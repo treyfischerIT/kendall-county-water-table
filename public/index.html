@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kendall County Texas Water Table Graph</title>
+<meta name="description" content="Live groundwater level tracker for Kendall County, Texas (Boerne area) — monitoring well #5758402 from the Texas Water Development Board, with month-over-month rise/fall indicators." />
+<meta property="og:title" content="Kendall County Texas Water Table Graph" />
+<meta property="og:description" content="Live groundwater levels for Kendall County, TX with month-over-month rise/fall indicators. Source: Texas Water Development Board." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  :root{
+    --bg:#0e1b2a; --panel:#13263a; --panel2:#0f2032; --ink:#eaf2fb; --muted:#93aec7;
+    --line:#38bdf8; --fill:rgba(56,189,248,.14); --grid:rgba(147,174,199,.14);
+    --rose:#34d399; --drop:#f87171; --border:rgba(147,174,199,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--line)}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
+  header h1{margin:0 0 4px;font-size:1.5rem;letter-spacing:.2px}
+  header .sub{color:var(--muted);font-size:.9rem;line-height:1.5}
+  header .sub a{white-space:nowrap}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0}
+  @media(max-width:640px){.cards{grid-template-columns:repeat(2,1fr)}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+  .card .lbl{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.6px}
+  .card .val{font-size:1.5rem;font-weight:600;margin-top:6px}
+  .card .chg{font-size:.82rem;margin-top:4px;display:flex;align-items:center;gap:5px}
+  .up{color:var(--rose)} .down{color:var(--drop)}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 16px 8px;margin-bottom:22px}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+  .toolbar h2{font-size:.98rem;margin:0;font-weight:600}
+  .toggle{display:inline-flex;background:var(--panel2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .toggle button{background:transparent;color:var(--muted);border:0;padding:7px 14px;font-size:.85rem;cursor:pointer}
+  .toggle button.active{background:var(--line);color:#04121f;font-weight:600}
+  .chartbox{position:relative;height:360px}
+  .axis-note{color:var(--muted);font-size:.75rem;margin:6px 2px 2px;text-align:right}
+  .months h2{font-size:.98rem;margin:0 0 12px;font-weight:600}
+  .mstrip{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}
+  .m{flex:0 0 auto;min-width:82px;background:var(--panel2);border:1px solid var(--border);
+     border-radius:12px;padding:10px;text-align:center}
+  .m .mo{color:var(--muted);font-size:.7rem;letter-spacing:.4px}
+  .m .mv{font-size:.95rem;font-weight:600;margin:4px 0}
+  .m .md{font-size:.78rem;display:flex;justify-content:center;align-items:center;gap:3px}
+  .legend{color:var(--muted);font-size:.78rem;margin-top:10px;line-height:1.5}
+  footer{color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:26px;border-top:1px solid var(--border);padding-top:16px}
+  .loading,.err{padding:40px 10px;text-align:center;color:var(--muted)}
+  .err{color:var(--drop)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>💧 Kendall County Texas Water Table</h1>
+    <div class="sub">
+      Groundwater monitoring well <strong>#5758402</strong> · Boerne / Kendall County area ·
+      Live data from the <a href="https://waterdatafortexas.org/groundwater/well/5758402" target="_blank" rel="noopener">Texas Water Development Board</a>.
+      <div id="updated"></div>
+    </div>
+  </header>
+
+  <div id="cards" class="cards" hidden></div>
+
+  <section class="panel">
+    <div class="toolbar">
+      <h2>Water table over time</h2>
+      <div class="toggle" id="ranges">
+        <button data-range="30d">30 days</button>
+        <button data-range="1y">1 year</button>
+        <button data-range="all" class="active">All (since 2021)</button>
+      </div>
+    </div>
+    <div class="chartbox"><canvas id="chart"></canvas></div>
+    <div class="axis-note">Axis is inverted so the line rising = a higher water table (less depth to water).</div>
+    <div id="status" class="loading">Loading live groundwater data…</div>
+  </section>
+
+  <section class="panel months" id="monthsPanel" hidden>
+    <h2>Month-over-month change</h2>
+    <div class="mstrip" id="mstrip"></div>
+    <div class="legend">
+      <span class="up">▲ green</span> = water table rose that month (water got shallower) ·
+      <span class="down">▼ red</span> = water table dropped (water got deeper). Values are feet below land surface.
+    </div>
+  </section>
+
+  <footer>
+    Data source: Texas Water Development Board, “Water Data for Texas” — well #5758402.
+    Water level is measured in feet below land surface; a smaller number means a higher water table.
+    Data refreshes hourly. This page is an independent visualization and is not affiliated with the TWDB.
+  </footer>
+</div>
+
+<script>
+const fmt = (n, d=2) => n==null ? "—" : n.toFixed(d);
+const parse = (s) => new Date(s.replace(" ", "T")); // treat as local wall-clock
+const monShort = (ym) => {
+  const [y,m] = ym.split("-").map(Number);
+  return new Date(y, m-1, 1).toLocaleString("en-US",{month:"short"}) + " '" + String(y).slice(2);
+};
+
+let chart, DATA;
+
+async function main(){
+  try{
+    const res = await fetch("/api/well?id=5758402");
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    DATA = data;
+    document.getElementById("status").remove();
+    renderUpdated();
+    renderCards();
+    renderMonths();
+    setupRanges();
+    drawRange("all");
+  }catch(e){
+    const s = document.getElementById("status");
+    s.className = "err";
+    s.textContent = "Couldn't load data: " + e.message;
+  }
+}
+
+function renderUpdated(){
+  if(!DATA.lastDate) return;
+  document.getElementById("updated").textContent =
+    "Latest reading: " + parse(DATA.lastDate).toLocaleString() +
+    " · " + DATA.count.toLocaleString() + " readings since " + DATA.firstDate.slice(0,10) + ".";
+}
+
+// Water-table change: positive = table ROSE (depth decreased).
+function tableChange(oldV, newV){ return oldV==null||newV==null ? null : (oldV - newV); }
+
+function valueAtOrBefore(daily, targetMs){
+  let best=null;
+  for(const p of daily){ if(parse(p.date).getTime() <= targetMs) best=p; else break; }
+  return best;
+}
+
+function renderCards(){
+  const daily = DATA.daily, cur = DATA.current, lastMs = parse(DATA.lastDate).getTime();
+  const p30 = valueAtOrBefore(daily, lastMs - 30*864e5);
+  const p365 = valueAtOrBefore(daily, lastMs - 365*864e5);
+  const first = daily[0];
+  const card = (lbl, val, chg) => {
+    let chgHtml = "";
+    if(chg!=null){
+      const up = chg > 0;
+      const arrow = Math.abs(chg) < 0.005 ? "▬" : (up ? "▲" : "▼");
+      const cls = Math.abs(chg) < 0.005 ? "" : (up ? "up" : "down");
+      const word = up ? "higher" : "lower";
+      chgHtml = `<div class="chg ${cls}">${arrow} ${fmt(Math.abs(chg))} ft ${Math.abs(chg)<0.005?"flat":word}</div>`;
+    }
+    return `<div class="card"><div class="lbl">${lbl}</div><div class="val">${val}</div>${chgHtml}</div>`;
+  };
+  const el = document.getElementById("cards");
+  el.hidden = false;
+  el.innerHTML = [
+    card("Current depth to water", fmt(cur)+" ft", null),
+    card("30-day change", "", tableChange(p30?.v, cur)),
+    card("12-month change", "", tableChange(p365?.v, cur)),
+    card("Since Jan 2021", "", tableChange(first?.v, cur)),
+  ].join("");
+}
+
+function renderMonths(){
+  const m = DATA.monthly;
+  const strip = document.getElementById("mstrip");
+  const rows = m.map((cur,i)=>{
+    const prev = m[i-1];
+    const chg = prev ? tableChange(prev.v, cur.v) : null;
+    let d = `<div class="md">—</div>`;
+    if(chg!=null){
+      const flat = Math.abs(chg) < 0.005;
+      const up = chg > 0;
+      const cls = flat ? "" : (up ? "up" : "down");
+      const arrow = flat ? "▬" : (up ? "▲" : "▼");
+      d = `<div class="md ${cls}">${arrow} ${fmt(Math.abs(chg),1)}</div>`;
+    }
+    return `<div class="m"><div class="mo">${monShort(cur.month)}</div>
+      <div class="mv">${fmt(cur.v,1)}</div>${d}</div>`;
+  }).join("");
+  strip.innerHTML = rows;
+  document.getElementById("monthsPanel").hidden = false;
+  strip.scrollLeft = strip.scrollWidth; // show most recent
+}
+
+function seriesFor(range){
+  if(range === "30d") return DATA.recent.map(p=>({x:parse(p.t), y:p.v}));
+  const daily = DATA.daily.map(p=>({x:parse(p.date), y:p.v}));
+  if(range === "1y"){
+    const cut = parse(DATA.lastDate).getTime() - 365*864e5;
+    return daily.filter(p=>p.x.getTime() >= cut);
+  }
+  return daily;
+}
+
+function drawRange(range){
+  const pts = seriesFor(range);
+  const unit = range==="30d" ? "day" : (range==="1y" ? "month" : "year");
+  const cfg = {
+    type:"line",
+    data:{ datasets:[{
+      label:"Depth to water (ft below surface)",
+      data:pts, borderColor:"#38bdf8", backgroundColor:"rgba(56,189,248,.14)",
+      borderWidth:2, pointRadius:0, tension:.25, fill:true,
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      interaction:{mode:"index",intersect:false},
+      scales:{
+        x:{ type:"time", time:{unit}, grid:{color:"rgba(147,174,199,.14)"},
+            ticks:{color:"#93aec7",maxRotation:0,autoSkipPadding:24} },
+        y:{ reverse:true, grid:{color:"rgba(147,174,199,.14)"},
+            ticks:{color:"#93aec7",callback:v=>v+" ft"},
+            title:{display:true,text:"◀ deeper   ·   ft below surface   ·   shallower ▶",color:"#93aec7"} }
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:(it)=> parse ? new Date(it[0].parsed.x).toLocaleString() : "",
+          label:(it)=> " " + fmt(it.parsed.y) + " ft below surface"
+        }}
+      }
+    }
+  };
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById("chart"), cfg);
+}
+
+function setupRanges(){
+  document.querySelectorAll("#ranges button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      document.querySelectorAll("#ranges button").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      drawRange(b.dataset.range);
+    });
+  });
+}
+
+main();
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+name = "kendall-county-water-table"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# The Worker serves the static page (public/) and also exposes /api/well,
+# which proxies + aggregates the TWDB feed server-side (the upstream feed
+# has no CORS header and is ~8.5MB, so we downsample before it hits the browser).
+[assets]
+directory = "./public"
+binding = "ASSETS"
