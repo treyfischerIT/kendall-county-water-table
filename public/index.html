@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Kendall County Texas Water Table Graph</title>
-<meta name="description" content="Live groundwater level tracker for Kendall County, Texas (Boerne area) — monitoring well #5758402 from the Texas Water Development Board, with month-over-month rise/fall indicators." />
+<meta name="description" content="Live groundwater level tracker for Kendall County, Texas (Boerne area) — Trinity Aquifer monitoring well #6811417 from the Texas Water Development Board, with data back to 2006 and month-over-month rise/fall indicators." />
 <meta property="og:title" content="Kendall County Texas Water Table Graph" />
 <meta property="og:description" content="Live groundwater levels for Kendall County, TX with month-over-month rise/fall indicators. Source: Texas Water Development Board." />
 <meta property="og:type" content="website" />
@@ -59,8 +59,8 @@
   <header>
     <h1>💧 Kendall County Texas Water Table</h1>
     <div class="sub">
-      Groundwater monitoring well <strong>#5758402</strong> · Boerne / Kendall County area ·
-      Live data from the <a href="https://waterdatafortexas.org/groundwater/well/5758402" target="_blank" rel="noopener">Texas Water Development Board</a>.
+      Trinity Aquifer monitoring well <strong>#6811417</strong> · Boerne / Kendall County area ·
+      Live data from the <a href="https://waterdatafortexas.org/groundwater/well/6811417" target="_blank" rel="noopener">Texas Water Development Board</a>.
       <div id="updated"></div>
     </div>
   </header>
@@ -73,7 +73,7 @@
       <div class="toggle" id="ranges">
         <button data-range="30d">30 days</button>
         <button data-range="1y">1 year</button>
-        <button data-range="all" class="active">All (since 2021)</button>
+        <button data-range="all" class="active" id="allBtn">All time</button>
       </div>
     </div>
     <div class="chartbox"><canvas id="chart"></canvas></div>
@@ -91,9 +91,9 @@
   </section>
 
   <footer>
-    Data source: Texas Water Development Board, “Water Data for Texas” — well #5758402.
+    Data source: Texas Water Development Board, “Water Data for Texas” — Trinity Aquifer well #6811417, Kendall County.
     Water level is measured in feet below land surface; a smaller number means a higher water table.
-    Data refreshes hourly. This page is an independent visualization and is not affiliated with the TWDB.
+    Data refreshes weekly. This page is an independent visualization and is not affiliated with the TWDB.
   </footer>
 </div>
 
@@ -109,7 +109,7 @@ let chart, DATA;
 
 async function main(){
   try{
-    const res = await fetch("/api/well?id=5758402");
+    const res = await fetch("/api/well?id=6811417");
     const data = await res.json();
     if(data.error) throw new Error(data.error);
     DATA = data;
@@ -158,13 +158,14 @@ function renderCards(){
     }
     return `<div class="card"><div class="lbl">${lbl}</div><div class="val">${val}</div>${chgHtml}</div>`;
   };
+  const firstYear = DATA.firstDate ? DATA.firstDate.slice(0, 4) : "record start";
   const el = document.getElementById("cards");
   el.hidden = false;
   el.innerHTML = [
     card("Current depth to water", fmt(cur)+" ft", null),
     card("30-day change", "", tableChange(p30?.v, cur)),
     card("12-month change", "", tableChange(p365?.v, cur)),
-    card("Since Jan 2021", "", tableChange(first?.v, cur)),
+    card("Since " + firstYear, "", tableChange(first?.v, cur)),
   ].join("");
 }
 

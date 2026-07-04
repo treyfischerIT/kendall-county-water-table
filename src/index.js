@@ -2,9 +2,10 @@
 // groundwater feed. The upstream JSON (~8.5MB, no CORS header) is fetched
 // server-side, downsampled to a small payload, and cached ~1 hour.
 
-const DEFAULT_WELL = "5758402";
+const DEFAULT_WELL = "6811417";
 const VALUE_KEY = "water_level(ft below land surface)";
-const CACHE_SECONDS = 3600;
+// Pull the upstream feed at most once a week; serve the cached copy in between.
+const CACHE_SECONDS = 604800; // 7 days
 
 export default {
   async fetch(request, env, ctx) {
