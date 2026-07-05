@@ -1,18 +1,35 @@
 // Cloudflare Worker: serves the static page and proxies/aggregates the TWDB
-// groundwater feed. The upstream JSON (~8.5MB, no CORS header) is fetched
-// server-side, downsampled to a small payload, and cached ~1 hour.
+// groundwater feed. The upstream JSON (~8-33MB, no CORS header) is fetched
+// server-side, downsampled to a small payload, and heavily cached so the site
+// stays cheap and fast even under a viral traffic spike.
+//
+// Caching layers (fastest → slowest), so almost no request ever touches TWDB:
+//   1. Browser cache        — max-age, one API hit per visitor per week.
+//   2. Cloudflare edge cache — caches.default, shared across all visitors in a colo.
+//   3. Stale-while-revalidate — past the weekly mark we serve the stale copy
+//      instantly and rebuild in the background; a spike never waits on a rebuild.
+//   4. In-isolate dedup      — a burst of cold requests shares ONE fetch+parse
+//      instead of each downloading and parsing the multi-MB feed.
+//   5. stale-if-error        — if TWDB is down, keep serving the last good copy.
 
-const DEFAULT_WELL = "6811417";
 const VALUE_KEY = "water_level(ft below land surface)";
-// Pull the upstream feed at most once a week; serve the cached copy in between.
-const CACHE_SECONDS = 604800; // 7 days
+const CACHE_SECONDS = 604800; // 7 days — how often we refresh from TWDB
+const EDGE_SECONDS = 2592000; // 30 days — how long the edge keeps a copy (for SWR)
+
+// Only the wells the site actually uses. Prevents the endpoint from being abused
+// as an open proxy to hammer TWDB with arbitrary well ids.
+const ALLOWED_WELLS = new Set(["6811417", "6810616"]);
+const DEFAULT_WELL = "6811417";
+
+// Per-isolate map of in-flight builds — the thundering-herd guard.
+const inflight = new Map();
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/well") {
-      return handleWell(request, url, ctx);
+      return handleWell(url, ctx);
     }
 
     // Everything else = static assets from ./public
@@ -20,32 +37,76 @@ export default {
   },
 };
 
-async function handleWell(request, url, ctx) {
-  const wellId = (url.searchParams.get("id") || DEFAULT_WELL).replace(/[^0-9]/g, "");
+async function handleWell(url, ctx) {
+  const requested = (url.searchParams.get("id") || DEFAULT_WELL).replace(/[^0-9]/g, "");
+  if (!ALLOWED_WELLS.has(requested)) {
+    return json({ error: `Unknown well ${requested || "(none)"}` }, 404, {
+      "Cache-Control": "public, max-age=3600",
+    });
+  }
+  const wellId = requested;
   const cacheKey = new Request(`https://cache.local/well/${wellId}`, { method: "GET" });
   const cache = caches.default;
 
   const cached = await cache.match(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    // Serve immediately. If it's past the weekly refresh mark, rebuild in the
+    // background so the next visitor gets fresh data — this request doesn't wait.
+    const builtAt = Number(cached.headers.get("x-built-at")) || 0;
+    if (Date.now() - builtAt > CACHE_SECONDS * 1000) {
+      ctx.waitUntil(refresh(wellId, cache, cacheKey));
+    }
+    return cached;
+  }
 
-  const upstream = `https://waterdatafortexas.org/groundwater/well/${wellId}.json`;
-  let raw;
+  // Cold: build synchronously (dedup'd so concurrent cold requests share one build).
+  let payload;
   try {
-    const r = await fetch(upstream, {
-      cf: { cacheTtl: CACHE_SECONDS, cacheEverything: true },
-    });
-    if (!r.ok) throw new Error(`upstream ${r.status}`);
-    raw = await r.json();
+    payload = await buildPayload(wellId);
   } catch (err) {
     return json({ error: `Could not load well ${wellId}: ${err.message}` }, 502);
   }
-
-  const payload = aggregate(raw, wellId);
-  const resp = json(payload, 200, {
-    "Cache-Control": `public, max-age=${CACHE_SECONDS}`,
-  });
+  const resp = freshResponse(payload);
   ctx.waitUntil(cache.put(cacheKey, resp.clone()));
   return resp;
+}
+
+// Fetch + aggregate the upstream feed, deduplicating concurrent calls for the
+// same well within this isolate so a burst only does the work once.
+function buildPayload(wellId) {
+  let job = inflight.get(wellId);
+  if (!job) {
+    job = (async () => {
+      const upstream = `https://waterdatafortexas.org/groundwater/well/${wellId}.json`;
+      const r = await fetch(upstream, { cf: { cacheTtl: CACHE_SECONDS, cacheEverything: true } });
+      if (!r.ok) throw new Error(`upstream ${r.status}`);
+      return aggregate(await r.json(), wellId);
+    })().finally(() => inflight.delete(wellId));
+    inflight.set(wellId, job);
+  }
+  return job;
+}
+
+// Background revalidation: rebuild and replace the cached copy. On failure we do
+// nothing, so the existing (stale) copy keeps being served — stale-if-error.
+async function refresh(wellId, cache, cacheKey) {
+  try {
+    const payload = await buildPayload(wellId);
+    await cache.put(cacheKey, freshResponse(payload));
+  } catch (_) {
+    /* keep serving the last good copy */
+  }
+}
+
+function freshResponse(payload) {
+  return json(payload, 200, {
+    // Browsers cache a week; the edge holds a copy for 30 days so we can serve
+    // stale-while-revalidate and stale-if-error from it.
+    "Cache-Control":
+      `public, max-age=${CACHE_SECONDS}, s-maxage=${EDGE_SECONDS}, ` +
+      `stale-while-revalidate=${EDGE_SECONDS}, stale-if-error=${EDGE_SECONDS}`,
+    "x-built-at": String(Date.now()),
+  });
 }
 
 // Turn the full record into a compact payload:
