@@ -168,7 +168,10 @@ async function load(wellId){
     "https://waterdatafortexas.org/groundwater/well/" + wellId;
   document.getElementById("updated").textContent = "";
   try{
-    const res = await fetch("/api/well?id=" + wellId);
+    // Rolling 6-hour bucket in the URL so a returning visitor's browser re-fetches
+    // at least every refresh window instead of serving a long-cached stale copy.
+    const bucket = Math.floor(Date.now() / (6 * 3600 * 1000));
+    const res = await fetch(`/api/well?id=${wellId}&t=${bucket}`);
     const data = await res.json();
     if(data.error) throw new Error(data.error);
     DATA = data;

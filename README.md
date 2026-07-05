@@ -24,9 +24,10 @@ built on Texas Water Development Board (TWDB) monitoring well **#6811417**.
 The TWDB feed (`/groundwater/well/6811417.json`) is ~33 MB and sends no CORS header, so
 a browser can't fetch it directly. A Cloudflare Worker (`src/index.js`) proxies it
 server-side at `/api/well`, downsamples it to a small payload (last reading per day, per
-month, plus raw last-30-days), adds CORS, and caches the result for one week (the upstream
-feed only updates a few times a day). The static page (`public/index.html`, vanilla HTML +
-Chart.js) renders it.
+month, plus raw last-30-days), adds CORS, and caches the result. It refreshes from TWDB
+every few hours (stale-while-revalidate, so visitors never wait on the refetch) to stay in
+step with the official page. The static page (`public/index.html`, vanilla HTML + Chart.js)
+renders it.
 
 ## Develop / deploy
 

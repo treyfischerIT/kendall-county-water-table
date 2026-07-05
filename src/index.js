@@ -4,17 +4,23 @@
 // stays cheap and fast even under a viral traffic spike.
 //
 // Caching layers (fastest → slowest), so almost no request ever touches TWDB:
-//   1. Browser cache        — max-age, one API hit per visitor per week.
+//   1. Browser cache        — max-age, one API hit per visitor per refresh window.
 //   2. Cloudflare edge cache — caches.default, shared across all visitors in a colo.
-//   3. Stale-while-revalidate — past the weekly mark we serve the stale copy
+//   3. Stale-while-revalidate — past the refresh mark we serve the stale copy
 //      instantly and rebuild in the background; a spike never waits on a rebuild.
 //   4. In-isolate dedup      — a burst of cold requests shares ONE fetch+parse
 //      instead of each downloading and parsing the multi-MB feed.
 //   5. stale-if-error        — if TWDB is down, keep serving the last good copy.
 
 const VALUE_KEY = "water_level(ft below land surface)";
-const CACHE_SECONDS = 604800; // 7 days — how often we refresh from TWDB
+// Refresh from TWDB every few hours so the site stays in step with the official
+// page (TWDB posts new readings through the day). SWR means users never wait on
+// this — the refetch happens in the background.
+const CACHE_SECONDS = 21600; // 6 hours — how often we refresh from TWDB
 const EDGE_SECONDS = 2592000; // 30 days — how long the edge keeps a copy (for SWR)
+// Bump to invalidate every cached copy at once (e.g. after changing the refresh
+// cadence or the payload shape) so all visitors get a fresh rebuild immediately.
+const CACHE_VERSION = "v2";
 
 // Only the wells the site actually uses. Prevents the endpoint from being abused
 // as an open proxy to hammer TWDB with arbitrary well ids.
@@ -45,12 +51,12 @@ async function handleWell(url, ctx) {
     });
   }
   const wellId = requested;
-  const cacheKey = new Request(`https://cache.local/well/${wellId}`, { method: "GET" });
+  const cacheKey = new Request(`https://cache.local/well/${CACHE_VERSION}/${wellId}`, { method: "GET" });
   const cache = caches.default;
 
   const cached = await cache.match(cacheKey);
   if (cached) {
-    // Serve immediately. If it's past the weekly refresh mark, rebuild in the
+    // Serve immediately. If it's past the refresh mark, rebuild in the
     // background so the next visitor gets fresh data — this request doesn't wait.
     const builtAt = Number(cached.headers.get("x-built-at")) || 0;
     if (Date.now() - builtAt > CACHE_SECONDS * 1000) {
@@ -78,7 +84,9 @@ function buildPayload(wellId) {
   if (!job) {
     job = (async () => {
       const upstream = `https://waterdatafortexas.org/groundwater/well/${wellId}.json`;
-      const r = await fetch(upstream, { cf: { cacheTtl: CACHE_SECONDS, cacheEverything: true } });
+      // Bypass Cloudflare's cache for the raw feed so each (rare, deduped, at most
+      // once per refresh window per colo) rebuild gets genuinely fresh readings.
+      const r = await fetch(upstream, { cache: "no-store" });
       if (!r.ok) throw new Error(`upstream ${r.status}`);
       return aggregate(await r.json(), wellId);
     })().finally(() => inflight.delete(wellId));
