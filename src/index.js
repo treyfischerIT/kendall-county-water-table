@@ -13,10 +13,10 @@
 //   5. stale-if-error        — if TWDB is down, keep serving the last good copy.
 
 const VALUE_KEY = "water_level(ft below land surface)";
-// Refresh from TWDB every few hours so the site stays in step with the official
-// page (TWDB posts new readings through the day). SWR means users never wait on
-// this — the refetch happens in the background.
-const CACHE_SECONDS = 21600; // 6 hours — how often we refresh from TWDB
+// Refresh from TWDB about twice a day. The source posts a new reading roughly
+// once daily, so a 12h window reliably picks up each update within half a day
+// without over-fetching. SWR means users never wait on the refetch.
+const CACHE_SECONDS = 43200; // 12 hours — how often we refresh from TWDB
 const EDGE_SECONDS = 2592000; // 30 days — how long the edge keeps a copy (for SWR)
 // Bump to invalidate every cached copy at once (e.g. after changing the refresh
 // cadence or the payload shape) so all visitors get a fresh rebuild immediately.
