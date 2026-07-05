@@ -97,6 +97,7 @@
     <div class="legend">
       Cross-section drawn to scale from this well's actual record. The blue zone is saturated
       rock below today's water table; the column shows water standing in the well bore.
+      The animation sweeps from the record high down to today — click the diagram to replay it.
     </div>
   </section>
 
@@ -323,7 +324,9 @@ function renderXsec(){
     `<rect x="547" y="${m.yL-9}" width="${m.t.length*6.6+10}" height="18" rx="4" fill="#0e1b2a" opacity=".85"/>`+
     `<text x="551" y="${m.yL+4}" fill="${m.c}" font-size="12"${m.bold?' font-weight="700"':''}>${m.t}</text>`).join("");
 
-  const wtY = y(cur);
+  const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const startFt = reduced ? cur : hi.v;   // drain animation starts at the record high
+  const wtY = y(startFt);
   const spokes=[0,45,90,135].map(a=>{
     const r=8, x=152.5, yy=17, ca=Math.cos(a*Math.PI/180), sa=Math.sin(a*Math.PI/180);
     return `<line x1="${x-r*ca}" y1="${yy-r*sa}" x2="${x+r*ca}" y2="${yy+r*sa}"/>`;
@@ -379,15 +382,15 @@ function renderXsec(){
     ${bands}
     ${ruler}
 
-    <rect x="0" y="${wtY}" width="${W}" height="${BOT-wtY}" fill="url(#xsSat)"/>
-    <line x1="0" y1="${wtY}" x2="${W}" y2="${wtY}" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="7 5">
+    <rect id="xsSatRect" x="0" y="${wtY}" width="${W}" height="${BOT-wtY}" fill="url(#xsSat)"/>
+    <line id="xsWt" x1="0" y1="${wtY}" x2="${W}" y2="${wtY}" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="7 5">
       <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2.5s" repeatCount="indefinite"/>
     </line>
-    <text x="14" y="${wtY-6}" fill="#38bdf8" font-size="11" font-weight="600">water table</text>
+    <text id="xsWtLabel" x="14" y="${wtY-6}" fill="#38bdf8" font-size="11" font-weight="600">water table</text>
 
     <rect x="${BX}" y="${SURF-6}" width="${BW}" height="${BOT-SURF+6}" fill="#0a1624" stroke="#93aec7" stroke-width="1.2" rx="2"/>
-    <rect x="${BX+2}" y="${wtY}" width="${BW-4}" height="${BOT-wtY-2}" fill="url(#xsBoreW)"/>
-    <rect x="${BX+2}" y="${wtY}" width="${BW-4}" height="3" fill="#bae6fd">
+    <rect id="xsBoreWater" x="${BX+2}" y="${wtY}" width="${BW-4}" height="${BOT-wtY-2}" fill="url(#xsBoreW)"/>
+    <rect id="xsBoreShine" x="${BX+2}" y="${wtY}" width="${BW-4}" height="3" fill="#bae6fd">
       <animate attributeName="opacity" values="1;.35;1" dur="2s" repeatCount="indefinite"/>
     </rect>
     <rect x="${BX-8}" y="${SURF-14}" width="${BW+16}" height="9" fill="#5b6c80" rx="2"/>
@@ -398,6 +401,38 @@ function renderXsec(){
     <text x="14" y="${BOT+16}" fill="#93aec7" font-size="10" opacity=".8">Glen Rose limestone continues below · scale: 0–${depthMax} ft</text>
   </svg>`;
   document.getElementById("xsecPanel").hidden = false;
+
+  // drain animation: sweep from the record high down to today, live depth readout
+  const xsec = document.getElementById("xsec");
+  xsec.style.cursor = "pointer";
+  xsec.title = "Replay the decline";
+  xsec.onclick = ()=> animateDrain(hi.v, cur, y, BOT);
+  if(!reduced) setTimeout(()=> animateDrain(hi.v, cur, y, BOT), 500);
+}
+
+let xsecRaf;
+function animateDrain(fromFt, toFt, yFn, BOT){
+  cancelAnimationFrame(xsecRaf);
+  const sat=document.getElementById("xsSatRect"), line=document.getElementById("xsWt"),
+        lab=document.getElementById("xsWtLabel"), bw=document.getElementById("xsBoreWater"),
+        sh=document.getElementById("xsBoreShine");
+  if(!sat) return;
+  const dur=3500;
+  let last=performance.now(), elapsed=0;
+  const ease=t=> t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;   // ease-in-out cubic
+  function frame(now){
+    // cap per-frame progress so throttled/backgrounded tabs don't skip the sweep
+    elapsed += Math.min(now-last, 50); last = now;
+    const p=Math.min(1,elapsed/dur), v=fromFt+(toFt-fromFt)*ease(p), yy=yFn(v);
+    sat.setAttribute("y",yy); sat.setAttribute("height",Math.max(0,BOT-yy));
+    line.setAttribute("y1",yy); line.setAttribute("y2",yy);
+    lab.setAttribute("y",yy-6);
+    lab.textContent = "water table · " + v.toFixed(1) + " ft";
+    bw.setAttribute("y",yy); bw.setAttribute("height",Math.max(0,BOT-yy-2));
+    sh.setAttribute("y",yy);
+    if(p<1) xsecRaf=requestAnimationFrame(frame);
+  }
+  xsecRaf=requestAnimationFrame(frame);
 }
 
 function renderMonths(){
