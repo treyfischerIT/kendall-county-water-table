@@ -34,7 +34,12 @@
   .card .lbl{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.6px}
   .card .val{font-size:1.5rem;font-weight:600;margin-top:6px}
   .card .chg{font-size:.82rem;margin-top:4px;display:flex;align-items:center;gap:5px}
+  .card .csub{color:var(--muted);font-size:.72rem;margin-top:3px}
   .up{color:var(--rose)} .down{color:var(--drop)}
+  .explain{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--line);
+    border-radius:12px;padding:12px 16px;margin:18px 0 2px;font-size:.9rem;line-height:1.55}
+  .explain b{color:var(--line)}
+  .explain .muted{color:var(--muted)}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 16px 8px;margin-bottom:22px}
   .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px}
   .toolbar h2{font-size:.98rem;margin:0;font-weight:600}
@@ -80,6 +85,13 @@
       <div id="updated"></div>
     </div>
   </header>
+
+  <div class="explain">
+    <b>How to read this:</b> every reading is <b>feet below the ground</b> — how far down you'd
+    have to go to reach the top of the water. <span class="muted">A bigger number means the water
+    has dropped deeper underground and there's less of it left in the aquifer. It measures the depth
+    to the water, not how deep the well is or how much water remains.</span>
+  </div>
 
   <div class="wellpick">
     <label for="wellSel">Monitoring well</label>
@@ -253,22 +265,23 @@ function renderCards(){
   const p30 = valueAtOrBefore(daily, lastMs - 30*864e5);
   const p365 = valueAtOrBefore(daily, lastMs - 365*864e5);
   const first = daily[0];
-  const card = (lbl, val, chg) => {
+  const card = (lbl, val, chg, sub) => {
     let chgHtml = "";
     if(chg!=null){
       const up = chg > 0;
       const arrow = Math.abs(chg) < 0.005 ? "▬" : (up ? "▲" : "▼");
       const cls = Math.abs(chg) < 0.005 ? "" : (up ? "up" : "down");
-      const word = up ? "higher" : "lower";
+      const word = up ? "shallower (more water)" : "deeper (less water)";
       chgHtml = `<div class="chg ${cls}">${arrow} ${fmt(Math.abs(chg))} ft ${Math.abs(chg)<0.005?"flat":word}</div>`;
     }
-    return `<div class="card"><div class="lbl">${lbl}</div><div class="val">${val}</div>${chgHtml}</div>`;
+    const subHtml = sub ? `<div class="csub">${sub}</div>` : "";
+    return `<div class="card"><div class="lbl">${lbl}</div><div class="val">${val}</div>${subHtml}${chgHtml}</div>`;
   };
   const firstYear = DATA.firstDate ? DATA.firstDate.slice(0, 4) : "record start";
   const el = document.getElementById("cards");
   el.hidden = false;
   el.innerHTML = [
-    card("Current depth to water", fmt(cur)+" ft", null),
+    card("Current depth to water", fmt(cur)+" ft", null, "below the ground surface"),
     card("30-day change", "", tableChange(p30?.v, cur)),
     card("12-month change", "", tableChange(p365?.v, cur)),
     card("Since " + firstYear, "", tableChange(first?.v, cur)),
