@@ -330,36 +330,30 @@ function renderXsec(){
   const wtY = y(startFt);
 
   // year flags: where the table stood at each year's end, fading in as time passes.
-  // Cap at ~8 flags (always keep first + latest year) so deep records don't clutter.
+  // "Today" already marks the current level, so skip the current year; then keep only
+  // years with ≥15px of clearance from every flag already kept — clustered years
+  // (flat stretches) collapse to one flag instead of a tangle of leader lines.
   const yearLast = new Map();
   for(const m of DATA.monthly) yearLast.set(m.month.slice(0,4), m.v);
-  let years=[...yearLast.keys()].sort();
-  if(years.length>8){
-    const stepN=Math.ceil((years.length-1)/7), sel=[];
-    for(let k=0;k<years.length;k+=stepN) sel.push(years[k]);
-    if(sel[sel.length-1]!==years[years.length-1]) sel.push(years[years.length-1]);
-    years=sel;
+  const curYear = DATA.lastDate ? DATA.lastDate.slice(0,4) : "";
+  const allYears=[...yearLast.keys()].sort().filter(yr=>yr!==curYear);
+  const firstYr=+allYears[0], lastYr=+curYear||+allYears[allYears.length-1];
+  const flags=[];
+  for(const yr of allYears){
+    const yy=y(yearLast.get(yr));
+    if(yy > y(cur)-8) continue;                     // too close to the Today line
+    if(flags.every(f=>Math.abs(f.yA-yy)>=15))
+      flags.push({yr, v:yearLast.get(yr), yA:yy,
+        t: lastYr>firstYr ? 0.05+0.85*(+yr-firstYr)/(lastYr-firstYr) : 0.5});
   }
-  const flags=years.map((yr,idx)=>({yr, v:yearLast.get(yr),
-    t: years.length>1 ? 0.05+0.9*idx/(years.length-1) : 0.5}));
-  flags.forEach(f=>{ f.yA=y(f.v); f.yL=f.yA; });
-  // two alternating label lanes at true depth; nudge only within a lane
-  const byY=[...flags].sort((a,b)=>a.yA-b.yA);
-  const laneLast=[-99,-99];
-  byY.forEach((f,k)=>{
-    f.lane=k%2;
-    if(f.yL-laneLast[f.lane]<12) f.yL=laneLast[f.lane]+12;
-    laneLast[f.lane]=f.yL;
-  });
 
-  const flagSvg = flags.map(f=>{
-    const laneX = f.lane===0 ? BX-16 : BX-62;   // two label lanes left of the bore
-    return `<g class="xsYF" data-t="${f.t}" opacity="${reduced?1:0}">`+
-    `<line x1="${BX-1}" y1="${f.yA}" x2="${laneX+2}" y2="${f.yL}" stroke="#93aec7" stroke-width="1" opacity=".35"/>`+
+  const flagSvg = flags.map(f=>
+    `<g class="xsYF" data-t="${f.t}" opacity="${reduced?1:0}">`+
+    `<line x1="${BX-1}" y1="${f.yA}" x2="${BX-12}" y2="${f.yA}" stroke="#93aec7" stroke-width="1" opacity=".4"/>`+
     `<circle cx="${BX-1}" cy="${f.yA}" r="2" fill="#93aec7" opacity=".7"/>`+
-    `<rect x="${laneX-26}" y="${f.yL-5.5}" width="29" height="11" rx="3" fill="#0e1b2a" opacity=".78"/>`+
-    `<text x="${laneX}" y="${f.yL+3.5}" fill="#93aec7" font-size="10" text-anchor="end">${f.yr}</text>`+
-    `</g>`;}).join("");
+    `<rect x="${BX-44}" y="${f.yA-5.5}" width="30" height="11" rx="3" fill="#0e1b2a" opacity=".78"/>`+
+    `<text x="${BX-15}" y="${f.yA+3.5}" fill="#93aec7" font-size="10" text-anchor="end">${f.yr}</text>`+
+    `</g>`).join("");
 
   const spokes=[0,45,90,135].map(a=>{
     const r=8, x=152.5, yy=17, ca=Math.cos(a*Math.PI/180), sa=Math.sin(a*Math.PI/180);
