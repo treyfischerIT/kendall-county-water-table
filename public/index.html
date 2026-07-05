@@ -13,6 +13,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root{
     --bg:#0e1b2a; --panel:#13263a; --panel2:#0f2032; --ink:#eaf2fb; --muted:#93aec7;
@@ -65,6 +67,19 @@
   .legend{color:var(--muted);font-size:.78rem;margin-top:10px;line-height:1.5}
   footer{color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:26px;border-top:1px solid var(--border);padding-top:16px}
   #xsec svg{width:100%;height:auto;display:block;border-radius:10px}
+  #map{height:400px;border-radius:12px;overflow:hidden;z-index:0}
+  .leaflet-container{background:#0a1624;font:inherit}
+  .leaflet-tooltip{background:#13263a;color:#eaf2fb;border:1px solid var(--border);
+    box-shadow:0 2px 8px rgba(0,0,0,.4);font-weight:600}
+  .leaflet-tooltip-top:before{border-top-color:var(--border)}
+  .leaflet-bar a{background:var(--panel);color:var(--ink);border-color:var(--border)}
+  .leaflet-bar a:hover{background:var(--panel2)}
+  #meta{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+  @media(max-width:640px){#meta{grid-template-columns:1fr}}
+  .mrow{display:flex;justify-content:space-between;gap:14px;padding:8px 0;
+    border-bottom:1px solid var(--border);font-size:.86rem;line-height:1.4}
+  .mrow .mk{color:var(--muted);flex:0 0 auto}
+  .mrow .mv{text-align:right;font-weight:500}
   .wellpick{display:flex;align-items:center;gap:10px;margin:20px 0 2px;flex-wrap:wrap}
   .wellpick label{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px}
   .wellpick select{background:var(--panel);color:var(--ink);border:1px solid var(--border);
@@ -80,7 +95,7 @@
   <header>
     <h1>💧 Kendall County Texas Water Table</h1>
     <div class="sub">
-      Glen Rose Trinity Aquifer · Boerne / Kendall County, Texas · Live data from the
+      Cow Creek GCD groundwater monitoring network · Kendall County, Texas · Live data from the
       <a id="twdbLink" href="https://waterdatafortexas.org/groundwater/well/6811417" target="_blank" rel="noopener">Texas Water Development Board</a>.
       <div id="updated"></div>
     </div>
@@ -99,7 +114,19 @@
     <span id="wellNum" class="wellnum"></span>
   </div>
 
+  <section class="panel" id="mapPanel">
+    <div class="toolbar"><h2>📍 Where these wells are</h2>
+      <span class="muted" style="font-size:.8rem">Cow Creek GCD network · tap a well to view it</span>
+    </div>
+    <div id="map"></div>
+  </section>
+
   <div id="cards" class="cards" hidden></div>
+
+  <section class="panel" id="detailsPanel" hidden>
+    <div class="toolbar"><h2>Well details</h2></div>
+    <div id="meta"></div>
+  </section>
 
   <section class="panel" id="xsecPanel" hidden>
     <div class="toolbar">
@@ -142,9 +169,10 @@
   </section>
 
   <footer>
-    Data source: Texas Water Development Board, “Water Data for Texas” — Glen Rose Trinity Aquifer monitoring wells in Kendall County (select above).
-    Water level is measured in feet below land surface; a smaller number means a higher water table.
-    Data refreshes weekly. This page is an independent visualization and is not affiliated with the TWDB.
+    Monitoring network operated by the <b>Cow Creek Groundwater Conservation District</b>; readings hosted by the
+    Texas Water Development Board (“Water Data for Texas”). Water level is measured in feet below land surface;
+    a smaller number means a higher water table. Data refreshes about twice a day.
+    This page is an independent visualization and is not affiliated with the CCGCD or TWDB.
   </footer>
 </div>
 
@@ -159,13 +187,89 @@ const monShort = (ym) => {
 let chart, DATA;
 
 const WELLS = [
-  { id: "6811417", name: "Schwope Monitoring Well" },
-  { id: "6810616", name: "Ranger Creek Monitoring Well" },
+  {id:"6811417",name:"Schwope",twdb:"H.W. Schwope & Sons",lat:29.798222,lng:-98.744472,depth:515,formation:"Glen Rose LS and Hensell SH and Cow Creek LS Members of Pearsall FM",aquifer:"Trinity",county:"Kendall"},
+  {id:"6810616",name:"Ranger Creek",twdb:"PWS at Mission",lat:29.809889,lng:-98.760139,depth:560,formation:"Hensell Sand and Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"5758203",name:"Alamo Springs",twdb:"Alamo Springs",lat:30.109083,lng:-98.801222,depth:155,formation:"Edwards and Associated Limestones",aquifer:"Edwards-Trinity Plateau",county:"Kendall"},
+  {id:"6811708",name:"City of Boerne",twdb:"City of Boerne",lat:29.791472,lng:-98.718222,depth:357,formation:"Glen Rose Limestone, Lower and Hensell Shale Mbr of Pearsall Formation",aquifer:"Trinity",county:"Kendall"},
+  {id:"6806105",name:"Clearwater Ranch",twdb:"Clearwater Ranch",lat:29.958889,lng:-98.86,depth:310,formation:"Glen Rose Limestone, Lower and Hensell Shale Mbr of Pearsall Formation",aquifer:"Trinity",county:"Kendall"},
+  {id:"6801314",name:"Comfort",twdb:"Comfort",lat:29.971944,lng:-98.89475,depth:280,formation:"Hensell Sand Member of Travis Peak Formation",aquifer:"Trinity",county:"Kendall"},
+  {id:"6811302",name:"Cordillera Trace",twdb:"Cordillera Trace",lat:29.858639,lng:-98.625083,depth:295,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"5758402",name:"David Langford",twdb:"David Langford",lat:30.076944,lng:-98.8425,depth:315,formation:"Hensell Sand Member of Travis Peak Formation",aquifer:"Trinity",county:"Kendall"},
+  {id:"6804214",name:"Donop Ranch",twdb:"Donop Ranch",lat:29.996111,lng:-98.543889,depth:400,formation:"",aquifer:"Trinity",county:"Kendall"},
+  {id:"6812414",name:"Fritz Grosser",twdb:"Fritz Grosser",lat:29.796556,lng:-98.583361,depth:340,formation:"Hensell Sand and Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6802302",name:"Greco Bend",twdb:"Greco Bend",lat:29.977556,lng:-98.760861,depth:400,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6803503",name:"Hixon Monitor",twdb:"Hixon Monitor",lat:29.952222,lng:-98.691389,depth:200,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6804312",name:"Kendalia",twdb:"Kendalia",lat:29.970417,lng:-98.525333,depth:310,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6810626",name:"Pfeiffer Ranch",twdb:"Pfeiffer Ranch",lat:29.828611,lng:-98.750556,depth:500,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6811817",name:"Ranch Drive",twdb:"Ranch Drive",lat:29.771723,lng:-98.68758,depth:389,formation:"Glen Rose Limestone and Pearsall Formation",aquifer:"Trinity",county:"Kendall"},
+  {id:"6812106",name:"Rio Cordillera",twdb:"Rio Cordillera",lat:29.854611,lng:-98.598611,depth:255,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6802807",name:"Rust Road",twdb:"Rust Road",lat:29.909722,lng:-98.82325,depth:708,formation:"Hosston Formation",aquifer:"Trinity",county:"Kendall"},
+  {id:"6803109",name:"Sisterdale VFD",twdb:"Sisterdale VFD",lat:29.975556,lng:-98.721111,depth:200,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6811509",name:"Spring Creek Estates",twdb:"Spring Creek Estates",lat:29.819333,lng:-98.695056,depth:440,formation:"Glen Rose Limestone, Lower Member",aquifer:"Trinity",county:"Kendall"},
+  {id:"6809303",name:"Turkey Knob",twdb:"Turkey Knob",lat:29.836833,lng:-98.886833,depth:1018,formation:"Hensell Sand and Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6811418",name:"Twin Canyon",twdb:"Twin Canyon",lat:29.830694,lng:-98.728528,depth:585,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
+  {id:"6802609",name:"Waring",twdb:"Waring",lat:29.930194,lng:-98.788167,depth:281,formation:"Hensell Sand Member of Travis Peak Formation",aquifer:"Trinity",county:"Kendall"},
+  {id:"6802509",name:"Windmill Ranch",twdb:"Windmill Ranch",lat:29.936389,lng:-98.7975,depth:380,formation:"Glen Rose LS and Hensell SH and Cow Creek LS Members of Pearsall FM",aquifer:"Trinity",county:"Kendall"}
 ];
+const WELL_BY_ID = Object.fromEntries(WELLS.map(w => [w.id, w]));
 
 function activeRange(){
   const b = document.querySelector("#ranges button.active");
   return b ? b.dataset.range : "all";
+}
+
+// ---- Map of all wells -------------------------------------------------
+let map, markers = {};
+function markerStyle(sel){
+  return sel
+    ? { radius:9, color:"#ffffff", weight:2, fillColor:"#f6c178", fillOpacity:1 }
+    : { radius:6, color:"#0a1624", weight:1, fillColor:"#38bdf8", fillOpacity:.85 };
+}
+function initMap(){
+  if(!window.L) return;                       // Leaflet failed to load — dropdown still works
+  map = L.map("map", { scrollWheelZoom:false }).setView([29.87, -98.72], 10);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    subdomains:"abcd", maxZoom:19,
+    attribution:'&copy; OpenStreetMap &copy; CARTO'
+  }).addTo(map);
+  const pts = [];
+  WELLS.forEach(w=>{
+    if(w.lat==null || w.lng==null) return;
+    const m = L.circleMarker([w.lat, w.lng], markerStyle(false))
+      .addTo(map)
+      .bindTooltip(w.name, { direction:"top", offset:[0,-4] })
+      .on("click", ()=>{ document.getElementById("wellSel").value = w.id; load(w.id); });
+    markers[w.id] = m;
+    pts.push([w.lat, w.lng]);
+  });
+  if(pts.length) map.fitBounds(pts, { padding:[28,28] });
+}
+function selectMarker(id){
+  for(const wid in markers) markers[wid].setStyle(markerStyle(wid === id));
+  if(markers[id]) markers[id].bringToFront();
+}
+
+// ---- Per-well metadata panel ------------------------------------------
+function renderMeta(id){
+  const w = WELL_BY_ID[id]; if(!w) return;
+  const rows = [
+    ["TWDB site name", w.twdb],
+    ["State well number", "#" + w.id],
+    ["Aquifer", w.aquifer || "—"],
+    ["Geologic formation", (w.formation && w.formation !== "-n/a-") ? w.formation : "—"],
+    ["Well depth (drilled)", w.depth != null ? w.depth.toLocaleString() + " ft" : "—"],
+    ["Location", (w.lat!=null) ? w.lat.toFixed(4) + ", " + w.lng.toFixed(4) : "—"],
+    ["County", w.county || "—"],
+    ["Monitored by", "Cow Creek GCD"],
+  ];
+  if(DATA && DATA.firstDate){
+    rows.push(["Period of record",
+      DATA.firstDate.slice(0,10) + " → " + DATA.lastDate.slice(0,10) +
+      " · " + DATA.count.toLocaleString() + " readings"]);
+  }
+  document.getElementById("meta").innerHTML = rows.map(([k,v])=>
+    `<div class="mrow"><span class="mk">${k}</span><span class="mv">${v}</span></div>`).join("");
+  document.getElementById("detailsPanel").hidden = false;
 }
 
 async function load(wellId){
@@ -179,6 +283,7 @@ async function load(wellId){
   document.getElementById("twdbLink").href =
     "https://waterdatafortexas.org/groundwater/well/" + wellId;
   document.getElementById("updated").textContent = "";
+  selectMarker(wellId);
   try{
     // Rolling 12-hour bucket in the URL so a returning visitor's browser re-fetches
     // at least every refresh window instead of serving a long-cached stale copy.
@@ -189,6 +294,7 @@ async function load(wellId){
     DATA = data;
     status.hidden = true;
     renderUpdated();
+    renderMeta(wellId);
     renderCards();
     renderXsec();
     renderMonths();
@@ -208,6 +314,7 @@ function init(){
     sel.appendChild(o);
   });
   sel.addEventListener("change", ()=> load(sel.value));
+  initMap();
   setupRanges();
 
   // Reset-zoom button

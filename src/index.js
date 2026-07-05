@@ -22,9 +22,15 @@ const EDGE_SECONDS = 2592000; // 30 days — how long the edge keeps a copy (for
 // cadence or the payload shape) so all visitors get a fresh rebuild immediately.
 const CACHE_VERSION = "v2";
 
-// Only the wells the site actually uses. Prevents the endpoint from being abused
-// as an open proxy to hammer TWDB with arbitrary well ids.
-const ALLOWED_WELLS = new Set(["6811417", "6810616"]);
+// Only the wells the site actually uses (the Cow Creek GCD monitoring network).
+// Prevents the endpoint from being abused as an open proxy to hammer TWDB with
+// arbitrary well ids.
+const ALLOWED_WELLS = new Set([
+  "6811417", "6810616", "5758203", "6811708", "6806105", "6801314", "6811302",
+  "5758402", "6804214", "6812414", "6802302", "6803503", "6804312", "6810626",
+  "6811817", "6812106", "6802807", "6803109", "6811509", "6809303", "6811418",
+  "6802609", "6802509",
+]);
 const DEFAULT_WELL = "6811417";
 
 // Per-isolate map of in-flight builds — the thundering-herd guard.
