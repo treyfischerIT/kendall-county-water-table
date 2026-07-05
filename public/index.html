@@ -404,10 +404,15 @@ function renderXsec(){
   for(const p of d){ if(p.v<hi.v) hi=p; if(p.v>lo.v) lo=p; }
   const cur = DATA.current;
   const ya = valueAtOrBefore(d, parse(DATA.lastDate).getTime()-365*864e5);
+  const wellCfg = WELL_BY_ID[DATA.wellId];
+  const wellDepth = (wellCfg && wellCfg.depth) || null;
 
   const W=760, SURF=64, BOT=456, H=480;
-  const depthMax = Math.ceil((lo.v*1.07)/25)*25;
+  // scale so BOTH the deepest water level and the drilled well bottom fit on screen
+  const deepest = Math.max(lo.v*1.07, wellDepth ? wellDepth*1.04 : 0);
+  const depthMax = Math.ceil(deepest/25)*25;
   const y = ft => SURF + ft*(BOT-SURF)/depthMax;
+  const wellBottomY = wellDepth ? y(wellDepth) : BOT;
   const mmyy = ds => { const [yy,mm]=ds.split("-");
     return new Date(+yy,+mm-1,1).toLocaleString("en-US",{month:"short"})+" "+yy; };
 
@@ -438,6 +443,7 @@ function renderXsec(){
     {ft:lo.v, c:"#f87171", t:`▼ Record low · ${lo.v.toFixed(1)} ft · ${mmyy(lo.date)}`},
   ];
   if(ya) marks.push({ft:ya.v, c:"#93aec7", t:`1 year ago · ${ya.v.toFixed(1)} ft`});
+  if(wellDepth) marks.push({ft:wellDepth, c:"#9aa7b4", t:`⊥ Well drilled to ${wellDepth.toLocaleString()} ft`});
   marks.forEach(m=>{ m.yA=y(m.ft); m.yL=m.yA; });
   marks.sort((a,b)=>a.yA-b.yA);
   for(let k=1;k<marks.length;k++)
@@ -515,11 +521,12 @@ function renderXsec(){
     </line>
     <text id="xsWtLabel" x="14" y="${wtY-6}" fill="#38bdf8" font-size="11" font-weight="600">water table</text>
 
-    <rect x="${BX}" y="${SURF-6}" width="${BW}" height="${BOT-SURF+6}" fill="#0a1624" stroke="#93aec7" stroke-width="1.2" rx="2"/>
-    <rect id="xsBoreWater" x="${BX+2}" y="${wtY}" width="${BW-4}" height="${BOT-wtY-2}" fill="url(#xsBoreW)"/>
+    <rect x="${BX}" y="${SURF-6}" width="${BW}" height="${wellBottomY-SURF+6}" fill="#0a1624" stroke="#93aec7" stroke-width="1.2" rx="2"/>
+    <rect id="xsBoreWater" x="${BX+2}" y="${wtY}" width="${BW-4}" height="${wellBottomY-wtY-2}" fill="url(#xsBoreW)"/>
     <rect id="xsBoreShine" x="${BX+2}" y="${wtY}" width="${BW-4}" height="3" fill="#bae6fd">
       <animate attributeName="opacity" values="1;.35;1" dur="2s" repeatCount="indefinite"/>
     </rect>
+    <line x1="${BX-4}" y1="${wellBottomY}" x2="${BX+BW+4}" y2="${wellBottomY}" stroke="#9aa7b4" stroke-width="3" stroke-linecap="round"/>
     <rect x="${BX-8}" y="${SURF-14}" width="${BW+16}" height="9" fill="#5b6c80" rx="2"/>
 
     <text id="xsYearTicker" x="215" y="${SURF+(BOT-SURF)*0.42}" fill="#93aec7"
@@ -527,7 +534,7 @@ function renderXsec(){
     ${markSvg}
 
     <rect x="0" y="${BOT}" width="${W}" height="${H-BOT}" fill="#0e1b2a"/>
-    <text x="14" y="${BOT+16}" fill="#93aec7" font-size="10" opacity=".8">Glen Rose limestone continues below · scale: 0–${depthMax} ft</text>
+    <text x="14" y="${BOT+16}" fill="#93aec7" font-size="10" opacity=".8">Saturated rock continues below the well bottom · vertical scale 0–${depthMax} ft</text>
   </svg>`;
   document.getElementById("xsecPanel").hidden = false;
 
@@ -535,12 +542,12 @@ function renderXsec(){
   const xsec = document.getElementById("xsec");
   xsec.style.cursor = "pointer";
   xsec.title = "Replay the decline";
-  xsec.onclick = ()=> animateDrain(hi.v, cur, y, BOT, hi.date, DATA.lastDate);
-  if(!reduced) setTimeout(()=> animateDrain(hi.v, cur, y, BOT, hi.date, DATA.lastDate), 500);
+  xsec.onclick = ()=> animateDrain(hi.v, cur, y, BOT, wellBottomY, hi.date, DATA.lastDate);
+  if(!reduced) setTimeout(()=> animateDrain(hi.v, cur, y, BOT, wellBottomY, hi.date, DATA.lastDate), 500);
 }
 
 let xsecRaf;
-function animateDrain(fromFt, toFt, yFn, BOT, fromDate, toDate){
+function animateDrain(fromFt, toFt, yFn, BOT, boreBottom, fromDate, toDate){
   cancelAnimationFrame(xsecRaf);
   const sat=document.getElementById("xsSatRect"), line=document.getElementById("xsWt"),
         lab=document.getElementById("xsWtLabel"), bw=document.getElementById("xsBoreWater"),
@@ -560,7 +567,7 @@ function animateDrain(fromFt, toFt, yFn, BOT, fromDate, toDate){
     line.setAttribute("y1",yy); line.setAttribute("y2",yy);
     lab.setAttribute("y",yy-6);
     lab.textContent = "water table · " + v.toFixed(1) + " ft";
-    bw.setAttribute("y",yy); bw.setAttribute("height",Math.max(0,BOT-yy-2));
+    bw.setAttribute("y",yy); bw.setAttribute("height",Math.max(0,boreBottom-yy-2));
     sh.setAttribute("y",yy);
     if(yrT && yf0!=null && yf1!=null){
       yrT.textContent = Math.floor(yf0 + (yf1-yf0)*ease(p));
