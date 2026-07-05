@@ -59,6 +59,7 @@
   .m .md{font-size:.78rem;display:flex;justify-content:center;align-items:center;gap:3px}
   .legend{color:var(--muted);font-size:.78rem;margin-top:10px;line-height:1.5}
   footer{color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:26px;border-top:1px solid var(--border);padding-top:16px}
+  #xsec svg{width:100%;height:auto;display:block;border-radius:10px}
   .wellpick{display:flex;align-items:center;gap:10px;margin:20px 0 2px;flex-wrap:wrap}
   .wellpick label{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px}
   .wellpick select{background:var(--panel);color:var(--ink);border:1px solid var(--border);
@@ -87,6 +88,17 @@
   </div>
 
   <div id="cards" class="cards" hidden></div>
+
+  <section class="panel" id="xsecPanel" hidden>
+    <div class="toolbar">
+      <h2>Under the ground — where the water sits</h2>
+    </div>
+    <div id="xsec"></div>
+    <div class="legend">
+      Cross-section drawn to scale from this well's actual record. The blue zone is saturated
+      rock below today's water table; the column shows water standing in the well bore.
+    </div>
+  </section>
 
   <section class="panel">
     <div class="toolbar">
@@ -148,6 +160,7 @@ async function load(wellId){
   status.textContent = "Loading live groundwater data…";
   document.getElementById("cards").hidden = true;
   document.getElementById("monthsPanel").hidden = true;
+  document.getElementById("xsecPanel").hidden = true;
   document.getElementById("wellNum").textContent = "#" + wellId;
   document.getElementById("twdbLink").href =
     "https://waterdatafortexas.org/groundwater/well/" + wellId;
@@ -160,6 +173,7 @@ async function load(wellId){
     status.hidden = true;
     renderUpdated();
     renderCards();
+    renderXsec();
     renderMonths();
     drawRange(activeRange());
   }catch(e){
@@ -254,6 +268,136 @@ function renderCards(){
     card("12-month change", "", tableChange(p365?.v, cur)),
     card("Since " + firstYear, "", tableChange(first?.v, cur)),
   ].join("");
+}
+
+// Cross-section illustration: dusk Hill Country surface, soil, limestone strata,
+// well bore + standing water — all vertically to scale from this well's record.
+function renderXsec(){
+  const d = DATA.daily;
+  if(!d || !d.length){ document.getElementById("xsecPanel").hidden = true; return; }
+  let hi=d[0], lo=d[0];                       // hi = shallowest depth (record-high table)
+  for(const p of d){ if(p.v<hi.v) hi=p; if(p.v>lo.v) lo=p; }
+  const cur = DATA.current;
+  const ya = valueAtOrBefore(d, parse(DATA.lastDate).getTime()-365*864e5);
+
+  const W=760, SURF=64, BOT=456, H=480;
+  const depthMax = Math.ceil((lo.v*1.07)/25)*25;
+  const y = ft => SURF + ft*(BOT-SURF)/depthMax;
+  const mmyy = ds => { const [yy,mm]=ds.split("-");
+    return new Date(+yy,+mm-1,1).toLocaleString("en-US",{month:"short"})+" "+yy; };
+
+  // limestone strata bands (below soil + weathered caliche)
+  let bands="", depth=30, i=0;
+  const thick=[26,38,20,44,28,32,22,40], cols=["#3b382e","#332f27"];
+  while(depth<depthMax){
+    const t=Math.min(thick[i%thick.length], depthMax-depth);
+    bands+=`<rect x="0" y="${y(depth)}" width="${W}" height="${y(depth+t)-y(depth)}" fill="${cols[i%2]}"/>`+
+           `<line x1="0" y1="${y(depth)}" x2="${W}" y2="${y(depth)}" stroke="#241f18" stroke-width="1" opacity=".6"/>`;
+    depth+=t; i++;
+  }
+
+  // faint depth ruler (skip labels that would collide with the water-table label)
+  const step = depthMax>360?100:50;
+  let ruler="";
+  for(let ft=step; ft<depthMax; ft+=step){
+    ruler+=`<line x1="10" y1="${y(ft)}" x2="${W-10}" y2="${y(ft)}" stroke="#93aec7" stroke-width="0.5" opacity=".12"/>`;
+    if(Math.abs(y(ft)-y(cur)) > 16)
+      ruler+=`<text x="14" y="${y(ft)-3}" fill="#93aec7" font-size="10" opacity=".8">${ft} ft</text>`;
+  }
+
+  // depth markers, nudged apart when they'd overlap
+  const BX=328, BW=26;
+  const marks=[
+    {ft:hi.v, c:"#34d399", t:`▲ Record high · ${hi.v.toFixed(1)} ft · ${mmyy(hi.date)}`},
+    {ft:cur,  c:"#38bdf8", t:`● Today · ${cur.toFixed(1)} ft`, bold:true},
+    {ft:lo.v, c:"#f87171", t:`▼ Record low · ${lo.v.toFixed(1)} ft · ${mmyy(lo.date)}`},
+  ];
+  if(ya) marks.push({ft:ya.v, c:"#93aec7", t:`1 year ago · ${ya.v.toFixed(1)} ft`});
+  marks.forEach(m=>{ m.yA=y(m.ft); m.yL=m.yA; });
+  marks.sort((a,b)=>a.yA-b.yA);
+  for(let k=1;k<marks.length;k++)
+    if(marks[k].yL - marks[k-1].yL < 20) marks[k].yL = marks[k-1].yL + 20;
+  const markSvg = marks.map(m=>
+    `<line x1="${BX+BW}" y1="${m.yA}" x2="530" y2="${m.yA}" stroke="${m.c}" stroke-width="1" opacity=".55"/>`+
+    `<line x1="530" y1="${m.yA}" x2="546" y2="${m.yL}" stroke="${m.c}" stroke-width="1" opacity=".55"/>`+
+    `<rect x="547" y="${m.yL-9}" width="${m.t.length*6.6+10}" height="18" rx="4" fill="#0e1b2a" opacity=".85"/>`+
+    `<text x="551" y="${m.yL+4}" fill="${m.c}" font-size="12"${m.bold?' font-weight="700"':''}>${m.t}</text>`).join("");
+
+  const wtY = y(cur);
+  const spokes=[0,45,90,135].map(a=>{
+    const r=8, x=152.5, yy=17, ca=Math.cos(a*Math.PI/180), sa=Math.sin(a*Math.PI/180);
+    return `<line x1="${x-r*ca}" y1="${yy-r*sa}" x2="${x+r*ca}" y2="${yy+r*sa}"/>`;
+  }).join("");
+  const stars=[[60,12],[110,22],[230,9],[300,18],[420,10],[480,20],[700,14],[730,26]]
+    .map(([x,yy])=>`<circle cx="${x}" cy="${yy}" r="1" fill="#eaf2fb" opacity=".7"/>`).join("");
+
+  document.getElementById("xsec").innerHTML = `
+  <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="xsSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0d1f33"/><stop offset=".6" stop-color="#1c3a55"/>
+        <stop offset=".92" stop-color="#5d4530"/><stop offset="1" stop-color="#6e5136"/>
+      </linearGradient>
+      <linearGradient id="xsSoil" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#5a4128"/><stop offset="1" stop-color="#463019"/>
+      </linearGradient>
+      <linearGradient id="xsSat" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#38bdf8" stop-opacity=".28"/>
+        <stop offset="1" stop-color="#0c4a6e" stop-opacity=".45"/>
+      </linearGradient>
+      <linearGradient id="xsBoreW" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#075985"/>
+      </linearGradient>
+      <radialGradient id="xsSun">
+        <stop offset="0" stop-color="#fcd9a0"/><stop offset="1" stop-color="#f2a65c" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <rect x="0" y="0" width="${W}" height="${SURF}" fill="url(#xsSky)"/>
+    <circle cx="618" cy="46" r="26" fill="url(#xsSun)"/>
+    <circle cx="618" cy="46" r="9" fill="#f6c178"/>
+    ${stars}
+
+    <g stroke="#08131f" stroke-width="1.6" fill="none">
+      <line x1="142" y1="64" x2="152" y2="20"/><line x1="164" y1="64" x2="153" y2="20"/>
+      <line x1="146" y1="50" x2="161" y2="50"/><line x1="144" y1="57" x2="163" y2="57"/>
+      <circle cx="152.5" cy="17" r="8"/>${spokes}
+      <line x1="152.5" y1="17" x2="168" y2="21"/>
+    </g>
+
+    <g fill="#0c1c12">
+      <path d="M497 64 l3 -12 l4 12 z"/>
+      <ellipse cx="500" cy="44" rx="26" ry="12"/>
+      <ellipse cx="486" cy="50" rx="15" ry="8"/><ellipse cx="514" cy="50" rx="15" ry="8"/>
+    </g>
+
+    <rect x="0" y="58" width="${W}" height="6" fill="#2c4a2e"/>
+    <text x="${W-14}" y="56" fill="#eaf2fb" font-size="11" text-anchor="end" opacity=".85">land surface · 0 ft</text>
+
+    <rect x="0" y="${SURF}" width="${W}" height="${y(14)-SURF}" fill="url(#xsSoil)"/>
+    <rect x="0" y="${y(14)}" width="${W}" height="${y(30)-y(14)}" fill="#4d463a"/>
+    ${bands}
+    ${ruler}
+
+    <rect x="0" y="${wtY}" width="${W}" height="${BOT-wtY}" fill="url(#xsSat)"/>
+    <line x1="0" y1="${wtY}" x2="${W}" y2="${wtY}" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="7 5">
+      <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2.5s" repeatCount="indefinite"/>
+    </line>
+    <text x="14" y="${wtY-6}" fill="#38bdf8" font-size="11" font-weight="600">water table</text>
+
+    <rect x="${BX}" y="${SURF-6}" width="${BW}" height="${BOT-SURF+6}" fill="#0a1624" stroke="#93aec7" stroke-width="1.2" rx="2"/>
+    <rect x="${BX+2}" y="${wtY}" width="${BW-4}" height="${BOT-wtY-2}" fill="url(#xsBoreW)"/>
+    <rect x="${BX+2}" y="${wtY}" width="${BW-4}" height="3" fill="#bae6fd">
+      <animate attributeName="opacity" values="1;.35;1" dur="2s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="${BX-8}" y="${SURF-14}" width="${BW+16}" height="9" fill="#5b6c80" rx="2"/>
+
+    ${markSvg}
+
+    <rect x="0" y="${BOT}" width="${W}" height="${H-BOT}" fill="#0e1b2a"/>
+    <text x="14" y="${BOT+16}" fill="#93aec7" font-size="10" opacity=".8">Glen Rose limestone continues below · scale: 0–${depthMax} ft</text>
+  </svg>`;
+  document.getElementById("xsecPanel").hidden = false;
 }
 
 function renderMonths(){
