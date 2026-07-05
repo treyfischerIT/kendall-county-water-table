@@ -9,7 +9,7 @@ built on Texas Water Development Board (TWDB) monitoring well **#6811417**.
 
 - An animated, to-scale **cross-section illustration** — surface scene, soil, Glen Rose
   limestone strata, and the well bore — where the water table drains from the record high
-  down to today's level, with year flags fading in to mark each year's level (click to replay).
+  down to today's level while a ghost year counter ticks by (click to replay).
 - An interactive chart of the water table from December 2006 to today (150k+ readings).
 - **Inverted depth axis** — the line rising means a *higher* water table (less depth to
   water), which reads intuitively for a general audience. Values are feet below land surface.
