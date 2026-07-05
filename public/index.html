@@ -11,6 +11,8 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <style>
   :root{
     --bg:#0e1b2a; --panel:#13263a; --panel2:#0f2032; --ink:#eaf2fb; --muted:#93aec7;
@@ -36,6 +38,13 @@
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 16px 8px;margin-bottom:22px}
   .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px}
   .toolbar h2{font-size:.98rem;margin:0;font-weight:600}
+  .rightctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .ghostbtn{background:var(--panel2);color:var(--muted);border:1px solid var(--border);
+    border-radius:10px;padding:7px 12px;font-size:.82rem;cursor:pointer}
+  .ghostbtn:hover{color:var(--ink);border-color:var(--line)}
+  .chartbox{cursor:crosshair}
+  .mslider{width:100%;margin:14px 0 2px;accent-color:var(--line);cursor:pointer}
+  .mslider[hidden]{display:none}
   .toggle{display:inline-flex;background:var(--panel2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
   .toggle button{background:transparent;color:var(--muted);border:0;padding:7px 14px;font-size:.85rem;cursor:pointer}
   .toggle button.active{background:var(--line);color:#04121f;font-weight:600}
@@ -82,20 +91,24 @@
   <section class="panel">
     <div class="toolbar">
       <h2>Water table over time</h2>
-      <div class="toggle" id="ranges">
-        <button data-range="30d">30 days</button>
-        <button data-range="1y" class="active">1 year</button>
-        <button data-range="all" id="allBtn">All time</button>
+      <div class="rightctl">
+        <button id="resetZoom" class="ghostbtn" hidden>⤢ Reset zoom</button>
+        <div class="toggle" id="ranges">
+          <button data-range="30d">30 days</button>
+          <button data-range="1y" class="active">1 year</button>
+          <button data-range="all" id="allBtn">All time</button>
+        </div>
       </div>
     </div>
     <div class="chartbox"><canvas id="chart"></canvas></div>
-    <div class="axis-note">Axis is inverted so the line rising = a higher water table (less depth to water).</div>
+    <div class="axis-note">Drag across the chart or scroll/pinch to zoom · axis inverted so the line rising = a higher water table (less depth to water).</div>
     <div id="status" class="loading">Loading live groundwater data…</div>
   </section>
 
   <section class="panel months" id="monthsPanel" hidden>
     <h2>Month-over-month change</h2>
     <div class="mstrip" id="mstrip"></div>
+    <input type="range" id="mslider" class="mslider" min="0" max="100" value="100" step="0.1" aria-label="Scroll through months" />
     <div class="legend">
       <span class="up">▲ green</span> = water table rose that month (water got shallower) ·
       <span class="down">▼ red</span> = water table dropped (water got deeper). Values are feet below land surface.
@@ -165,7 +178,39 @@ function init(){
   });
   sel.addEventListener("change", ()=> load(sel.value));
   setupRanges();
+
+  // Reset-zoom button
+  document.getElementById("resetZoom").addEventListener("click", ()=>{
+    if(chart) chart.resetZoom();
+    document.getElementById("resetZoom").hidden = true;
+  });
+
+  // Month slider <-> strip scroll (two-way)
+  const strip = document.getElementById("mstrip");
+  const slider = document.getElementById("mslider");
+  let syncing = false;
+  slider.addEventListener("input", ()=>{
+    const max = strip.scrollWidth - strip.clientWidth;
+    if(max <= 0) return;
+    syncing = true;
+    strip.scrollLeft = max * (slider.value/100);
+    syncing = false;
+  });
+  strip.addEventListener("scroll", ()=>{
+    if(syncing) return;
+    const max = strip.scrollWidth - strip.clientWidth;
+    slider.value = max > 0 ? (strip.scrollLeft/max)*100 : 100;
+  });
+
   load(WELLS[0].id);
+}
+
+function syncMonthSlider(){
+  const strip = document.getElementById("mstrip");
+  const slider = document.getElementById("mslider");
+  const max = strip.scrollWidth - strip.clientWidth;
+  slider.hidden = max <= 1;            // nothing to scroll = hide slider
+  slider.value = 100;                  // strip is scrolled to the most recent month
 }
 
 function renderUpdated(){
@@ -231,6 +276,7 @@ function renderMonths(){
   strip.innerHTML = rows;
   document.getElementById("monthsPanel").hidden = false;
   strip.scrollLeft = strip.scrollWidth; // show most recent
+  syncMonthSlider();
 }
 
 function seriesFor(range){
@@ -266,12 +312,24 @@ function drawRange(range){
       plugins:{
         legend:{display:false},
         tooltip:{callbacks:{
-          title:(it)=> parse ? new Date(it[0].parsed.x).toLocaleString() : "",
+          title:(it)=> new Date(it[0].parsed.x).toLocaleString(),
           label:(it)=> " " + fmt(it.parsed.y) + " ft below surface"
-        }}
+        }},
+        zoom:{
+          zoom:{
+            wheel:{enabled:true},
+            pinch:{enabled:true},
+            drag:{enabled:true, backgroundColor:"rgba(56,189,248,.18)", borderColor:"#38bdf8", borderWidth:1},
+            mode:"x",
+            onZoomComplete:()=>{ document.getElementById("resetZoom").hidden = false; }
+          },
+          pan:{ enabled:true, mode:"x", modifierKey:"shift",
+            onPanComplete:()=>{ document.getElementById("resetZoom").hidden = false; } }
+        }
       }
     }
   };
+  document.getElementById("resetZoom").hidden = true;
   if(chart) chart.destroy();
   chart = new Chart(document.getElementById("chart"), cfg);
 }
