@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Kendall County Texas Water Table Graph</title>
-<meta name="description" content="Live groundwater level tracker for Kendall County, Texas (Boerne area) — Glen Rose Trinity Aquifer monitoring well #6811417 from the Texas Water Development Board, with data back to 2006 and month-over-month rise/fall indicators." />
+<meta name="description" content="Live groundwater level tracker for Kendall County, Texas (Boerne area) — Glen Rose Trinity Aquifer monitoring wells (Schwope & Ranger Creek) from the Texas Water Development Board, with month-over-month rise/fall indicators." />
 <meta property="og:title" content="Kendall County Texas Water Table Graph" />
 <meta property="og:description" content="Live groundwater levels for Kendall County, TX with month-over-month rise/fall indicators. Source: Texas Water Development Board." />
 <meta property="og:type" content="website" />
@@ -50,6 +50,12 @@
   .m .md{font-size:.78rem;display:flex;justify-content:center;align-items:center;gap:3px}
   .legend{color:var(--muted);font-size:.78rem;margin-top:10px;line-height:1.5}
   footer{color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:26px;border-top:1px solid var(--border);padding-top:16px}
+  .wellpick{display:flex;align-items:center;gap:10px;margin:20px 0 2px;flex-wrap:wrap}
+  .wellpick label{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px}
+  .wellpick select{background:var(--panel);color:var(--ink);border:1px solid var(--border);
+    border-radius:10px;padding:9px 12px;font-size:.95rem;font-weight:600;cursor:pointer;min-width:230px}
+  .wellpick select:focus{outline:2px solid var(--line);outline-offset:1px}
+  .wellnum{color:var(--muted);font-size:.85rem}
   .loading,.err{padding:40px 10px;text-align:center;color:var(--muted)}
   .err{color:var(--drop)}
 </style>
@@ -59,11 +65,17 @@
   <header>
     <h1>💧 Kendall County Texas Water Table</h1>
     <div class="sub">
-      Glen Rose Trinity Aquifer monitoring well <strong>#6811417</strong> · Boerne / Kendall County area ·
-      Live data from the <a href="https://waterdatafortexas.org/groundwater/well/6811417" target="_blank" rel="noopener">Texas Water Development Board</a>.
+      Glen Rose Trinity Aquifer · Boerne / Kendall County, Texas · Live data from the
+      <a id="twdbLink" href="https://waterdatafortexas.org/groundwater/well/6811417" target="_blank" rel="noopener">Texas Water Development Board</a>.
       <div id="updated"></div>
     </div>
   </header>
+
+  <div class="wellpick">
+    <label for="wellSel">Monitoring well</label>
+    <select id="wellSel"></select>
+    <span id="wellNum" class="wellnum"></span>
+  </div>
 
   <div id="cards" class="cards" hidden></div>
 
@@ -91,7 +103,7 @@
   </section>
 
   <footer>
-    Data source: Texas Water Development Board, “Water Data for Texas” — Glen Rose Trinity Aquifer well #6811417, Kendall County.
+    Data source: Texas Water Development Board, “Water Data for Texas” — Glen Rose Trinity Aquifer monitoring wells in Kendall County (select above).
     Water level is measured in feet below land surface; a smaller number means a higher water table.
     Data refreshes weekly. This page is an independent visualization and is not affiliated with the TWDB.
   </footer>
@@ -107,23 +119,53 @@ const monShort = (ym) => {
 
 let chart, DATA;
 
-async function main(){
+const WELLS = [
+  { id: "6811417", name: "Schwope Monitoring Well" },
+  { id: "6810616", name: "Ranger Creek Monitoring Well" },
+];
+
+function activeRange(){
+  const b = document.querySelector("#ranges button.active");
+  return b ? b.dataset.range : "all";
+}
+
+async function load(wellId){
+  const status = document.getElementById("status");
+  status.hidden = false; status.className = "loading";
+  status.textContent = "Loading live groundwater data…";
+  document.getElementById("cards").hidden = true;
+  document.getElementById("monthsPanel").hidden = true;
+  document.getElementById("wellNum").textContent = "#" + wellId;
+  document.getElementById("twdbLink").href =
+    "https://waterdatafortexas.org/groundwater/well/" + wellId;
+  document.getElementById("updated").textContent = "";
   try{
-    const res = await fetch("/api/well?id=6811417");
+    const res = await fetch("/api/well?id=" + wellId);
     const data = await res.json();
     if(data.error) throw new Error(data.error);
     DATA = data;
-    document.getElementById("status").remove();
+    status.hidden = true;
     renderUpdated();
     renderCards();
     renderMonths();
-    setupRanges();
-    drawRange("all");
+    drawRange(activeRange());
   }catch(e){
-    const s = document.getElementById("status");
-    s.className = "err";
-    s.textContent = "Couldn't load data: " + e.message;
+    status.hidden = false;
+    status.className = "err";
+    status.textContent = "Couldn't load data: " + e.message;
   }
+}
+
+function init(){
+  const sel = document.getElementById("wellSel");
+  WELLS.forEach(w=>{
+    const o = document.createElement("option");
+    o.value = w.id; o.textContent = w.name;
+    sel.appendChild(o);
+  });
+  sel.addEventListener("change", ()=> load(sel.value));
+  setupRanges();
+  load(WELLS[0].id);
 }
 
 function renderUpdated(){
@@ -244,7 +286,7 @@ function setupRanges(){
   });
 }
 
-main();
+init();
 </script>
 </body>
 </html>
