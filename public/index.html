@@ -97,7 +97,8 @@
     <div class="legend">
       Cross-section drawn to scale from this well's actual record. The blue zone is saturated
       rock below today's water table; the column shows water standing in the well bore.
-      The animation sweeps from the record high down to today — click the diagram to replay it.
+      The animation sweeps from the record high down to today, with year flags marking where
+      the table stood at each year's end — click the diagram to replay it.
     </div>
   </section>
 
@@ -327,6 +328,39 @@ function renderXsec(){
   const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const startFt = reduced ? cur : hi.v;   // drain animation starts at the record high
   const wtY = y(startFt);
+
+  // year flags: where the table stood at each year's end, fading in as time passes.
+  // Cap at ~8 flags (always keep first + latest year) so deep records don't clutter.
+  const yearLast = new Map();
+  for(const m of DATA.monthly) yearLast.set(m.month.slice(0,4), m.v);
+  let years=[...yearLast.keys()].sort();
+  if(years.length>8){
+    const stepN=Math.ceil((years.length-1)/7), sel=[];
+    for(let k=0;k<years.length;k+=stepN) sel.push(years[k]);
+    if(sel[sel.length-1]!==years[years.length-1]) sel.push(years[years.length-1]);
+    years=sel;
+  }
+  const flags=years.map((yr,idx)=>({yr, v:yearLast.get(yr),
+    t: years.length>1 ? 0.05+0.9*idx/(years.length-1) : 0.5}));
+  flags.forEach(f=>{ f.yA=y(f.v); f.yL=f.yA; });
+  // two alternating label lanes at true depth; nudge only within a lane
+  const byY=[...flags].sort((a,b)=>a.yA-b.yA);
+  const laneLast=[-99,-99];
+  byY.forEach((f,k)=>{
+    f.lane=k%2;
+    if(f.yL-laneLast[f.lane]<12) f.yL=laneLast[f.lane]+12;
+    laneLast[f.lane]=f.yL;
+  });
+
+  const flagSvg = flags.map(f=>{
+    const laneX = f.lane===0 ? BX-16 : BX-62;   // two label lanes left of the bore
+    return `<g class="xsYF" data-t="${f.t}" opacity="${reduced?1:0}">`+
+    `<line x1="${BX-1}" y1="${f.yA}" x2="${laneX+2}" y2="${f.yL}" stroke="#93aec7" stroke-width="1" opacity=".35"/>`+
+    `<circle cx="${BX-1}" cy="${f.yA}" r="2" fill="#93aec7" opacity=".7"/>`+
+    `<rect x="${laneX-26}" y="${f.yL-5.5}" width="29" height="11" rx="3" fill="#0e1b2a" opacity=".78"/>`+
+    `<text x="${laneX}" y="${f.yL+3.5}" fill="#93aec7" font-size="10" text-anchor="end">${f.yr}</text>`+
+    `</g>`;}).join("");
+
   const spokes=[0,45,90,135].map(a=>{
     const r=8, x=152.5, yy=17, ca=Math.cos(a*Math.PI/180), sa=Math.sin(a*Math.PI/180);
     return `<line x1="${x-r*ca}" y1="${yy-r*sa}" x2="${x+r*ca}" y2="${yy+r*sa}"/>`;
@@ -395,6 +429,7 @@ function renderXsec(){
     </rect>
     <rect x="${BX-8}" y="${SURF-14}" width="${BW+16}" height="9" fill="#5b6c80" rx="2"/>
 
+    ${flagSvg}
     ${markSvg}
 
     <rect x="0" y="${BOT}" width="${W}" height="${H-BOT}" fill="#0e1b2a"/>
@@ -417,6 +452,7 @@ function animateDrain(fromFt, toFt, yFn, BOT){
         lab=document.getElementById("xsWtLabel"), bw=document.getElementById("xsBoreWater"),
         sh=document.getElementById("xsBoreShine");
   if(!sat) return;
+  const flagEls=document.querySelectorAll(".xsYF");
   const dur=3500;
   let last=performance.now(), elapsed=0;
   const ease=t=> t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;   // ease-in-out cubic
@@ -430,6 +466,8 @@ function animateDrain(fromFt, toFt, yFn, BOT){
     lab.textContent = "water table · " + v.toFixed(1) + " ft";
     bw.setAttribute("y",yy); bw.setAttribute("height",Math.max(0,BOT-yy-2));
     sh.setAttribute("y",yy);
+    flagEls.forEach(el=> el.setAttribute("opacity",
+      Math.max(0, Math.min(1, (p - +el.dataset.t)*6))));
     if(p<1) xsecRaf=requestAnimationFrame(frame);
   }
   xsecRaf=requestAnimationFrame(frame);
