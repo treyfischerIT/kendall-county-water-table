@@ -91,6 +91,7 @@
   .sponsor-card .sp-tag{color:var(--muted);font-size:.82rem;margin-top:4px;line-height:1.4}
   .sponsor-card.ad-slot{border-style:dashed;background:transparent}
   .sponsor-card.ad-slot .sp-name{color:var(--line)}
+  .sponsor-contact{color:var(--muted);font-size:.82rem;margin:14px 2px 2px;line-height:1.5}
   .wellpick{display:flex;align-items:center;gap:10px;margin:20px 0 2px;flex-wrap:wrap}
   .wellpick label{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px}
   .wellpick select{background:var(--panel);color:var(--ink);border:1px solid var(--border);
@@ -159,6 +160,9 @@
     </div>
     <p class="sponsor-intro">Well drillers, pump &amp; rain-catchment installers, water treatment — reach neighbors who are actively watching their water.</p>
     <div id="sponsors" class="sponsor-grid"></div>
+    <p class="sponsor-contact">Want your business here? Email
+      <a href="mailto:info@upwardaxistech.com?subject=Advertising%20on%20the%20Kendall%20County%20Water%20Table">info@upwardaxistech.com</a>
+      or call <a href="tel:+12103074832">(210)&nbsp;307-4832</a>.</p>
   </section>
 
   <section class="panel">
@@ -242,8 +246,8 @@ const WELL_BY_ID = Object.fromEntries(WELLS.map(w => [w.id, w]));
 //   { name:"Hill Country Rain Catchment", tagline:"Rainwater systems & tanks · Boerne", url:"https://..." }
 const SPONSORS = [
 ];
-// Where "Advertise here" inquiries go — swap for a real email/booking link.
-const ADVERTISE_CONTACT = "https://upwardaxistech.com";
+// Where "Advertise here" inquiries go.
+const ADVERTISE_CONTACT = "mailto:info@upwardaxistech.com?subject=Advertising%20on%20the%20Kendall%20County%20Water%20Table";
 function renderSponsors(){
   const el = document.getElementById("sponsors"); if(!el) return;
   const slot = (name, tag) =>
