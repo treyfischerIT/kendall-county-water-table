@@ -593,12 +593,32 @@ function renderXsec(){
   </svg>`;
   document.getElementById("xsecPanel").hidden = false;
 
-  // drain animation: sweep from the record high down to today, live depth readout
+  // drain animation: sweep from the record high down to today, live depth readout.
+  // The diagram renders "primed" at the record-high level and only drains once the
+  // visitor scrolls it into view — so they actually see it happen.
   const xsec = document.getElementById("xsec");
   xsec.style.cursor = "pointer";
   xsec.title = "Replay the decline";
-  xsec.onclick = ()=> animateDrain(hi.v, cur, y, BOT, wellBottomY, hi.date, DATA.lastDate);
-  if(!reduced) setTimeout(()=> animateDrain(hi.v, cur, y, BOT, wellBottomY, hi.date, DATA.lastDate), 500);
+  const play = ()=> animateDrain(hi.v, cur, y, BOT, wellBottomY, hi.date, DATA.lastDate);
+  xsec.onclick = play;
+  if(!reduced) armDrainOnView(xsec, play);
+}
+
+// Play the drain the first time the cross-section is scrolled into view (not on load).
+let drainObserver;
+function armDrainOnView(el, play){
+  if(drainObserver){ drainObserver.disconnect(); drainObserver = null; }
+  if(!("IntersectionObserver" in window)){ setTimeout(play, 500); return; }
+  drainObserver = new IntersectionObserver((entries)=>{
+    for(const e of entries){
+      if(e.isIntersecting && e.intersectionRatio >= 0.25){
+        drainObserver.disconnect(); drainObserver = null;
+        setTimeout(play, 200);
+        break;
+      }
+    }
+  }, { threshold: [0.25] });
+  drainObserver.observe(el);
 }
 
 let xsecRaf;
