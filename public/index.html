@@ -80,6 +80,17 @@
     border-bottom:1px solid var(--border);font-size:.86rem;line-height:1.4}
   .mrow .mk{color:var(--muted);flex:0 0 auto}
   .mrow .mv{text-align:right;font-weight:500}
+  .sponsor-tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);
+    border:1px solid var(--border);border-radius:6px;padding:2px 7px}
+  .sponsor-intro{color:var(--muted);font-size:.85rem;margin:2px 2px 14px;line-height:1.5}
+  .sponsor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .sponsor-card{display:block;background:var(--panel2);border:1px solid var(--border);border-radius:12px;
+    padding:14px 16px;text-decoration:none;color:var(--ink);transition:border-color .15s,transform .15s}
+  .sponsor-card:hover{border-color:var(--line);transform:translateY(-1px)}
+  .sponsor-card .sp-name{font-weight:600;font-size:.98rem}
+  .sponsor-card .sp-tag{color:var(--muted);font-size:.82rem;margin-top:4px;line-height:1.4}
+  .sponsor-card.ad-slot{border-style:dashed;background:transparent}
+  .sponsor-card.ad-slot .sp-name{color:var(--line)}
   .wellpick{display:flex;align-items:center;gap:10px;margin:20px 0 2px;flex-wrap:wrap}
   .wellpick label{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px}
   .wellpick select{background:var(--panel);color:var(--ink);border:1px solid var(--border);
@@ -139,6 +150,15 @@
       The animation sweeps from the record high down to today as the years tick by —
       click the diagram to replay it.
     </div>
+  </section>
+
+  <section class="panel" id="sponsorPanel">
+    <div class="toolbar">
+      <h2>💧 Local water &amp; rain-catchment pros</h2>
+      <span class="sponsor-tag">Sponsored</span>
+    </div>
+    <p class="sponsor-intro">Well drillers, pump &amp; rain-catchment installers, water treatment — reach neighbors who are actively watching their water.</p>
+    <div id="sponsors" class="sponsor-grid"></div>
   </section>
 
   <section class="panel">
@@ -215,6 +235,33 @@ const WELLS = [
   {id:"6802509",name:"Windmill Ranch",twdb:"Windmill Ranch",lat:29.936389,lng:-98.7975,depth:380,formation:"Glen Rose LS and Hensell SH and Cow Creek LS Members of Pearsall FM",aquifer:"Trinity",county:"Kendall"}
 ];
 const WELL_BY_ID = Object.fromEntries(WELLS.map(w => [w.id, w]));
+
+// ---- Sponsors -----------------------------------------------------------
+// Add paying advertisers here — one object each. Leave empty to show just the
+// "Advertise here" slot. Example:
+//   { name:"Hill Country Rain Catchment", tagline:"Rainwater systems & tanks · Boerne", url:"https://..." }
+const SPONSORS = [
+];
+// Where "Advertise here" inquiries go — swap for a real email/booking link.
+const ADVERTISE_CONTACT = "https://upwardaxistech.com";
+function renderSponsors(){
+  const el = document.getElementById("sponsors"); if(!el) return;
+  const slot = (name, tag) =>
+    `<a class="sponsor-card ad-slot" href="${ADVERTISE_CONTACT}" target="_blank" rel="noopener">
+       <div class="sp-name">${name}</div><div class="sp-tag">${tag}</div></a>`;
+  const cards = SPONSORS.map(s =>
+    `<a class="sponsor-card" href="${s.url}" target="_blank" rel="noopener sponsored">
+       <div class="sp-name">${s.name}</div>
+       <div class="sp-tag">${s.tagline || ""}</div></a>`);
+  if(SPONSORS.length === 0){
+    // No paid sponsors yet — show available slots by category (honest + a soft sell).
+    ["Rain catchment & tanks", "Well drilling & service", "Pump & water treatment"]
+      .forEach(cat => cards.push(slot(cat, "Your business here → advertise to Kendall County")));
+  } else {
+    cards.push(slot("Advertise here →", "Reach local well &amp; water customers in Kendall County"));
+  }
+  el.innerHTML = cards.join("");
+}
 
 function activeRange(){
   const b = document.querySelector("#ranges button.active");
@@ -318,6 +365,7 @@ function init(){
   });
   sel.addEventListener("change", ()=> load(sel.value));
   initMap();
+  renderSponsors();
   setupRanges();
 
   // Reset-zoom button
