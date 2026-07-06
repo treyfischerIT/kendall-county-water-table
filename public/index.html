@@ -94,10 +94,16 @@
   .sponsor-contact{color:var(--muted);font-size:.82rem;margin:14px 2px 2px;line-height:1.5}
   .wellpick{display:flex;align-items:center;gap:10px;margin:20px 0 2px;flex-wrap:wrap}
   .wellpick label{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px}
-  .wellpick select{background:var(--panel);color:var(--ink);border:1px solid var(--border);
-    border-radius:10px;padding:9px 12px;font-size:.95rem;font-weight:600;cursor:pointer;min-width:230px}
+  .wellpick select{background:var(--panel);color:var(--ink);border:1.5px solid var(--line);
+    border-radius:10px;padding:9px 34px 9px 12px;font-size:.95rem;font-weight:600;cursor:pointer;min-width:230px;
+    box-shadow:0 0 0 3px rgba(56,189,248,.12);
+    appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center}
+  .wellpick select:hover{border-color:#7dd3fc}
   .wellpick select:focus{outline:2px solid var(--line);outline-offset:1px}
   .wellnum{color:var(--muted);font-size:.85rem}
+  .wellpick-hint{color:var(--line);font-size:.82rem;margin:2px 2px 0;line-height:1.5}
   .loading,.err{padding:40px 10px;text-align:center;color:var(--muted)}
   .err{color:var(--drop)}
 </style>
@@ -121,10 +127,11 @@
   </div>
 
   <div class="wellpick">
-    <label for="wellSel">Monitoring well</label>
+    <label for="wellSel">Choose a well</label>
     <select id="wellSel"></select>
     <span id="wellNum" class="wellnum"></span>
   </div>
+  <div class="wellpick-hint" id="wellHint"></div>
 
   <section class="panel" id="mapPanel">
     <div class="toolbar"><h2>📍 Where these wells are</h2>
@@ -334,6 +341,9 @@ async function load(wellId){
   document.getElementById("monthsPanel").hidden = true;
   document.getElementById("xsecPanel").hidden = true;
   document.getElementById("wellNum").textContent = "#" + wellId;
+  const wIdx = WELLS.findIndex(w => w.id === wellId) + 1;
+  document.getElementById("wellHint").innerHTML =
+    `Well ${wIdx} of ${WELLS.length} · switch anytime with this menu ▲ or by tapping a dot on the map ▼`;
   document.getElementById("twdbLink").href =
     "https://waterdatafortexas.org/groundwater/well/" + wellId;
   document.getElementById("updated").textContent = "";
@@ -601,7 +611,10 @@ function renderXsec(){
   xsec.title = "Replay the decline";
   const play = ()=> animateDrain(hi.v, cur, y, BOT, wellBottomY, hi.date, DATA.lastDate);
   xsec.onclick = play;
-  if(!reduced) armDrainOnView(xsec, play);
+  if(!reduced){
+    xsec.onmouseenter = play;   // desktop: replay the drain on hover
+    armDrainOnView(xsec, play); // first auto-play when scrolled into view (also covers touch)
+  }
 }
 
 // Play the drain the first time the cross-section is scrolled into view (not on load).
