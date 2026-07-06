@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://kendall-county-water-table.trey-817.workers.dev/</loc>
+    <lastmod>2026-07-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://kendall-county-water-table.trey-817.workers.dev/og-image.png</image:loc>
+      <image:title>Kendall County Texas Water Table — live groundwater levels</image:title>
+    </image:image>
+  </url>
+</urlset>

@@ -3,11 +3,76 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Kendall County Texas Water Table Graph</title>
-<meta name="description" content="Live groundwater level tracker for Kendall County, Texas (Boerne area) — Glen Rose Trinity Aquifer monitoring wells (Schwope & Ranger Creek) from the Texas Water Development Board, with month-over-month rise/fall indicators." />
-<meta property="og:title" content="Kendall County Texas Water Table Graph" />
-<meta property="og:description" content="Live groundwater levels for Kendall County, TX with month-over-month rise/fall indicators. Source: Texas Water Development Board." />
+<title>Kendall County Water Table — Live Groundwater Levels (Boerne, TX)</title>
+<meta name="description" content="Live depth-to-water for 23 groundwater monitoring wells across Kendall County & Boerne, Texas. Interactive map, per-well history, and trends from official Cow Creek GCD / Texas Water Development Board data, updated daily." />
+<link rel="canonical" href="https://kendall-county-water-table.trey-817.workers.dev/" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="author" content="Upward Axis Tech" />
+<meta name="theme-color" content="#0e1b2a" />
+<meta name="geo.region" content="US-TX" />
+<meta name="geo.placename" content="Kendall County, Boerne, Texas" />
+<meta name="geo.position" content="29.87;-98.73" />
+<meta name="ICBM" content="29.87, -98.73" />
+<!-- Open Graph -->
 <meta property="og:type" content="website" />
+<meta property="og:site_name" content="Kendall County Texas Water Table" />
+<meta property="og:title" content="Kendall County Water Table — Live Groundwater Levels" />
+<meta property="og:description" content="Live depth-to-water for 23 monitoring wells across Kendall County & Boerne, TX. Interactive map + trends from official CCGCD / TWDB data, updated daily." />
+<meta property="og:url" content="https://kendall-county-water-table.trey-817.workers.dev/" />
+<meta property="og:image" content="https://kendall-county-water-table.trey-817.workers.dev/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Kendall County Texas Water Table — live groundwater levels across 23 monitoring wells" />
+<meta property="og:locale" content="en_US" />
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Kendall County Water Table — Live Groundwater Levels" />
+<meta name="twitter:description" content="Live depth-to-water for 23 monitoring wells across Kendall County & Boerne, TX. Interactive map + trends, updated daily." />
+<meta name="twitter:image" content="https://kendall-county-water-table.trey-817.workers.dev/og-image.png" />
+<meta name="twitter:image:alt" content="Kendall County Texas Water Table share image" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://kendall-county-water-table.trey-817.workers.dev/#website",
+      "url": "https://kendall-county-water-table.trey-817.workers.dev/",
+      "name": "Kendall County Texas Water Table",
+      "description": "Live groundwater levels for 23 monitoring wells across Kendall County & Boerne, Texas.",
+      "inLanguage": "en-US",
+      "publisher": { "@id": "https://upwardaxistech.com/#org" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://upwardaxistech.com/#org",
+      "name": "Upward Axis Tech",
+      "url": "https://upwardaxistech.com",
+      "email": "info@upwardaxistech.com",
+      "telephone": "+1-210-307-4832"
+    },
+    {
+      "@type": "Dataset",
+      "@id": "https://kendall-county-water-table.trey-817.workers.dev/#dataset",
+      "name": "Kendall County Groundwater Levels — Cow Creek GCD monitoring network",
+      "description": "Depth-to-water measurements (feet below land surface) for 23 groundwater monitoring wells in the Trinity Aquifer across Kendall County, Texas — including the Boerne, Comfort, Sisterdale, Kendalia and Waring areas. Recorded by the Cow Creek Groundwater Conservation District, hosted by the Texas Water Development Board, and refreshed daily.",
+      "url": "https://kendall-county-water-table.trey-817.workers.dev/",
+      "keywords": ["Kendall County water table", "Boerne groundwater levels", "Trinity Aquifer", "depth to water", "well monitoring", "Texas groundwater", "Cow Creek GCD"],
+      "isAccessibleForFree": true,
+      "creator": { "@type": "GovernmentOrganization", "name": "Cow Creek Groundwater Conservation District", "url": "https://ccgcd.org" },
+      "includedInDataCatalog": { "@type": "DataCatalog", "name": "Water Data for Texas", "url": "https://waterdatafortexas.org/groundwater" },
+      "temporalCoverage": "1993/..",
+      "variableMeasured": "Depth to groundwater (feet below land surface)",
+      "measurementTechnique": "Automated datalogger / transducer water-level measurement",
+      "spatialCoverage": {
+        "@type": "Place",
+        "name": "Kendall County, Texas",
+        "geo": { "@type": "GeoShape", "box": "29.77 -98.90 30.11 -98.52" }
+      }
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
