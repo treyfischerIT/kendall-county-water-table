@@ -5,4 +5,4 @@ Allow: /
 # The live data API is fine to crawl but not useful in search results
 Disallow: /api/
 
-Sitemap: https://kendall-county-water-table.trey-817.workers.dev/sitemap.xml
+Sitemap: https://www.texaswaterwatchers.com/sitemap.xml

@@ -3,7 +3,7 @@
 A live, shareable groundwater tracker for the Boerne / Kendall County, Texas area,
 built on Texas Water Development Board (TWDB) monitoring well **#6811417**.
 
-**Live site:** https://kendall-county-water-table.trey-817.workers.dev
+**Live site:** https://www.texaswaterwatchers.com
 
 ## What it shows
 
