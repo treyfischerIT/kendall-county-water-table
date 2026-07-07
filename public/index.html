@@ -222,7 +222,6 @@
       <span><i style="background:#f6c178"></i>Dropped 5–15 ft</span>
       <span><i style="background:#38bdf8"></i>Roughly stable (±5 ft)</span>
       <span><i style="background:#34d399"></i>Recovered 5+ ft</span>
-      <span class="muted" id="legendNote"></span>
     </div>
   </section>
 
@@ -412,8 +411,6 @@ function initMap(){
     pts.push([w.lat, w.lng]);
   });
   if(pts.length) map.fitBounds(pts, { padding:[28,28] });
-  const ln = document.getElementById("legendNote");
-  if(ln) ln.textContent = "· 12-month change, updated weekly (as of " + CHG12_ASOF + ")";
 }
 function selectMarker(id){
   for(const wid in markers) markers[wid].setStyle(markerStyle(wid === id, wid));
