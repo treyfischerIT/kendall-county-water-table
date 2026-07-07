@@ -218,7 +218,7 @@
     </div>
     <div id="map"></div>
     <div class="maplegend">
-      <span><i style="background:#f87171"></i>Dropped 15+ ft <b>(dramatic)</b></span>
+      <span><i style="background:#f87171"></i>Dropped 15+ ft <b>(steep)</b></span>
       <span><i style="background:#f6c178"></i>Dropped 5–15 ft</span>
       <span><i style="background:#38bdf8"></i>Roughly stable (±5 ft)</span>
       <span><i style="background:#34d399"></i>Recovered 5+ ft</span>
@@ -339,7 +339,7 @@ const CHG12_ASOF = "2026-07-07";
 // Map a 12-month change to a color + tier label.
 function trendTier(chg){
   if(chg == null)   return { c:"#93aec7", label:"Not enough data" };
-  if(chg >= 15)     return { c:"#f87171", label:"Dropped 15+ ft (dramatic)", big:true };
+  if(chg >= 15)     return { c:"#f87171", label:"Dropped 15+ ft (steep drop)", big:true };
   if(chg >= 5)      return { c:"#f6c178", label:"Dropped 5–15 ft" };
   if(chg <= -5)     return { c:"#34d399", label:"Recovered 5+ ft" };
   return { c:"#38bdf8", label:"Roughly stable (±5 ft)" };
@@ -379,7 +379,7 @@ function activeRange(){
 
 // ---- Map of all wells -------------------------------------------------
 let map, markers = {};
-// Markers are colored by their 12-month change; dramatic droppers are red + larger.
+// Markers are colored by their 12-month change; steep droppers are red + larger.
 function markerStyle(sel, wellId){
   const t = trendTier(CHG12[wellId]);
   return sel
@@ -399,7 +399,7 @@ function initMap(){
     attribution:'&copy; OpenStreetMap &copy; CARTO'
   }).addTo(map);
   const pts = [];
-  // draw dramatic droppers last so they sit on top
+  // draw steep droppers last so they sit on top
   const ordered = [...WELLS].sort((a,b)=> (CHG12[a.id]||0) - (CHG12[b.id]||0));
   ordered.forEach(w=>{
     if(w.lat==null || w.lng==null) return;
