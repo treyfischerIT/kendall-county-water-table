@@ -11,6 +11,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CAT = path.join(ROOT, "wells-catalog.json");
 const HTML = path.join(ROOT, "public/index.html");
 const KEY = "water_level(ft below land surface)";
+// Fetch wells one at a time with a pause between each, so we never hit the TWDB
+// server with a burst of simultaneous requests (avoids rate-limiting/throttling).
+const THROTTLE_MS = 1000;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const cat = JSON.parse(fs.readFileSync(CAT, "utf8"));
 const result = {};
@@ -38,6 +42,8 @@ for (const w of cat.wells) {
   } catch (e) {
     console.error(w.id, w.ccgcdName, "ERR", e.message, "(keeping previous value)");
     result[w.id] = w.change12moFt ?? null;
+  } finally {
+    await sleep(THROTTLE_MS); // pace requests — one well at a time, spaced out
   }
 }
 
