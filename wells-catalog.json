@@ -19,7 +19,8 @@
       "fetchError": null,
       "wellDepthFt": 155,
       "formation": "Edwards and Associated Limestones",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 7.5
     },
     {
       "id": "6811708",
@@ -39,7 +40,8 @@
       "fetchError": null,
       "wellDepthFt": 357,
       "formation": "Glen Rose Limestone, Lower and Hensell Shale Mbr of Pearsall Formation",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 0.5
     },
     {
       "id": "6806105",
@@ -59,7 +61,8 @@
       "fetchError": null,
       "wellDepthFt": 310,
       "formation": "Glen Rose Limestone, Lower and Hensell Shale Mbr of Pearsall Formation",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": -2.1
     },
     {
       "id": "6801314",
@@ -79,7 +82,8 @@
       "fetchError": null,
       "wellDepthFt": 280,
       "formation": "Hensell Sand Member of Travis Peak Formation",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": -0.9
     },
     {
       "id": "6811302",
@@ -99,7 +103,8 @@
       "fetchError": null,
       "wellDepthFt": 295,
       "formation": "Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 2.7
     },
     {
       "id": "5758402",
@@ -119,7 +124,8 @@
       "fetchError": null,
       "wellDepthFt": 315,
       "formation": "Hensell Sand Member of Travis Peak Formation",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 5.6
     },
     {
       "id": "6804214",
@@ -139,7 +145,8 @@
       "fetchError": null,
       "wellDepthFt": 400,
       "formation": "-n/a-",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": -9.7
     },
     {
       "id": "6812414",
@@ -159,7 +166,8 @@
       "fetchError": null,
       "wellDepthFt": 340,
       "formation": "Hensell Sand and Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": -1.8
     },
     {
       "id": "6802302",
@@ -179,7 +187,8 @@
       "fetchError": null,
       "wellDepthFt": 400,
       "formation": "Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 1.4
     },
     {
       "id": "6803503",
@@ -199,7 +208,8 @@
       "fetchError": null,
       "wellDepthFt": 200,
       "formation": "Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": null
     },
     {
       "id": "6811417",
@@ -219,7 +229,8 @@
       "fetchError": null,
       "wellDepthFt": 515,
       "formation": "Glen Rose LS and Hensell SH and Cow Creek LS Members of Pearsall FM",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 9.3
     },
     {
       "id": "6804312",
@@ -239,7 +250,8 @@
       "fetchError": null,
       "wellDepthFt": 310,
       "formation": "Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 8.9
     },
     {
       "id": "6810616",
@@ -259,7 +271,8 @@
       "fetchError": null,
       "wellDepthFt": 560,
       "formation": "Hensell Sand and Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 59.1
     },
     {
       "id": "6810626",
@@ -279,7 +292,8 @@
       "fetchError": null,
       "wellDepthFt": 500,
       "formation": "Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 25.6
     },
     {
       "id": "6811817",
@@ -299,7 +313,8 @@
       "fetchError": null,
       "wellDepthFt": 389,
       "formation": "Glen Rose Limestone and Pearsall Formation",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 6.8
     },
     {
       "id": "6812106",
@@ -319,7 +334,8 @@
       "fetchError": null,
       "wellDepthFt": 255,
       "formation": "Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 0.5
     },
     {
       "id": "6802807",
@@ -339,7 +355,8 @@
       "fetchError": null,
       "wellDepthFt": 708,
       "formation": "Hosston Formation",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": -6.3
     },
     {
       "id": "6811509",
@@ -359,7 +376,8 @@
       "fetchError": null,
       "wellDepthFt": 440,
       "formation": "Glen Rose Limestone, Lower Member",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 1.7
     },
     {
       "id": "6803109",
@@ -379,7 +397,8 @@
       "fetchError": null,
       "wellDepthFt": 200,
       "formation": "Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": -0.3
     },
     {
       "id": "6809303",
@@ -399,7 +418,8 @@
       "fetchError": null,
       "wellDepthFt": 1018,
       "formation": "Hensell Sand and Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 9.9
     },
     {
       "id": "6811418",
@@ -419,7 +439,8 @@
       "fetchError": null,
       "wellDepthFt": 585,
       "formation": "Cow Creek Limestone",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": 19.4
     },
     {
       "id": "6802609",
@@ -439,7 +460,8 @@
       "fetchError": null,
       "wellDepthFt": 281,
       "formation": "Hensell Sand Member of Travis Peak Formation",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": -9.1
     },
     {
       "id": "6802509",
@@ -459,7 +481,9 @@
       "fetchError": null,
       "wellDepthFt": 380,
       "formation": "Glen Rose LS and Hensell SH and Cow Creek LS Members of Pearsall FM",
-      "gcd": "Cow Creek GCD"
+      "gcd": "Cow Creek GCD",
+      "change12moFt": -11.8
     }
-  ]
+  ],
+  "chg12UpdatedAt": "2026-07-07"
 }

@@ -143,6 +143,10 @@
   footer{color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:26px;border-top:1px solid var(--border);padding-top:16px}
   #xsec svg{width:100%;height:auto;display:block;border-radius:10px}
   #map{height:400px;border-radius:12px;overflow:hidden;z-index:0}
+  .maplegend{display:flex;flex-wrap:wrap;gap:10px 18px;margin:12px 2px 2px;font-size:.8rem;color:var(--ink);align-items:center}
+  .maplegend span{display:inline-flex;align-items:center;gap:6px}
+  .maplegend i{width:11px;height:11px;border-radius:50%;display:inline-block;border:1px solid #0a1624}
+  .maplegend b{color:var(--drop);font-weight:600}
   .leaflet-container{background:#0a1624;font:inherit}
   .leaflet-tooltip{background:#13263a;color:#eaf2fb;border:1px solid var(--border);
     box-shadow:0 2px 8px rgba(0,0,0,.4);font-weight:600}
@@ -210,9 +214,16 @@
 
   <section class="panel" id="mapPanel">
     <div class="toolbar"><h2>📍 Where these wells are</h2>
-      <span class="muted" style="font-size:.8rem">Cow Creek GCD network · tap a well to view it</span>
+      <span class="muted" style="font-size:.8rem">Colored by 12-month change · tap a well to view it</span>
     </div>
     <div id="map"></div>
+    <div class="maplegend">
+      <span><i style="background:#f87171"></i>Dropped 15+ ft <b>(dramatic)</b></span>
+      <span><i style="background:#f6c178"></i>Dropped 5–15 ft</span>
+      <span><i style="background:#38bdf8"></i>Roughly stable (±5 ft)</span>
+      <span><i style="background:#34d399"></i>Recovered 5+ ft</span>
+      <span class="muted" id="legendNote"></span>
+    </div>
   </section>
 
   <div id="cards" class="cards" hidden></div>
@@ -322,6 +333,19 @@ const WELLS = [
 ];
 const WELL_BY_ID = Object.fromEntries(WELLS.map(w => [w.id, w]));
 
+// 12-month change in depth-to-water, ft (+ = water dropped deeper, - = recovered).
+// Refreshed weekly by scripts/refresh-droppers.mjs. CHG12_ASOF is the snapshot date.
+const CHG12 = {"5758203":7.5,"6811708":0.5,"6806105":-2.1,"6801314":-0.9,"6811302":2.7,"5758402":5.6,"6804214":-9.7,"6812414":-1.8,"6802302":1.4,"6803503":null,"6811417":9.3,"6804312":8.9,"6810616":59.1,"6810626":25.6,"6811817":6.8,"6812106":0.5,"6802807":-6.3,"6811509":1.7,"6803109":-0.3,"6809303":9.9,"6811418":19.4,"6802609":-9.1,"6802509":-11.8};
+const CHG12_ASOF = "2026-07-07";
+// Map a 12-month change to a color + tier label.
+function trendTier(chg){
+  if(chg == null)   return { c:"#93aec7", label:"Not enough data" };
+  if(chg >= 15)     return { c:"#f87171", label:"Dropped 15+ ft (dramatic)", big:true };
+  if(chg >= 5)      return { c:"#f6c178", label:"Dropped 5–15 ft" };
+  if(chg <= -5)     return { c:"#34d399", label:"Recovered 5+ ft" };
+  return { c:"#38bdf8", label:"Roughly stable (±5 ft)" };
+}
+
 // ---- Sponsors -----------------------------------------------------------
 // Add paying advertisers here — one object each. Leave empty to show just the
 // "Advertise here" slot. Example:
@@ -356,10 +380,17 @@ function activeRange(){
 
 // ---- Map of all wells -------------------------------------------------
 let map, markers = {};
-function markerStyle(sel){
+// Markers are colored by their 12-month change; dramatic droppers are red + larger.
+function markerStyle(sel, wellId){
+  const t = trendTier(CHG12[wellId]);
   return sel
-    ? { radius:9, color:"#ffffff", weight:2, fillColor:"#f6c178", fillOpacity:1 }
-    : { radius:6, color:"#0a1624", weight:1, fillColor:"#38bdf8", fillOpacity:.85 };
+    ? { radius:11, color:"#ffffff", weight:3, fillColor:t.c, fillOpacity:1 }
+    : { radius: t.big ? 9 : 6, color:"#0a1624", weight:1, fillColor:t.c, fillOpacity:.9 };
+}
+function chgTip(id){
+  const c = CHG12[id];
+  if(c == null) return "";
+  return c > 0 ? ` · ▼ ${c.toFixed(0)} ft deeper (12 mo)` : ` · ▲ ${Math.abs(c).toFixed(0)} ft recovered (12 mo)`;
 }
 function initMap(){
   if(!window.L) return;                       // Leaflet failed to load — dropdown still works
@@ -369,19 +400,23 @@ function initMap(){
     attribution:'&copy; OpenStreetMap &copy; CARTO'
   }).addTo(map);
   const pts = [];
-  WELLS.forEach(w=>{
+  // draw dramatic droppers last so they sit on top
+  const ordered = [...WELLS].sort((a,b)=> (CHG12[a.id]||0) - (CHG12[b.id]||0));
+  ordered.forEach(w=>{
     if(w.lat==null || w.lng==null) return;
-    const m = L.circleMarker([w.lat, w.lng], markerStyle(false))
+    const m = L.circleMarker([w.lat, w.lng], markerStyle(false, w.id))
       .addTo(map)
-      .bindTooltip(w.name, { direction:"top", offset:[0,-4] })
+      .bindTooltip(w.name + chgTip(w.id), { direction:"top", offset:[0,-4] })
       .on("click", ()=>{ document.getElementById("wellSel").value = w.id; load(w.id); });
     markers[w.id] = m;
     pts.push([w.lat, w.lng]);
   });
   if(pts.length) map.fitBounds(pts, { padding:[28,28] });
+  const ln = document.getElementById("legendNote");
+  if(ln) ln.textContent = "· 12-month change, updated weekly (as of " + CHG12_ASOF + ")";
 }
 function selectMarker(id){
-  for(const wid in markers) markers[wid].setStyle(markerStyle(wid === id));
+  for(const wid in markers) markers[wid].setStyle(markerStyle(wid === id, wid));
   if(markers[id]) markers[id].bringToFront();
 }
 
