@@ -56,10 +56,12 @@ fs.writeFileSync(CAT, JSON.stringify(cat, null, 2));
 
 // 2) site
 let html = fs.readFileSync(HTML, "utf8");
-const lit = "const CHG12 = {" +
+// Only the recorder half — the 26 manual (biweekly) wells live in CHG12_MANUAL,
+// refreshed separately by refresh-manual.mjs, and must not be touched here.
+const lit = "const CHG12_RECORDER = {" +
   cat.wells.map((w) => JSON.stringify(w.id) + ":" + (result[w.id] == null ? "null" : result[w.id])).join(",") +
   "};";
-html = html.replace(/const CHG12 = \{[^}]*\};/, lit);
+html = html.replace(/const CHG12_RECORDER = \{[^}]*\};/, lit);
 html = html.replace(/const CHG12_ASOF = "[^"]*";/, `const CHG12_ASOF = "${asof}";`);
 fs.writeFileSync(HTML, html);
 
