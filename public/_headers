@@ -1,7 +1,10 @@
 # Cache the page briefly in the browser so a refresh/viral spike is absorbed
-# client-side. Short max-age keeps redeploys visible within a few minutes; the
-# live data comes from /api/well, which has its own long cache.
+# client-side. The whole app is inline in this one HTML file, so a stale page =
+# stale code — keep the stale-while-revalidate window short so a redeploy (incl.
+# bug fixes) reaches returning visitors within minutes, not a day. The real load
+# spike is absorbed at the Cloudflare edge; the live data comes from /api/well,
+# which has its own long cache.
 /
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+  Cache-Control: public, max-age=300, stale-while-revalidate=600
 /index.html
-  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+  Cache-Control: public, max-age=300, stale-while-revalidate=600
