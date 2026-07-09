@@ -656,10 +656,14 @@ function renderCards(){
     return `<div class="card"><div class="lbl">${lbl}</div><div class="val">${val}</div>${subHtml}${chgHtml}</div>`;
   };
   const firstYear = DATA.firstDate ? DATA.firstDate.slice(0, 4) : "record start";
+  const asOf = parse(DATA.lastDate).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+  // Manual wells are read every ~2 weeks, so their "current" is a dated measurement, not live.
+  // Say so right on the card so a 2-week-old number doesn't read as broken next to live recorders.
+  const curSub = DATA.manual ? ("measured " + asOf + " · every ~2 weeks") : ("as of " + asOf);
   const el = document.getElementById("cards");
   el.hidden = false;
   el.innerHTML = [
-    card("Current depth to water", fmt(cur)+" ft", null, "below the ground surface"),
+    card("Current depth to water", fmt(cur)+" ft", null, curSub),
     card("30-day change", "", tableChange(p30?.v, cur)),
     card("12-month change", "", tableChange(p365?.v, cur)),
     card("Since " + firstYear, "", tableChange(first?.v, cur)),
