@@ -310,6 +310,9 @@ const monShort = (ym) => {
 };
 
 let chart, DATA;
+// Bumped on every load(); an in-flight fetch only applies its result if it's still the
+// latest selection, so a slow well can't clobber the well you just switched to.
+let loadSeq = 0;
 
 const WELLS = [
   {id:"6811417",name:"Schwope",twdb:"H.W. Schwope & Sons",lat:29.798222,lng:-98.744472,depth:515,formation:"Glen Rose LS and Hensell SH and Cow Creek LS Members of Pearsall FM",aquifer:"Trinity",county:"Kendall"},
@@ -509,6 +512,7 @@ function getManual(){
 }
 
 async function load(wellId){
+  const myseq = ++loadSeq;               // this call's ticket; a newer load() supersedes it
   const well = WELL_BY_ID[wellId] || {};
   const status = document.getElementById("status");
   status.hidden = false; status.className = "loading";
@@ -537,6 +541,7 @@ async function load(wellId){
         ping(); return;
       }
       const all = await getManual();
+      if(myseq !== loadSeq) return;       // superseded by a newer selection — drop this result
       const md = all.wells[wellId];
       const lastMs = parse(md.lastDate).getTime();
       const recent = md.daily.filter(p => lastMs - parse(p.date).getTime() <= 45*864e5)
@@ -549,6 +554,7 @@ async function load(wellId){
       const bucket = Math.floor(Date.now() / (12 * 3600 * 1000));
       const res = await fetch(`/api/well?id=${wellId}&t=${bucket}`);
       const data = await res.json();
+      if(myseq !== loadSeq) return;       // superseded by a newer selection — drop this result
       if(data.error) throw new Error(data.error);
       DATA = data;
     }
