@@ -97,6 +97,9 @@
     --rose:#34d399; --drop:#f87171; --border:rgba(147,174,199,.18);
   }
   *{box-sizing:border-box}
+  /* The [hidden] attribute must win over class display rules (e.g. .cards{display:grid}),
+     otherwise hiding a panel — like the tiles when a no-data well is picked — does nothing. */
+  [hidden]{display:none!important}
   html,body{margin:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased}
@@ -265,7 +268,7 @@
   <section class="panel">
     <div class="toolbar">
       <h2>Water table over time</h2>
-      <div class="rightctl">
+      <div class="rightctl" id="chartCtl">
         <button id="resetZoom" class="ghostbtn" hidden>⤢ Reset zoom</button>
         <div class="toggle" id="ranges">
           <button data-range="30d">30 days</button>
@@ -274,8 +277,8 @@
         </div>
       </div>
     </div>
-    <div class="chartbox"><canvas id="chart"></canvas></div>
-    <div class="axis-note">Drag across the chart or scroll/pinch to zoom · axis inverted so the line rising = a higher water table (less depth to water).</div>
+    <div class="chartbox" id="chartbox"><canvas id="chart"></canvas></div>
+    <div class="axis-note" id="axisNote">Drag across the chart or scroll/pinch to zoom · axis inverted so the line rising = a higher water table (less depth to water).</div>
     <div id="status" class="loading">Loading live groundwater data…</div>
   </section>
 
@@ -520,6 +523,10 @@ async function load(wellId){
   document.getElementById("cards").hidden = true;
   document.getElementById("monthsPanel").hidden = true;
   document.getElementById("xsecPanel").hidden = true;
+  // hide the chart + its controls too, so a no-data well doesn't leave the prior well's graph up
+  document.getElementById("chartbox").hidden = true;
+  document.getElementById("axisNote").hidden = true;
+  document.getElementById("chartCtl").hidden = true;
   document.getElementById("wellNum").textContent = well.manual ? "CCGCD #" + wellId.slice(1) : "#" + wellId;
   const wIdx = WELLS.findIndex(w => w.id === wellId) + 1;
   document.getElementById("wellHint").innerHTML =
@@ -559,6 +566,9 @@ async function load(wellId){
       DATA = data;
     }
     status.hidden = true;
+    document.getElementById("chartbox").hidden = false;   // canvas visible before drawRange sizes it
+    document.getElementById("axisNote").hidden = false;
+    document.getElementById("chartCtl").hidden = false;
     renderUpdated();
     renderMeta(wellId);
     renderCards();
