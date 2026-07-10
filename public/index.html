@@ -14,7 +14,7 @@
 <!-- Hotjar (Contentsquare) -->
 <script src="https://t.contentsquare.net/uxa/6d23c766fe32b.js" defer></script>
 <title>Kendall County Water Table — Live Groundwater Levels (Boerne, TX)</title>
-<meta name="description" content="Live depth-to-water for 23 groundwater monitoring wells across Kendall County & Boerne, Texas. Interactive map, per-well history, and trends from official Cow Creek GCD / Texas Water Development Board data, updated daily." />
+<meta name="description" content="Live depth-to-water for 49 groundwater monitoring wells across Kendall County & Boerne, Texas — 23 automatic recorders plus 26 additional monitoring wells. Interactive map, per-well history, and trends from official Cow Creek GCD / Texas Water Development Board data." />
 <link rel="canonical" href="https://www.texaswaterwatchers.com/" />
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 <meta name="author" content="Upward Axis Tech" />
@@ -27,17 +27,17 @@
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Kendall County Texas Water Table" />
 <meta property="og:title" content="Kendall County Water Table — Live Groundwater Levels" />
-<meta property="og:description" content="Live depth-to-water for 23 monitoring wells across Kendall County & Boerne, TX. Interactive map + trends from official CCGCD / TWDB data, updated daily." />
+<meta property="og:description" content="Live depth-to-water for 49 monitoring wells across Kendall County & Boerne, TX. Interactive map + trends from official CCGCD / TWDB data." />
 <meta property="og:url" content="https://www.texaswaterwatchers.com/" />
 <meta property="og:image" content="https://www.texaswaterwatchers.com/og-image.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="Kendall County Texas Water Table — live groundwater levels across 23 monitoring wells" />
+<meta property="og:image:alt" content="Kendall County Texas Water Table — live groundwater levels across 49 monitoring wells" />
 <meta property="og:locale" content="en_US" />
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Kendall County Water Table — Live Groundwater Levels" />
-<meta name="twitter:description" content="Live depth-to-water for 23 monitoring wells across Kendall County & Boerne, TX. Interactive map + trends, updated daily." />
+<meta name="twitter:description" content="Live depth-to-water for 49 monitoring wells across Kendall County & Boerne, TX. Interactive map + trends." />
 <meta name="twitter:image" content="https://www.texaswaterwatchers.com/og-image.png" />
 <meta name="twitter:image:alt" content="Kendall County Texas Water Table share image" />
 <script type="application/ld+json">
@@ -49,7 +49,7 @@
       "@id": "https://www.texaswaterwatchers.com/#website",
       "url": "https://www.texaswaterwatchers.com/",
       "name": "Kendall County Texas Water Table",
-      "description": "Live groundwater levels for 23 monitoring wells across Kendall County & Boerne, Texas.",
+      "description": "Live groundwater levels for 49 monitoring wells across Kendall County & Boerne, Texas.",
       "inLanguage": "en-US",
       "publisher": { "@id": "https://upwardaxistech.com/#org" }
     },
@@ -65,7 +65,7 @@
       "@type": "Dataset",
       "@id": "https://www.texaswaterwatchers.com/#dataset",
       "name": "Kendall County Groundwater Levels — Cow Creek GCD monitoring network",
-      "description": "Depth-to-water measurements (feet below land surface) for 23 groundwater monitoring wells in the Trinity Aquifer across Kendall County, Texas — including the Boerne, Comfort, Sisterdale, Kendalia and Waring areas. Recorded by the Cow Creek Groundwater Conservation District, hosted by the Texas Water Development Board, and refreshed daily.",
+      "description": "Depth-to-water measurements (feet below land surface) for 49 groundwater monitoring wells in the Trinity Aquifer across Kendall County, Texas — including the Boerne, Comfort, Sisterdale, Kendalia and Waring areas. Includes 23 automatic hourly recorders (via the Texas Water Development Board) and 26 additional monitoring wells from the Cow Creek Groundwater Conservation District.",
       "url": "https://www.texaswaterwatchers.com/",
       "keywords": ["Kendall County water table", "Boerne groundwater levels", "Trinity Aquifer", "depth to water", "well monitoring", "Texas groundwater", "Cow Creek GCD"],
       "isAccessibleForFree": true,
@@ -223,6 +223,11 @@
       <span><i style="background:#38bdf8"></i>Roughly stable (±5 ft)</span>
       <span><i style="background:#34d399"></i>Recovered 5+ ft</span>
     </div>
+    <div class="maplegend" style="margin-top:2px">
+      <span><i style="background:#38bdf8;border:1px solid #0a1624"></i>Automatic hourly recorder</span>
+      <span><i style="background:#38bdf8;border:2px solid #e8f0fb"></i>Additional monitoring well</span>
+      <span><i style="background:#93aec7;opacity:.35;border:1.5px solid #93aec7"></i>In network, no readings yet</span>
+    </div>
   </section>
 
   <div id="cards" class="cards" hidden></div>
@@ -297,7 +302,8 @@
 
 <script>
 const fmt = (n, d=2) => n==null ? "—" : n.toFixed(d);
-const parse = (s) => new Date(s.replace(" ", "T")); // treat as local wall-clock
+// treat as local wall-clock; date-only strings (Cow Creek GCD map wells) → local midnight
+const parse = (s) => new Date(s.includes(" ") ? s.replace(" ", "T") : s + "T00:00:00");
 const monShort = (ym) => {
   const [y,m] = ym.split("-").map(Number);
   return new Date(y, m-1, 1).toLocaleString("en-US",{month:"short"}) + " '" + String(y).slice(2);
@@ -331,13 +337,49 @@ const WELLS = [
   {id:"6809303",name:"Turkey Knob",twdb:"Turkey Knob",lat:29.836833,lng:-98.886833,depth:1018,formation:"Hensell Sand and Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
   {id:"6811418",name:"Twin Canyon",twdb:"Twin Canyon",lat:29.830694,lng:-98.728528,depth:585,formation:"Cow Creek Limestone",aquifer:"Trinity",county:"Kendall"},
   {id:"6802609",name:"Waring",twdb:"Waring",lat:29.930194,lng:-98.788167,depth:281,formation:"Hensell Sand Member of Travis Peak Formation",aquifer:"Trinity",county:"Kendall"},
-  {id:"6802509",name:"Windmill Ranch",twdb:"Windmill Ranch",lat:29.936389,lng:-98.7975,depth:380,formation:"Glen Rose LS and Hensell SH and Cow Creek LS Members of Pearsall FM",aquifer:"Trinity",county:"Kendall"}
+  {id:"6802509",name:"Windmill Ranch",twdb:"Windmill Ranch",lat:29.936389,lng:-98.7975,depth:380,formation:"Glen Rose LS and Hensell SH and Cow Creek LS Members of Pearsall FM",aquifer:"Trinity",county:"Kendall"},
+  // --- Additional Cow Creek GCD monitoring wells (series in manual-wells.json) ---
+  {id:"m5013",name:"Ammann Ranch",twdb:"Ammann Ranch",lat:29.78631,lng:-98.674861,depth:420,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m4255",name:"Bergenplatz",twdb:"Bergenplatz",lat:29.89017,lng:-98.707,depth:396,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:true},
+  {id:"m3991",name:"Champee Fire Well",twdb:"Champee Fire Well",lat:29.809583,lng:-98.867694,depth:179,formation:"",aquifer:"Edwards-Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m5637",name:"Circle J Well (House)",twdb:"Circle J Well (House)",lat:29.762361,lng:-98.786889,depth:null,formation:"",aquifer:"Upper Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m3281",name:"Coveney Ranch",twdb:"Coveney Ranch",lat:29.81908,lng:-98.60381,depth:500,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m4609",name:"Diamond Ridge",twdb:"Diamond Ridge",lat:29.752167,lng:-98.793889,depth:770,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:true},
+  {id:"m5093",name:"Estancia",twdb:"Estancia",lat:29.742556,lng:-98.759083,depth:620,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m9000",name:"Estates at Deep Hollow",twdb:"Estates at Deep Hollow",lat:29.755333,lng:-98.810722,depth:980,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m8630",name:"Hidden Springs",twdb:"Hidden Springs",lat:30.137194,lng:-98.909778,depth:600,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m7656",name:"High Point Ranch",twdb:"High Point Ranch",lat:29.979306,lng:-98.639028,depth:385,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m5318",name:"Joshua Crossing",twdb:"Joshua Crossing",lat:29.920278,lng:-98.836389,depth:580,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m0767",name:"Kendalia VFD",twdb:"Kendalia VFD",lat:29.96878,lng:-98.52158,depth:350,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m5434",name:"Kendall County R&B",twdb:"Kendall County R&B",lat:29.946194,lng:-98.878778,depth:82,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m3473",name:"Kendall Wood",twdb:"Kendall Wood",lat:29.809722,lng:-98.577222,depth:410,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m5193",name:"La Cancion",twdb:"La Cancion",lat:29.913889,lng:-98.6075,depth:560,formation:"",aquifer:"Lower Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m4739",name:"Meadow Springs",twdb:"Meadow Springs",lat:29.821667,lng:-98.564444,depth:385,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m6021",name:"Micah",twdb:"Micah",lat:29.82533,lng:-98.65253,depth:560,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:true},
+  {id:"m3730",name:"River Mountain Ranch",twdb:"River Mountain Ranch",lat:29.896306,lng:-98.620472,depth:235,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:true},
+  {id:"m7971",name:"Sabinas Creek Ranch",twdb:"Sabinas Creek Ranch",lat:29.86525,lng:-98.681278,depth:419,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m0105",name:"The Crossing LT",twdb:"The Crossing LT",lat:29.904513,lng:-98.556967,depth:450,formation:"",aquifer:"Lower Trinity",county:"Kendall",manual:true,hasData:true},
+  {id:"m0197",name:"The Crossing MT",twdb:"The Crossing MT",lat:29.904306,lng:-98.556944,depth:140,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m5968",name:"Violet Pass",twdb:"Violet Pass",lat:29.926111,lng:-98.749361,depth:360,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:false},
+  {id:"m1886",name:"Waring VFD",twdb:"Waring VFD",lat:29.950028,lng:-98.804,depth:280,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:true},
+  {id:"m3740",name:"Waterstone 3351",twdb:"Waterstone 3351",lat:29.889167,lng:-98.557222,depth:180,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:true},
+  {id:"m3738",name:"Waterstone Rio Frio",twdb:"Waterstone Rio Frio",lat:29.887222,lng:-98.533056,depth:328,formation:"",aquifer:"Lower Trinity",county:"Kendall",manual:true,hasData:true},
+  {id:"m4581",name:"Woodridge",twdb:"Woodridge",lat:29.947806,lng:-98.839611,depth:420,formation:"",aquifer:"Middle Trinity",county:"Kendall",manual:true,hasData:true}
 ];
+// Which manual wells currently have a published series (keys of manual-wells.json).
+// Rewritten by scripts/refresh-manual.mjs so the site self-heals as CCGCD adds readings.
+const MANUAL_HAS_DATA = new Set(["m4255","m4609","m6021","m3730","m0105","m1886","m3740","m3738","m4581"]);
+WELLS.forEach(w => { if(w.manual) w.hasData = MANUAL_HAS_DATA.has(w.id); });
 const WELL_BY_ID = Object.fromEntries(WELLS.map(w => [w.id, w]));
 
 // 12-month change in depth-to-water, ft (+ = water dropped deeper, - = recovered).
 // Refreshed weekly by scripts/refresh-droppers.mjs. CHG12_ASOF is the snapshot date.
-const CHG12 = {"5758203":7.5,"6811708":0.5,"6806105":-2.1,"6801314":-0.9,"6811302":2.7,"5758402":5.6,"6804214":-9.7,"6812414":-1.8,"6802302":1.4,"6803503":null,"6811417":9.3,"6804312":8.9,"6810616":59.1,"6810626":25.6,"6811817":6.8,"6812106":0.5,"6802807":-6.3,"6811509":1.7,"6803109":-0.3,"6809303":9.9,"6811418":19.4,"6802609":-9.1,"6802509":-11.8};
+// 12-month change (ft) per well. Two halves refreshed by two jobs (never overwrite each other):
+//   CHG12_RECORDER — 23 TWDB recorders, rewritten weekly by scripts/refresh-droppers.mjs
+//   CHG12_MANUAL   — 26 CCGCD monitoring wells, rewritten by scripts/refresh-manual.mjs
+const CHG12_RECORDER = {"5758203":7.5,"6811708":0.5,"6806105":-2.1,"6801314":-0.9,"6811302":2.7,"5758402":5.6,"6804214":-9.7,"6812414":-1.8,"6802302":1.4,"6803503":null,"6811417":9.3,"6804312":8.9,"6810616":59.1,"6810626":25.6,"6811817":6.8,"6812106":0.5,"6802807":-6.3,"6811509":1.7,"6803109":-0.3,"6809303":9.9,"6811418":19.4,"6802609":-9.1,"6802509":-11.8};
+const CHG12_MANUAL = {"m5013":null,"m4255":-1.6,"m3991":null,"m5637":null,"m3281":null,"m4609":-4,"m5093":null,"m9000":null,"m8630":null,"m7656":null,"m5318":null,"m0767":null,"m5434":null,"m3473":null,"m5193":null,"m4739":null,"m6021":1.8,"m3730":-6,"m7971":null,"m0105":-7.2,"m0197":null,"m5968":null,"m1886":-23.4,"m3740":-4.5,"m3738":-2,"m4581":-18.2};
+const CHG12 = Object.assign({}, CHG12_RECORDER, CHG12_MANUAL);
 const CHG12_ASOF = "2026-07-07";
 // Map a 12-month change to a color + tier label.
 function trendTier(chg){
@@ -384,15 +426,26 @@ function activeRange(){
 let map, markers = {};
 // Markers are colored by their 12-month change; steep droppers are red + larger.
 function markerStyle(sel, wellId){
+  const w = WELL_BY_ID[wellId] || {};
   const t = trendTier(CHG12[wellId]);
-  return sel
-    ? { radius:11, color:"#ffffff", weight:3, fillColor:t.c, fillOpacity:1 }
-    : { radius: t.big ? 9 : 6, color:"#0a1624", weight:1, fillColor:t.c, fillOpacity:.9 };
+  if(sel) return { radius:11, color:"#ffffff", weight:3, fillColor:t.c, fillOpacity:1 };
+  // Cow Creek GCD map wells with no readings yet: faint hollow gray pin.
+  if(w.manual && !w.hasData)
+    return { radius:5, color:"#93aec7", weight:1.5, fillColor:"#93aec7", fillOpacity:.18 };
+  // Manual wells with data: a light ring distinguishes them from hourly recorders.
+  if(w.manual)
+    return { radius: t.big ? 8 : 6, color:"#e8f0fb", weight:2, fillColor:t.c, fillOpacity:.9 };
+  // Automatic hourly recorders: dark-edged filled dot.
+  return { radius: t.big ? 9 : 6, color:"#0a1624", weight:1, fillColor:t.c, fillOpacity:.9 };
 }
 function chgTip(id){
   const c = CHG12[id];
   if(c == null) return "";
   return c > 0 ? ` · ▼ ${c.toFixed(0)} ft deeper (12 mo)` : ` · ▲ ${Math.abs(c).toFixed(0)} ft recovered (12 mo)`;
+}
+function tipText(w){
+  if(w.manual && !w.hasData) return w.name + " · no readings yet";
+  return w.name + chgTip(w.id);
 }
 function initMap(){
   if(!window.L) return;                       // Leaflet failed to load — dropdown still works
@@ -408,7 +461,7 @@ function initMap(){
     if(w.lat==null || w.lng==null) return;
     const m = L.circleMarker([w.lat, w.lng], markerStyle(false, w.id))
       .addTo(map)
-      .bindTooltip(w.name + chgTip(w.id), { direction:"top", offset:[0,-4] })
+      .bindTooltip(tipText(w), { direction:"top", offset:[0,-4] })
       .on("click", ()=>{ document.getElementById("wellSel").value = w.id; load(w.id); });
     markers[w.id] = m;
     pts.push([w.lat, w.lng]);
@@ -423,7 +476,15 @@ function selectMarker(id){
 // ---- Per-well metadata panel ------------------------------------------
 function renderMeta(id){
   const w = WELL_BY_ID[id]; if(!w) return;
-  const rows = [
+  const rows = w.manual ? [
+    ["Site name", w.twdb],
+    ["Cow Creek GCD well #", w.id.slice(1)],
+    ["Aquifer", w.aquifer || "—"],
+    ["Well depth (drilled)", w.depth != null ? w.depth.toLocaleString() + " ft" : "—"],
+    ["Location", (w.lat!=null) ? w.lat.toFixed(4) + ", " + w.lng.toFixed(4) : "—"],
+    ["County", w.county || "—"],
+    ["Monitored by", "Cow Creek GCD"],
+  ] : [
     ["TWDB site name", w.twdb],
     ["State well number", "#" + w.id],
     ["Aquifer", w.aquifer || "—"],
@@ -431,7 +492,7 @@ function renderMeta(id){
     ["Well depth (drilled)", w.depth != null ? w.depth.toLocaleString() + " ft" : "—"],
     ["Location", (w.lat!=null) ? w.lat.toFixed(4) + ", " + w.lng.toFixed(4) : "—"],
     ["County", w.county || "—"],
-    ["Monitored by", "Cow Creek GCD"],
+    ["Monitored by", "Cow Creek GCD · automatic hourly recorder"],
   ];
   if(DATA && DATA.firstDate){
     rows.push(["Period of record",
@@ -443,31 +504,60 @@ function renderMeta(id){
   document.getElementById("detailsPanel").hidden = false;
 }
 
+// Cow Creek GCD map wells load their series from a bundled JSON, fetched once.
+let MANUAL_CACHE = null;
+function getManual(){
+  if(!MANUAL_CACHE) MANUAL_CACHE = fetch("manual-wells.json").then(r => r.json());
+  return MANUAL_CACHE;
+}
+
 async function load(wellId){
   const myseq = ++loadSeq;               // this call's ticket; a newer load() supersedes it
+  const well = WELL_BY_ID[wellId] || {};
   const status = document.getElementById("status");
   status.hidden = false; status.className = "loading";
-  status.textContent = "Loading live groundwater data…";
+  status.textContent = "Loading groundwater data…";
   document.getElementById("cards").hidden = true;
   document.getElementById("monthsPanel").hidden = true;
   document.getElementById("xsecPanel").hidden = true;
-  document.getElementById("wellNum").textContent = "#" + wellId;
+  document.getElementById("wellNum").textContent = well.manual ? "CCGCD #" + wellId.slice(1) : "#" + wellId;
   const wIdx = WELLS.findIndex(w => w.id === wellId) + 1;
   document.getElementById("wellHint").innerHTML =
     `Well ${wIdx} of ${WELLS.length} · switch anytime with this menu ▲ or by tapping a dot on the map ▼`;
-  document.getElementById("twdbLink").href =
-    "https://waterdatafortexas.org/groundwater/well/" + wellId;
+  document.getElementById("twdbLink").href = well.manual
+    ? "https://ccgcd.org/monitoring/"
+    : "https://waterdatafortexas.org/groundwater/well/" + wellId;
   document.getElementById("updated").textContent = "";
   selectMarker(wellId);
+  const ping = () => { if(window.gtag) gtag('event','select_well',{ well_id:wellId, well_name: well.name || wellId }); };
   try{
-    // Rolling 12-hour bucket in the URL so a returning visitor's browser re-fetches
-    // at least every refresh window instead of serving a long-cached stale copy.
-    const bucket = Math.floor(Date.now() / (12 * 3600 * 1000));
-    const res = await fetch(`/api/well?id=${wellId}&t=${bucket}`);
-    const data = await res.json();
-    if(myseq !== loadSeq) return;         // superseded by a newer selection — drop this result
-    if(data.error) throw new Error(data.error);
-    DATA = data;
+    if(well.manual){
+      if(!well.hasData){
+        DATA = null;                 // no series — don't leak the prior well's period-of-record
+        renderMeta(wellId);
+        status.className = "loading";
+        status.textContent = "This Cow Creek GCD well is on the map but has no published readings yet.";
+        status.hidden = false;
+        ping(); return;
+      }
+      const all = await getManual();
+      if(myseq !== loadSeq) return;       // superseded by a newer selection — drop this result
+      const md = all.wells[wellId];
+      const lastMs = parse(md.lastDate).getTime();
+      const recent = md.daily.filter(p => lastMs - parse(p.date).getTime() <= 45*864e5)
+                             .map(p => ({ t: p.date + " 00:00:00", v: p.v }));
+      DATA = { wellId, unit:"ft below land surface", manual:true, current:md.current,
+               count:md.count, firstDate:md.firstDate, lastDate:md.lastDate,
+               daily:md.daily, monthly:md.monthly, recent };
+    } else {
+      // Rolling 12-hour bucket so a returning visitor re-fetches within the refresh window.
+      const bucket = Math.floor(Date.now() / (12 * 3600 * 1000));
+      const res = await fetch(`/api/well?id=${wellId}&t=${bucket}`);
+      const data = await res.json();
+      if(myseq !== loadSeq) return;       // superseded by a newer selection — drop this result
+      if(data.error) throw new Error(data.error);
+      DATA = data;
+    }
     status.hidden = true;
     renderUpdated();
     renderMeta(wellId);
@@ -475,10 +565,7 @@ async function load(wellId){
     renderXsec();
     renderMonths();
     drawRange(activeRange());
-    if(window.gtag) gtag('event', 'select_well', {
-      well_id: wellId,
-      well_name: (WELL_BY_ID[wellId] || {}).name || wellId
-    });
+    ping();
   }catch(e){
     status.hidden = false;
     status.className = "err";
@@ -488,11 +575,14 @@ async function load(wellId){
 
 function init(){
   const sel = document.getElementById("wellSel");
-  WELLS.forEach(w=>{
-    const o = document.createElement("option");
-    o.value = w.id; o.textContent = w.name;
-    sel.appendChild(o);
-  });
+  const grp = (label)=>{ const g=document.createElement("optgroup"); g.label=label; sel.appendChild(g); return g; };
+  const opt = (w,parent)=>{ const o=document.createElement("option"); o.value=w.id; o.textContent=w.name; parent.appendChild(o); };
+  const g1 = grp("Automatic recorders · hourly");
+  WELLS.filter(w=>!w.manual).forEach(w=>opt(w,g1));
+  const withData = WELLS.filter(w=>w.manual && w.hasData);
+  const noData = WELLS.filter(w=>w.manual && !w.hasData);
+  if(withData.length){ const g2 = grp("Additional monitoring wells"); withData.forEach(w=>opt(w,g2)); }
+  if(noData.length){ const g3 = grp("In network · no readings yet"); noData.forEach(w=>opt(w,g3)); }
   sel.addEventListener("change", ()=> load(sel.value));
   initMap();
   renderSponsors();
@@ -534,9 +624,15 @@ function syncMonthSlider(){
 
 function renderUpdated(){
   if(!DATA.lastDate) return;
-  document.getElementById("updated").textContent =
-    "Latest reading: " + parse(DATA.lastDate).toLocaleString() +
-    " · " + DATA.count.toLocaleString() + " readings since " + DATA.firstDate.slice(0,10) + ".";
+  const el = document.getElementById("updated");
+  if(DATA.manual){
+    el.textContent = "Latest reading: " + parse(DATA.lastDate).toLocaleDateString() +
+      " · " + DATA.count.toLocaleString() + " readings since " + DATA.firstDate.slice(0,10) +
+      " · Cow Creek GCD.";
+  } else {
+    el.textContent = "Latest reading: " + parse(DATA.lastDate).toLocaleString() +
+      " · " + DATA.count.toLocaleString() + " readings since " + DATA.firstDate.slice(0,10) + ".";
+  }
 }
 
 // Water-table change: positive = table ROSE (depth decreased).
@@ -566,10 +662,13 @@ function renderCards(){
     return `<div class="card"><div class="lbl">${lbl}</div><div class="val">${val}</div>${subHtml}${chgHtml}</div>`;
   };
   const firstYear = DATA.firstDate ? DATA.firstDate.slice(0, 4) : "record start";
+  const asOf = parse(DATA.lastDate).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+  // Show the reading date on the card so freshness is explicit for every well.
+  const curSub = "as of " + asOf;
   const el = document.getElementById("cards");
   el.hidden = false;
   el.innerHTML = [
-    card("Current depth to water", fmt(cur)+" ft", null, "below the ground surface"),
+    card("Current depth to water", fmt(cur)+" ft", null, curSub),
     card("30-day change", "", tableChange(p30?.v, cur)),
     card("12-month change", "", tableChange(p365?.v, cur)),
     card("Since " + firstYear, "", tableChange(first?.v, cur)),
