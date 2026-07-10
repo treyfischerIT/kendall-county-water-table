@@ -20,7 +20,15 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const HTML = path.join(ROOT, "public/index.html");
 const OUT = path.join(ROOT, "public/manual-wells.json");
 const URL = "https://ccgcd.org/monitoring/";
-const SERIES_KEY = "Depth to Water";
+// The depth-to-water series is keyed inconsistently across wells — some use
+// "Depth to Water", others "Depth to water level". Match either spelling.
+const SERIES_RE = /^depth to water/i;
+function pickDepthSeries(charts){
+  const key = Object.keys(charts || {}).find(
+    (k) => SERIES_RE.test(k) && Array.isArray(charts[k]) && charts[k].length
+  );
+  return key ? charts[key] : [];
+}
 // Common macOS Chrome/Chromium locations — first that exists wins.
 const CHROME_CANDIDATES = [
   process.env.CHROME_PATH,
@@ -127,7 +135,7 @@ async function scrape() {
     if (!known.has(id)) continue;
     matched++;
     const charts = mk.charts || {};
-    const s = buildSeries(charts[SERIES_KEY]);
+    const s = buildSeries(pickDepthSeries(charts));
     if (s) built[id] = s;
   }
   if (matched === 0) throw new Error("no rendered markers matched our manual well ids");

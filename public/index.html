@@ -229,7 +229,6 @@
     <div class="maplegend" style="margin-top:2px">
       <span><i style="background:#38bdf8;border:1px solid #0a1624"></i>Automatic hourly recorder</span>
       <span><i style="background:#38bdf8;border:2px solid #e8f0fb"></i>Additional monitoring well</span>
-      <span><i style="background:#93aec7;opacity:.35;border:1.5px solid #93aec7"></i>In network, no readings yet</span>
     </div>
   </section>
 
@@ -371,7 +370,7 @@ const WELLS = [
 ];
 // Which manual wells currently have a published series (keys of manual-wells.json).
 // Rewritten by scripts/refresh-manual.mjs so the site self-heals as CCGCD adds readings.
-const MANUAL_HAS_DATA = new Set(["m4255","m4609","m6021","m3730","m0105","m1886","m3740","m3738","m4581"]);
+const MANUAL_HAS_DATA = new Set(["m5013","m4255","m3991","m4609","m5093","m5318","m0767","m5434","m3473","m5193","m4739","m6021","m3730","m0105","m0197","m5968","m1886","m3740","m3738","m4581","m5637","m3281","m7656","m7971","m9000","m8630"]);
 WELLS.forEach(w => { if(w.manual) w.hasData = MANUAL_HAS_DATA.has(w.id); });
 const WELL_BY_ID = Object.fromEntries(WELLS.map(w => [w.id, w]));
 
@@ -381,7 +380,7 @@ const WELL_BY_ID = Object.fromEntries(WELLS.map(w => [w.id, w]));
 //   CHG12_RECORDER — 23 TWDB recorders, rewritten weekly by scripts/refresh-droppers.mjs
 //   CHG12_MANUAL   — 26 CCGCD monitoring wells, rewritten by scripts/refresh-manual.mjs
 const CHG12_RECORDER = {"5758203":7.5,"6811708":0.5,"6806105":-2.1,"6801314":-0.9,"6811302":2.7,"5758402":5.6,"6804214":-9.7,"6812414":-1.8,"6802302":1.4,"6803503":null,"6811417":9.3,"6804312":8.9,"6810616":59.1,"6810626":25.6,"6811817":6.8,"6812106":0.5,"6802807":-6.3,"6811509":1.7,"6803109":-0.3,"6809303":9.9,"6811418":19.4,"6802609":-9.1,"6802509":-11.8};
-const CHG12_MANUAL = {"m5013":null,"m4255":-1.6,"m3991":null,"m5637":null,"m3281":null,"m4609":-4,"m5093":null,"m9000":null,"m8630":null,"m7656":null,"m5318":null,"m0767":null,"m5434":null,"m3473":null,"m5193":null,"m4739":null,"m6021":1.8,"m3730":-6,"m7971":null,"m0105":-7.2,"m0197":null,"m5968":null,"m1886":-23.4,"m3740":-4.5,"m3738":-2,"m4581":-18.2};
+const CHG12_MANUAL = {"m5013":-1.2,"m4255":-1.6,"m3991":-2.4,"m5637":-0.6,"m3281":3.2,"m4609":-4,"m5093":-23.6,"m9000":-0.5,"m8630":-0.3,"m7656":-21.3,"m5318":-50,"m0767":6.1,"m5434":-0.1,"m3473":2.1,"m5193":-0.2,"m4739":-3.1,"m6021":1.8,"m3730":-6,"m7971":12.3,"m0105":-7.2,"m0197":1,"m5968":-13.4,"m1886":-23.4,"m3740":-4.5,"m3738":-2,"m4581":-18.2};
 const CHG12 = Object.assign({}, CHG12_RECORDER, CHG12_MANUAL);
 const CHG12_ASOF = "2026-07-07";
 // Map a 12-month change to a color + tier label.

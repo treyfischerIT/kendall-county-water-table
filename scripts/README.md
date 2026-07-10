@@ -1,7 +1,7 @@
 # Weekly groundwater refresh
 
 The map shows **49 wells**: 23 automatic hourly recorders (TWDB feeds) + 26 additional
-Cow Creek GCD monitoring wells (9 of which have a published series).
+Cow Creek GCD monitoring wells (all with a published series).
 Each is colored by its **12-month change in depth-to-water**:
 
 | Color | Meaning |
