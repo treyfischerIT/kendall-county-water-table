@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Rain Almanac — Kendall County, Texas</title>
+<meta name="description" content="133 years of rainfall for Kendall County and Boerne, Texas — four ways to read the record. A companion to the Kendall County water-table tracker.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a121c">
+<link rel="canonical" href="https://www.texaswaterwatchers.com/rain-almanac">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127783;</text></svg>">
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0a121c; --ink2:#0e1a28; --panel:#101f2f;
+    --paper:#eef4fa; --mist:#93aabf; --faint:#5f7789;
+    --line:rgba(147,170,191,.16);
+    --wet:#49a1e2; --wet-deep:#123a7a; --dry:#dc9a45; --dry-deep:#7d3411;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(120% 80% at 50% -10%, #12233a 0%, var(--ink) 60%) no-repeat;
+    color:var(--paper);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:960px;margin:0 auto;padding:clamp(28px,5vw,64px) clamp(18px,4vw,40px) 80px}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--wet);margin:0}
+  h1{font-family:var(--serif);font-weight:600;line-height:1.02;letter-spacing:-.01em;
+    font-size:clamp(2.4rem,7vw,4.6rem);margin:.28em 0 .1em;text-wrap:balance}
+  h1 em{font-style:italic;color:var(--mist)}
+  .lede{font-size:clamp(1.05rem,2.2vw,1.22rem);color:#cdd9e6;max-width:60ch;margin:.6em 0 0}
+  .stat-row{display:flex;flex-wrap:wrap;gap:0;margin:34px 0 4px;border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line)}
+  .stat{flex:1 1 120px;padding:16px 4px 14px;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:0}
+  .stat b{font-family:var(--serif);font-size:1.9rem;font-weight:600;display:block;line-height:1;
+    font-variant-numeric:tabular-nums}
+  .stat span{font-family:var(--mono);font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--mist);display:block;margin-top:8px}
+  .stat.dry b{color:var(--dry)} .stat.wet b{color:var(--wet)}
+
+  .plate{margin-top:clamp(56px,9vw,104px)}
+  .plate-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;flex-wrap:wrap}
+  .plate-num{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;color:var(--faint)}
+  .plate-kind{font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--wet)}
+  .plate h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.6rem,4vw,2.5rem);
+    margin:.1em 0 .15em;letter-spacing:-.01em;flex-basis:100%;text-wrap:balance}
+  .plate p.guide{color:var(--mist);max-width:62ch;margin:.1em 0 24px;font-size:1rem}
+  .card{background:linear-gradient(180deg,var(--panel),var(--ink2));border:1px solid var(--line);
+    border-radius:16px;padding:clamp(16px,3vw,26px)}
+  .cap{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;color:var(--faint);
+    margin:14px 2px 0;line-height:1.5}
+  .cap b{color:var(--mist);font-weight:400}
+
+  /* Plate I — stripes */
+  #stripes{display:flex;align-items:stretch;height:200px;gap:1px;overflow-x:auto;
+    border-radius:8px;background:#0a1017;padding:2px}
+  #stripes .yr{flex:1 0 4px;min-width:4px;border-radius:1px;position:relative;cursor:crosshair;
+    transition:transform .1s}
+  #stripes .yr[data-partial]{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.28) 0 2px,transparent 2px 4px)}
+  #stripes .yr.on{transform:scaleY(1.04);outline:2px solid var(--paper);outline-offset:-1px;z-index:2}
+  .stripe-axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.64rem;
+    color:var(--faint);margin-top:8px;letter-spacing:.05em}
+  .readout{display:flex;align-items:baseline;gap:12px;min-height:2.2em;margin:14px 2px 0;flex-wrap:wrap}
+  .readout .ry{font-family:var(--serif);font-size:1.7rem;font-weight:600;font-variant-numeric:tabular-nums}
+  .readout .rv{font-family:var(--mono);font-size:.95rem;letter-spacing:.03em}
+  .readout .rtag{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
+    padding:3px 9px;border-radius:100px;border:1px solid currentColor}
+
+  /* generic viz canvas */
+  .viz-canvas{display:block;width:100%;height:auto}
+  .legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;
+    font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mist)}
+  .swatch{display:inline-block;width:64px;height:9px;border-radius:100px;vertical-align:middle;margin-right:7px}
+
+  /* Plate IV controls */
+  .gauge-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:center}
+  @media(max-width:620px){.gauge-grid{grid-template-columns:1fr}}
+  .gauge-read .gy{font-family:var(--serif);font-size:clamp(3rem,10vw,5rem);font-weight:600;line-height:.9;
+    font-variant-numeric:tabular-nums}
+  .gauge-read .gin{font-family:var(--serif);font-size:clamp(1.5rem,5vw,2.2rem);color:var(--mist)}
+  .gauge-read .gin b{color:var(--paper);font-variant-numeric:tabular-nums}
+  .gauge-read .gtag{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+    margin-top:12px;display:inline-block;padding:4px 11px;border-radius:100px;border:1px solid currentColor}
+  .controls{display:flex;align-items:center;gap:14px;margin-top:22px}
+  input[type=range]{flex:1;accent-color:var(--wet);height:3px}
+  .btn{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+    background:transparent;color:var(--paper);border:1px solid var(--line);border-radius:100px;
+    padding:9px 16px;cursor:pointer;transition:border-color .15s,background .15s}
+  .btn:hover{border-color:var(--wet);background:rgba(73,161,226,.1)}
+  .btn:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--wet);outline-offset:3px}
+
+  footer{margin-top:90px;padding-top:22px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.68rem;line-height:1.7;color:var(--faint);letter-spacing:.03em}
+  footer b{color:var(--mist);font-weight:400}
+  .tooltip{position:fixed;pointer-events:none;z-index:50;background:#08111c;border:1px solid var(--line);
+    border-radius:8px;padding:8px 11px;font-family:var(--mono);font-size:.72rem;color:var(--paper);
+    opacity:0;transition:opacity .1s;box-shadow:0 8px 30px rgba(0,0,0,.5);white-space:nowrap}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Rainfall · Kendall County · Boerne, Texas</p>
+    <h1>One hundred thirty-three<br>years of <em>rain</em></h1>
+    <p class="lede">Every month of rain gauged near Boerne since 1893 — the heart of the Texas
+      Hill Country, where limestone lets a wet spring soak straight into the Trinity Aquifer and
+      a dry year draws the water table down. Four ways to read the same long record.</p>
+    <div class="stat-row">
+      <div class="stat"><b id="s-mean">33.3"</b><span>Mean / year</span></div>
+      <div class="stat dry"><b>10.3"</b><span>Driest · 1954</span></div>
+      <div class="stat wet"><b>64.2"</b><span>Wettest · 1992</span></div>
+      <div class="stat"><b>134</b><span>Years on record</span></div>
+    </div>
+  </header>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate I</span><span class="plate-kind">The whole record</span>
+      <h2>Rain stripes</h2>
+    </div>
+    <p class="guide">One stripe per year, 1893 at the left. Warm ochre is a dry year, deep blue a
+      wet one — the further from the 33-inch average, the more saturated. A century of boom and
+      bust in a single band.</p>
+    <div class="card">
+      <div id="stripes" role="img" aria-label="Annual rainfall from 1893 to 2026 as colored stripes"></div>
+      <div class="stripe-axis" id="stripe-axis"></div>
+      <div class="readout" id="stripe-read">
+        <span class="ry">—</span><span class="rv">Hover or arrow-key across the years</span>
+      </div>
+    </div>
+    <p class="cap">Diverging scale centered on the <b>33.3&Prime; long-term mean</b>. Hatched bar = 2026, partial year.</p>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate II</span><span class="plate-kind">The seasonal rhythm</span>
+      <h2>The rain spiral</h2>
+    </div>
+    <p class="guide">The same data wound into a clock. Twelve months around the dial, 1893 at the
+      center spiralling out to today. Two brighter arcs emerge — the Hill Country's <em>May</em>
+      and <em>September</em> rains — while a whole dim ring marks a drought year.</p>
+    <div class="card" style="display:flex;justify-content:center">
+      <canvas id="spiral" class="viz-canvas" style="max-width:560px" aria-label="Monthly rainfall arranged as a spiral clock, 1893 at center"></canvas>
+    </div>
+    <div class="legend"><span><i class="swatch" id="sw-spiral"></i></span>
+      <span>Drier month</span><span style="flex:0 0 auto;color:var(--faint)">→</span><span>Wetter month</span></div>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate III</span><span class="plate-kind">The departures</span>
+      <h2>Drought &amp; deluge</h2>
+    </div>
+    <p class="guide">How far each year ran above or below normal. Blue billows upward in the wet
+      years; rust sinks below the line through the droughts — including the 1950s
+      <em>drought of record</em> and the modern dry spells of 2011 and 2022.</p>
+    <div class="card">
+      <svg id="stream" class="viz-canvas" viewBox="0 0 960 340" preserveAspectRatio="xMidYMid meet"
+        aria-label="Annual rainfall departure from normal, 1893 to 2026"></svg>
+    </div>
+    <p class="cap">Distance from the baseline = inches above or below the <b>33.3&Prime; normal</b>.</p>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate IV</span><span class="plate-kind">One year at a time</span>
+      <h2>The rain gauge</h2>
+    </div>
+    <p class="guide">Pick a year and watch it fall. The cistern fills to that year's total against
+      the etched long-term average — the same rain that, in the wet years, recharges the aquifer
+      beneath these hills.</p>
+    <div class="card">
+      <div class="gauge-grid">
+        <div style="display:flex;justify-content:center">
+          <canvas id="gauge" class="viz-canvas" style="max-width:240px" aria-label="Rain gauge filling animation"></canvas>
+        </div>
+        <div class="gauge-read">
+          <div class="gy" id="g-year">1992</div>
+          <div class="gin"><b id="g-in">64.2</b> inches</div>
+          <div><span class="gtag" id="g-tag">Wettest on record</span></div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="g-play" aria-label="Play through the years">▶ Sweep</button>
+        <input type="range" id="g-slider" min="0" value="0" step="1" aria-label="Select year">
+      </div>
+    </div>
+    <p class="cap">Water level scaled to the wettest year on record. Dashed line = <b>33.3&Prime; average</b>.</p>
+  </section>
+
+  <footer>
+    <b>Source</b> — Cow Creek GCD monthly rainfall record for Kendall County, Texas.
+    1893–May 2011: NWS COOP station 41-0902, Boerne. June 2011–present: average of Kendall County
+    CoCoRaHS gauges.<br>
+    <b>A companion to the Kendall County water-table tracker</b> — four ways to read the same long rainfall record.
+  </footer>
+</div>
+<div class="tooltip" id="tip"></div>
+
+<script>
+const RAIN = {"mean": 33.34, "years": [{"y": 1893, "m": [0.21, 0.98, 2.1, 1.89, 2.79, 1.34, 0.91, 1.05, 0.23, 0.6, 3.84, 1.02], "a": 16.96}, {"y": 1894, "m": [1.68, 1.16, 1.1, 7.78, 6.05, 2.17, 0.13, 6.87, 1.97, 2.72, 0.07, 0.24], "a": 31.94}, {"y": 1895, "m": [1.48, 4.02, 2.09, 0.51, 6.3, 4.76, 0.16, 1.22, 4.3, 1.55, 4.75, 0.81], "a": 31.95}, {"y": 1896, "m": [4.41, 2.82, 0.83, 2.95, 0.98, 0.37, 6.71, 0.62, 5.59, 4.86, 0.31, 2.41], "a": 32.86}, {"y": 1897, "m": [1.56, 0.1, 4.06, 3.26, 1.45, 2.15, 1.82, 4.03, 3.29, 2.33, 0.12, 2.29], "a": 26.46}, {"y": 1898, "m": [1.25, 1.26, 1.92, 3.88, 2.71, 6.71, 1.66, 1.7, 2.1, 3.32, 2.16, 2.77], "a": 31.44}, {"y": 1899, "m": [0.42, 0.45, 0.03, 1.77, 3.1, 4.96, 3.29, 0.39, 2.97, 8.96, 2.59, 4.91], "a": 33.84}, {"y": 1900, "m": [5.31, 0.25, 3.36, 12.36, 7.71, 1.08, 8.4, 2.46, 1.99, 4.62, 1.35, 1.3], "a": 50.19}, {"y": 1901, "m": [0.47, 1.08, 1.2, 1.15, 3.74, 1.86, 6.04, 1.18, 3.06, 0.74, 0.75, 0.33], "a": 21.6}, {"y": 1902, "m": [0.97, 1.02, 1.97, 2.32, 5.94, 0.39, 2.77, 0.06, 2.84, 2.78, 9.0, 3.65], "a": 33.71}, {"y": 1903, "m": [3.35, 8.7, 2.21, 2.03, 2.05, 6.15, 9.5, 0.58, 1.62, 1.59, 0.0, 0.75], "a": 38.53}, {"y": 1904, "m": [0.12, 1.33, 0.88, 4.26, 8.28, 1.84, 1.99, 4.16, 8.83, 2.5, 0.55, 1.67], "a": 36.41}, {"y": 1905, "m": [1.0, 1.5, 3.3, 9.3, 0.17, 4.1, 1.3, 1.6, 3.8, 2.1, 4.5, 1.8], "a": 34.47}, {"y": 1906, "m": [0.4, 0.9, 0.45, 2.4, 1.2, 1.05, 7.0, 1.95, 5.6, 1.0, 1.2, 1.2], "a": 24.35}, {"y": 1907, "m": [0.2, 1.0, 1.4, 2.4, 7.75, 0.2, 1.5, 0.6, 1.7, 7.95, 10.4, 1.5], "a": 36.6}, {"y": 1908, "m": [0.4, 2.1, 2.0, 2.4, 7.6, 0.0, 5.5, 5.9, 1.0, 0.45, 0.8, 0.83], "a": 28.98}, {"y": 1909, "m": [0.0, 0.3, 1.57, 2.1, 3.89, 1.05, 6.9, 0.88, 1.94, 1.42, 2.95, 2.76], "a": 25.76}, {"y": 1910, "m": [0.05, 0.68, 3.7, 3.38, 1.91, 0.61, 0.84, 0.0, 1.43, 3.11, 1.34, 4.41], "a": 21.46}, {"y": 1911, "m": [0.58, 2.17, 5.45, 4.72, 1.36, 0.13, 1.7, 1.05, 0.4, 1.97, 2.95, 2.95], "a": 25.43}, {"y": 1912, "m": [0.34, 3.55, 3.53, 2.73, 1.15, 3.41, 0.92, 0.86, 1.73, 3.47, 3.84, 2.18], "a": 27.71}, {"y": 1913, "m": [1.21, 1.8, 0.9, 1.94, 3.85, 6.05, 0.33, 0.53, 5.64, 16.37, 8.03, 5.82], "a": 52.47}, {"y": 1914, "m": [0.05, 1.73, 1.32, 6.57, 15.65, 0.5, 0.84, 10.0, 1.56, 2.52, 3.8, 2.24], "a": 46.78}, {"y": 1915, "m": [1.68, 2.9, 1.69, 9.94, 1.3, 0.16, 1.61, 5.2, 5.34, 1.18, 0.67, 2.04], "a": 33.71}, {"y": 1916, "m": [4.35, 0.04, 0.23, 6.76, 7.54, 0.54, 3.62, 2.63, 5.44, 4.39, 0.87, 0.25], "a": 36.66}, {"y": 1917, "m": [1.05, 1.3, 0.28, 1.14, 6.85, 3.65, 0.58, 0.13, 3.05, 0.95, 0.79, 0.05], "a": 19.82}, {"y": 1918, "m": [0.28, 1.65, 0.93, 3.72, 1.28, 2.56, 0.12, 1.27, 4.01, 3.47, 4.72, 6.57], "a": 30.58}, {"y": 1919, "m": [4.14, 2.85, 1.73, 3.84, 4.16, 5.74, 6.27, 7.06, 13.9, 10.49, 1.08, 1.21], "a": 62.47}, {"y": 1920, "m": [2.72, 0.74, 0.94, 1.31, 2.44, 3.89, 1.53, 2.99, 2.63, 3.54, 5.04, 0.22], "a": 27.99}, {"y": 1921, "m": [2.16, 0.87, 3.35, 4.81, 2.35, 3.87, 1.02, 0.9, 9.69, 1.02, 1.39, 1.38], "a": 32.81}, {"y": 1922, "m": [1.42, 1.54, 3.18, 7.59, 3.22, 3.15, 0.28, 0.41, 1.66, 2.24, 1.41, 0.13], "a": 26.23}, {"y": 1923, "m": [0.56, 5.35, 3.28, 4.89, 1.61, 1.48, 3.23, 1.92, 9.97, 7.18, 4.02, 4.74], "a": 48.23}, {"y": 1924, "m": [1.64, 3.61, 2.91, 3.86, 9.82, 4.1, 0.0, 0.1, 4.06, 0.79, 0.24, 1.66], "a": 32.79}, {"y": 1925, "m": [0.42, 0.12, 0.0, 1.51, 2.35, 1.02, 0.59, 2.1, 3.17, 6.0, 2.66, 1.07], "a": 21.01}, {"y": 1926, "m": [2.85, 0.11, 6.04, 8.11, 4.17, 2.96, 2.85, 0.89, 0.27, 4.13, 3.1, 3.08], "a": 38.56}, {"y": 1927, "m": [1.54, 4.6, 2.72, 3.48, 2.72, 5.58, 3.17, 0.15, 0.86, 1.75, 0.1, 3.23], "a": 29.9}, {"y": 1928, "m": [0.64, 3.9, 0.68, 1.7, 1.01, 2.64, 4.07, 1.64, 5.73, 1.07, 2.06, 2.61], "a": 27.75}, {"y": 1929, "m": [1.58, 0.62, 1.34, 2.42, 8.04, 1.28, 6.83, 0.64, 2.02, 2.86, 3.17, 3.26], "a": 34.06}, {"y": 1930, "m": [1.54, 1.22, 2.51, 1.95, 5.2, 4.27, 1.22, 0.94, 2.01, 0.0, 0.0, 1.4], "a": 22.26}, {"y": 1931, "m": [6.44, 5.53, 2.69, 7.09, 1.62, 1.79, 3.81, 1.6, 0.17, 0.0, 0.0, 3.78], "a": 34.52}, {"y": 1932, "m": [4.38, 3.84, 3.14, 3.01, 1.94, 1.22, 5.62, 4.49, 5.19, 0.0, 0.47, 3.35], "a": 36.65}, {"y": 1933, "m": [4.13, 2.51, 0.85, 1.32, 3.75, 1.2, 2.37, 0.83, 2.52, 0.13, 0.48, 0.49], "a": 20.58}, {"y": 1934, "m": [6.01, 2.33, 2.54, 2.73, 1.74, 0.55, 5.17, 0.38, 0.91, 0.14, 0.99, 3.29], "a": 26.78}, {"y": 1935, "m": [0.42, 3.04, 0.77, 2.45, 12.59, 8.59, 6.8, 0.57, 10.4, 2.14, 1.35, 3.81], "a": 52.93}, {"y": 1936, "m": [0.7, 0.65, 1.74, 0.97, 11.17, 9.27, 2.8, 2.44, 11.43, 2.97, 1.77, 1.68], "a": 47.59}, {"y": 1937, "m": [1.98, 0.15, 2.92, 1.6, 5.94, 5.5, 3.24, 1.49, 0.1, 2.89, 1.54, 5.46], "a": 32.81}, {"y": 1938, "m": [4.06, 1.61, 2.07, 4.52, 2.59, 1.33, 1.84, 0.22, 3.97, 0.16, 0.48, 1.29], "a": 24.14}, {"y": 1939, "m": [3.54, 0.86, 0.65, 1.46, 2.58, 0.58, 6.55, 3.05, 0.48, 3.16, 2.33, 0.96], "a": 26.2}, {"y": 1940, "m": [0.68, 3.69, 1.59, 2.24, 3.45, 3.9, 0.79, 1.19, 1.17, 4.71, 3.67, 5.21], "a": 32.29}, {"y": 1941, "m": [1.81, 5.88, 4.71, 5.76, 4.51, 3.03, 1.61, 0.55, 5.0, 7.02, 0.85, 0.87], "a": 41.6}, {"y": 1942, "m": [0.41, 1.17, 0.66, 3.53, 3.79, 1.27, 2.62, 3.91, 4.78, 5.65, 1.58, 1.75], "a": 31.12}, {"y": 1943, "m": [0.86, 0.07, 1.71, 1.27, 4.26, 3.57, 5.16, 0.05, 4.76, 0.39, 1.59, 2.64], "a": 26.33}, {"y": 1944, "m": [3.67, 3.75, 3.7, 1.08, 8.56, 1.88, 0.87, 7.56, 2.25, 1.37, 3.91, 4.38], "a": 42.98}, {"y": 1945, "m": [3.55, 2.94, 1.98, 1.1, 1.0, 2.65, 4.22, 2.85, 5.01, 3.94, 1.3, 2.96], "a": 33.5}, {"y": 1946, "m": [3.02, 2.35, 1.93, 3.94, 3.65, 3.14, 2.4, 6.62, 9.45, 4.22, 2.29, 2.61], "a": 45.62}, {"y": 1947, "m": [4.09, 0.37, 1.91, 1.51, 5.92, 0.31, 0.48, 0.0, 0.0, 0.0, 0.0, 0.0], "a": 14.59}, {"y": 1948, "m": [0.44, 3.08, 1.49, 1.98, 1.29, 5.47, 1.81, 0.87, 3.56, 2.43, 0.57, 0.78], "a": 23.77}, {"y": 1949, "m": [3.68, 3.72, 1.73, 7.28, 3.18, 3.95, 3.77, 5.54, 2.08, 3.33, 0.0, 2.89], "a": 41.15}, {"y": 1950, "m": [0.7, 2.49, 0.34, 3.73, 3.08, 2.02, 4.14, 3.88, 3.29, 0.55, 0.72, 0.0], "a": 24.94}, {"y": 1951, "m": [0.24, 1.71, 2.69, 2.48, 4.1, 1.6, 0.6, 0.31, 1.44, 2.08, 1.26, 0.25], "a": 18.76}, {"y": 1952, "m": [0.53, 1.59, 2.98, 3.64, 7.14, 0.96, 0.62, 0.0, 13.63, 0.0, 3.4, 3.05], "a": 37.54}, {"y": 1953, "m": [0.73, 0.89, 1.18, 1.47, 1.6, 0.72, 0.77, 4.52, 3.97, 3.95, 0.39, 1.23], "a": 21.42}, {"y": 1954, "m": [0.87, 0.0, 0.08, 1.07, 0.91, 1.47, 0.25, 0.06, 0.57, 2.72, 1.94, 0.35], "a": 10.29}, {"y": 1955, "m": [1.72, 2.71, 0.45, 0.14, 4.68, 1.37, 0.37, 4.09, 0.7, 0.19, 1.56, 1.29], "a": 19.27}, {"y": 1956, "m": [1.07, 1.33, 0.13, 0.23, 0.67, 0.59, 0.14, 1.98, 2.04, 1.11, 1.68, 1.08], "a": 12.05}, {"y": 1957, "m": [0.51, 3.46, 4.06, 9.33, 9.22, 3.12, 0.0, 0.68, 8.9, 7.22, 4.61, 1.44], "a": 52.55}, {"y": 1958, "m": [4.68, 2.92, 2.89, 1.17, 7.34, 3.2, 0.12, 0.79, 10.37, 6.63, 0.33, 0.5], "a": 40.94}, {"y": 1959, "m": [0.75, 4.44, 0.3, 2.76, 2.02, 9.44, 1.39, 1.76, 2.27, 4.93, 2.06, 3.52], "a": 35.64}, {"y": 1960, "m": [1.01, 1.47, 2.63, 0.84, 1.45, 3.24, 3.8, 4.57, 0.74, 6.7, 1.16, 4.94], "a": 32.55}, {"y": 1961, "m": [1.26, 4.0, 0.39, 0.06, 0.12, 6.82, 3.92, 1.06, 1.42, 2.06, 2.82, 1.52], "a": 25.45}, {"y": 1962, "m": [0.61, 0.63, 1.47, 4.41, 1.42, 1.92, 0.76, 0.69, 5.11, 4.51, 2.4, 1.33], "a": 25.26}, {"y": 1963, "m": [0.22, 2.23, 0.13, 3.8, 1.19, 2.24, 0.33, 2.7, 1.29, 1.67, 3.88, 0.98], "a": 20.66}, {"y": 1964, "m": [4.19, 2.34, 3.12, 1.71, 0.97, 2.38, 0.37, 1.4, 6.61, 1.35, 1.77, 1.15], "a": 27.36}, {"y": 1965, "m": [1.07, 6.47, 2.04, 5.54, 10.26, 2.24, 0.04, 1.02, 3.68, 4.68, 1.03, 4.34], "a": 42.41}, {"y": 1966, "m": [1.82, 2.12, 0.83, 4.56, 5.17, 1.02, 1.16, 5.94, 5.99, 0.21, 0.0, 0.23], "a": 29.05}, {"y": 1967, "m": [0.15, 0.99, 0.94, 1.54, 3.24, 0.04, 0.58, 3.43, 8.0, 2.68, 3.38, 1.78], "a": 26.75}, {"y": 1968, "m": [6.5, 1.89, 2.64, 4.59, 3.59, 3.57, 2.02, 0.45, 4.08, 0.94, 2.78, 2.09], "a": 35.14}, {"y": 1969, "m": [0.78, 3.92, 2.24, 4.45, 2.82, 2.73, 1.28, 4.14, 2.97, 7.17, 2.18, 3.39], "a": 38.07}, {"y": 1970, "m": [1.82, 3.78, 2.66, 1.33, 8.04, 1.14, 0.44, 0.11, 6.53, 1.74, 0.02, 0.18], "a": 27.79}, {"y": 1971, "m": [0.05, 1.24, 0.11, 2.93, 1.98, 3.26, 0.35, 15.25, 8.91, 6.25, 2.85, 2.06], "a": 45.24}, {"y": 1972, "m": [1.31, 0.28, 2.03, 1.73, 7.86, 4.1, 2.18, 6.37, 2.92, 2.58, 3.19, 0.54], "a": 35.09}, {"y": 1973, "m": [3.67, 2.7, 2.74, 4.49, 0.89, 10.02, 9.83, 1.29, 6.86, 7.67, 0.61, 0.16], "a": 50.93}, {"y": 1974, "m": [1.95, 0.05, 0.99, 1.4, 7.27, 1.82, 0.18, 15.46, 2.0, 3.46, 3.86, 3.36], "a": 41.8}, {"y": 1975, "m": [1.09, 5.04, 1.03, 6.76, 5.89, 3.57, 2.6, 0.52, 1.99, 3.25, 0.18, 1.57], "a": 33.49}, {"y": 1976, "m": [0.33, 0.24, 1.39, 11.11, 6.13, 1.53, 4.66, 2.58, 4.35, 7.57, 2.14, 3.21], "a": 45.24}, {"y": 1977, "m": [3.11, 1.16, 1.37, 5.9, 2.63, 5.17, 0.29, 0.57, 1.06, 3.84, 6.91, 0.42], "a": 32.43}, {"y": 1978, "m": [0.95, 2.09, 0.81, 1.56, 1.05, 2.05, 0.31, 6.38, 9.38, 0.29, 6.09, 4.21], "a": 35.17}, {"y": 1979, "m": [3.75, 3.01, 6.97, 4.64, 1.06, 5.51, 8.17, 1.58, 0.71, 0.66, 2.11, 1.8], "a": 39.97}, {"y": 1980, "m": [1.2, 0.52, 2.4, 2.69, 5.58, 0.17, 0.16, 2.17, 7.94, 1.87, 3.68, 0.64], "a": 29.02}, {"y": 1981, "m": [1.43, 1.44, 3.88, 2.33, 6.04, 11.16, 2.43, 2.71, 2.26, 4.65, 2.07, 0.65], "a": 41.05}, {"y": 1982, "m": [1.18, 1.97, 0.74, 2.04, 6.47, 2.84, 1.18, 1.01, 2.14, 2.77, 3.8, 1.5], "a": 27.64}, {"y": 1983, "m": [1.73, 1.81, 3.96, 0.0, 5.59, 3.98, 2.77, 3.53, 2.28, 5.7, 2.58, 0.67], "a": 34.6}, {"y": 1984, "m": [1.87, 0.63, 0.5, 0.26, 2.41, 3.68, 1.89, 0.33, 1.74, 7.02, 2.48, 4.16], "a": 26.97}, {"y": 1985, "m": [1.82, 3.19, 0.0, 3.19, 2.81, 6.83, 3.7, 0.05, 7.11, 3.76, 4.14, 1.17], "a": 37.77}, {"y": 1986, "m": [0.88, 1.86, 0.58, 1.24, 7.46, 4.48, 0.11, 0.98, 6.61, 0.0, 1.9, 6.84], "a": 32.94}, {"y": 1987, "m": [0.81, 4.25, 0.92, 0.88, 8.55, 11.22, 0.96, 0.85, 3.15, 0.18, 5.68, 2.41], "a": 39.86}, {"y": 1988, "m": [0.56, 1.05, 2.39, 1.09, 1.35, 5.07, 0.58, 1.64, 3.04, 1.94, 0.21, 0.62], "a": 19.54}, {"y": 1989, "m": [4.71, 0.92, 2.06, 1.56, 2.19, 2.85, 0.46, 1.02, 1.99, 5.35, 1.6, 0.43], "a": 25.14}, {"y": 1990, "m": [1.35, 2.3, 6.59, 4.74, 2.63, 0.1, 11.59, 2.39, 3.94, 3.17, 3.4, 0.31], "a": 42.51}, {"y": 1991, "m": [4.22, 2.36, 1.47, 3.51, 4.49, 4.03, 0.85, 1.86, 5.18, 1.27, 2.02, 16.96], "a": 48.22}, {"y": 1992, "m": [4.67, 7.81, 5.93, 1.27, 12.61, 7.2, 4.88, 4.54, 3.69, 1.4, 7.13, 2.54], "a": 64.17}, {"y": 1993, "m": [2.66, 2.58, 2.29, 2.94, 3.37, 3.28, 0.0, 0.0, 2.88, 2.29, 0.92, 0.81], "a": 24.02}, {"y": 1994, "m": [2.81, 2.98, 5.01, 2.95, 6.34, 2.49, 0.0, 0.75, 3.25, 8.33, 2.23, 3.84], "a": 40.98}, {"y": 1995, "m": [0.34, 1.06, 2.06, 2.64, 7.89, 4.1, 1.08, 2.14, 4.14, 0.49, 3.63, 0.72], "a": 30.29}, {"y": 1996, "m": [0.03, 0.29, 1.37, 1.62, 4.11, 2.55, 0.31, 3.23, 3.58, 1.42, 3.46, 2.6], "a": 24.57}, {"y": 1997, "m": [1.79, 5.87, 3.53, 6.69, 5.99, 16.56, 0.32, 2.53, 0.63, 3.9, 1.03, 3.88], "a": 52.72}, {"y": 1998, "m": [2.38, 6.91, 6.95, 0.57, 0.76, 3.23, 1.13, 7.03, 2.48, 8.54, 4.71, 1.05], "a": 45.74}, {"y": 1999, "m": [0.06, 0.03, 3.33, 1.51, 2.37, 4.82, 3.35, 0.69, 0.22, 1.87, 0.42, 0.0], "a": 18.67}, {"y": 2000, "m": [1.1, 1.65, 1.02, 1.22, 6.03, 5.53, 0.55, 1.94, 1.94, 15.16, 8.14, 2.02], "a": 46.3}, {"y": 2001, "m": [4.74, 2.13, 3.39, 1.53, 4.56, 0.31, 0.0, 14.65, 4.75, 4.71, 9.7, 3.44], "a": 53.91}, {"y": 2002, "m": [0.61, 0.75, 2.22, 2.06, 3.64, 2.23, 28.43, 1.24, 7.48, 8.28, 1.62, 3.85], "a": 62.41}, {"y": 2003, "m": [1.31, 4.09, 1.58, 0.24, 0.15, 6.58, 5.78, 1.32, 3.66, 2.89, 0.81, 0.14], "a": 28.55}, {"y": 2004, "m": [3.23, 3.23, 2.48, 9.5, 2.08, 8.65, 1.56, 7.53, 2.81, 6.71, 12.52, 0.2], "a": 60.5}, {"y": 2005, "m": [2.78, 3.75, 2.46, 1.09, 4.79, 1.68, 1.99, 3.69, 0.52, 1.42, 1.12, 0.07], "a": 25.36}, {"y": 2006, "m": [0.77, 0.87, 2.4, 2.85, 3.59, 2.69, 1.29, 0.73, 2.5, 2.52, 2.32, 1.71], "a": 24.24}, {"y": 2007, "m": [6.76, 0.06, 10.4, 1.64, 10.31, 7.39, 9.64, 7.77, 2.88, 0.83, 0.74, 0.58], "a": 59.0}, {"y": 2008, "m": [0.54, 0.28, 1.81, 0.69, 1.62, 0.49, 2.21, 5.04, 0.11, 1.55, 0.06, 0.34], "a": 14.74}, {"y": 2009, "m": [0.69, 0.27, 2.66, 2.3, 3.3, 0.88, 1.34, 0.58, 5.29, 10.31, 2.85, 2.18], "a": 32.65}, {"y": 2010, "m": [4.49, 5.19, 1.92, 3.16, 5.79, 2.05, 5.03, 0.2, 12.05, 0.51, 0.34, 1.33], "a": 42.06}, {"y": 2011, "m": [1.69, 0.56, 0.02, 0.19, 1.25, 1.17, 0.48, 0.01, 1.8, 3.59, 2.11, 4.11], "a": 16.98}, {"y": 2012, "m": [1.85, 2.99, 4.25, 0.1, 5.48, 1.61, 2.77, 1.9, 6.88, 1.58, 0.03, 0.3], "a": 29.74}, {"y": 2013, "m": [3.63, 0.21, 0.69, 2.31, 6.31, 2.08, 1.52, 0.63, 4.12, 3.82, 2.98, 0.74], "a": 29.04}, {"y": 2014, "m": [0.14, 0.41, 0.76, 0.66, 6.75, 1.98, 2.24, 1.2, 4.04, 1.98, 4.57, 0.89], "a": 25.62}, {"y": 2015, "m": [4.23, 0.78, 2.76, 4.25, 17.33, 3.98, 0.4, 0.53, 0.48, 9.22, 4.02, 1.82], "a": 49.8}, {"y": 2016, "m": [1.03, 1.16, 3.28, 6.75, 8.68, 3.34, 0.43, 5.76, 3.81, 0.02, 3.1, 3.41], "a": 40.77}, {"y": 2017, "m": [2.78, 2.99, 1.49, 2.55, 1.84, 2.19, 0.81, 3.62, 3.83, 0.45, 0.69, 3.28], "a": 26.52}, {"y": 2018, "m": [0.39, 1.69, 2.44, 0.76, 3.21, 0.35, 4.02, 2.3, 14.3, 5.76, 0.86, 4.07], "a": 40.15}, {"y": 2019, "m": [2.21, 0.55, 0.51, 4.55, 5.45, 5.64, 0.56, 0.52, 1.07, 2.36, 0.83, 0.57], "a": 24.82}, {"y": 2020, "m": [3.36, 1.99, 2.26, 2.1, 8.15, 1.47, 0.48, 1.74, 5.67, 0.22, 1.34, 0.75], "a": 29.53}, {"y": 2021, "m": [1.36, 1.46, 1.31, 1.58, 10.26, 2.65, 4.99, 3.57, 4.08, 5.06, 1.46, 0.37], "a": 38.15}, {"y": 2022, "m": [0.66, 0.63, 0.48, 0.76, 1.93, 1.5, 1.02, 2.7, 1.25, 1.15, 2.34, 1.0], "a": 15.42}, {"y": 2023, "m": [1.4, 1.35, 1.04, 3.95, 4.35, 1.85, 0.53, 0.31, 0.96, 2.78, 2.0, 1.41], "a": 21.93}, {"y": 2024, "m": [3.14, 1.6, 1.76, 2.02, 2.24, 2.76, 5.41, 1.04, 2.45, 0.05, 4.13, 0.97], "a": 27.57}, {"y": 2025, "m": [1.91, 1.01, 2.33, 2.36, 7.22, 3.3, 5.29, 1.69, 2.5, 0.89, 0.63, 0.42], "a": 29.55}, {"y": 2026, "m": [1.56, 0.43, 1.33, 4.92, 4.75, 5.87], "a": 18.86}], "clim": {"m": [1.87, 2.07, 2.11, 3.08, 4.46, 3.18, 2.61, 2.45, 3.85, 3.24, 2.39, 2.05], "a": 33.24}};
+const MEAN = RAIN.mean;
+const YEARS = RAIN.years;
+const A = YEARS.map(y=>y.a);
+const minA = Math.min(...A), maxA = Math.max(...A);
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const tip = document.getElementById('tip');
+function showTip(x,y,html){tip.innerHTML=html;tip.style.opacity=1;
+  const w=tip.offsetWidth;tip.style.left=Math.min(innerWidth-w-8,Math.max(8,x-w/2))+'px';
+  tip.style.top=(y-tip.offsetHeight-12)+'px';}
+function hideTip(){tip.style.opacity=0;}
+
+// ---- color ----
+function hx(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function mix(c1,c2,t){const a=hx(c1),b=hx(c2);
+  return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;}
+function ramp(stops,t){t=Math.max(0,Math.min(1,t));const n=stops.length-1;
+  const i=Math.min(n-1,Math.floor(t*n));return mix(stops[i],stops[i+1],t*n-i);}
+const DRY=['#6f8598','#d99f47','#c0662c','#7d3411'];
+const WET=['#6f8598','#49a1e2','#2a6cc2','#123a7a'];
+function annColor(v){return v>=MEAN
+  ? ramp(WET,Math.pow((v-MEAN)/(maxA-MEAN),.8))
+  : ramp(DRY,Math.pow((MEAN-v)/(MEAN-minA),.8));}
+const MONWET=['#132433','#1c4272','#2f7fc6','#7fd0f5'];
+let monMax=0; YEARS.forEach(y=>y.m.forEach(v=>{if(v>monMax)monMax=v;}));
+function monColor(v){return ramp(MONWET,Math.sqrt(v/monMax));}
+const MON=['J','F','M','A','M','J','J','A','S','O','N','D'];
+const MONF=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ---- Plate I: stripes ----
+(function(){
+  const box=document.getElementById('stripes');
+  const read=document.getElementById('stripe-read');
+  YEARS.forEach((y,i)=>{
+    const d=document.createElement('div');d.className='yr';d.style.background=annColor(y.a);
+    if(y.m.length<12)d.setAttribute('data-partial','');
+    d.dataset.i=i;box.appendChild(d);
+  });
+  const axis=document.getElementById('stripe-axis');
+  ['1893','1920','1950','1980','2010','2026'].forEach(t=>{const s=document.createElement('span');s.textContent=t;axis.appendChild(s);});
+  let cur=-1;
+  function sel(i,ev){
+    if(i<0||i>=YEARS.length)return;
+    if(cur>=0)box.children[cur].classList.remove('on');
+    cur=i;const el=box.children[i];el.classList.add('on');
+    const y=YEARS[i];const dev=y.a-MEAN;const partial=y.m.length<12;
+    const wet=dev>=0;const col=annColor(y.a);
+    read.innerHTML=`<span class="ry">${y.y}</span>
+      <span class="rv">${y.a.toFixed(2)}&Prime;${partial?' (Jan–Jun)':''}</span>
+      <span class="rtag" style="color:${col}">${(wet?'+':'')}${dev.toFixed(1)}&Prime; ${wet?'wetter':'drier'} than normal</span>`;
+    if(ev){const r=el.getBoundingClientRect();showTip(r.left+r.width/2,r.top,`${y.y} · ${y.a.toFixed(1)}&Prime;`);}
+  }
+  box.addEventListener('mousemove',e=>{const t=e.target.closest('.yr');if(t)sel(+t.dataset.i,e);});
+  box.addEventListener('mouseleave',hideTip);
+  box.tabIndex=0;box.setAttribute('aria-label','Use left and right arrow keys to read each year');
+  box.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'){sel(cur<0?0:cur+1);e.preventDefault();}
+    if(e.key==='ArrowLeft'){sel(cur<0?YEARS.length-1:cur-1);e.preventDefault();}
+  });
+})();
+
+// ---- Plate II: spiral ----
+(function(){
+  const cv=document.getElementById('spiral');const ctx=cv.getContext('2d');
+  document.getElementById('sw-spiral').style.background=`linear-gradient(90deg,${MONWET[0]},${MONWET[2]},${MONWET[3]})`;
+  let dpr=1,S=0,cx=0,cy=0,r0=0,r1=0,progress=RM?1:0;
+  function layout(){
+    const cssW=Math.min(560,cv.parentElement.clientWidth-4);
+    dpr=Math.min(2,devicePixelRatio||1);S=cssW;
+    cv.style.width=cssW+'px';cv.width=cssW*dpr;cv.height=cssW*dpr;
+    cx=cv.width/2;cy=cv.width/2;r1=cv.width*0.46;r0=cv.width*0.10;
+  }
+  function rr(i){return r0+(r1-r0)*(i/YEARS.length);}
+  function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const shown=Math.floor(YEARS.length*progress);
+    for(let i=0;i<shown;i++){
+      const y=YEARS[i];const ra=rr(i),rb=rr(i+1);
+      for(let m=0;m<y.m.length;m++){
+        const a0=-Math.PI/2+m/12*2*Math.PI, a1=-Math.PI/2+(m+1)/12*2*Math.PI;
+        ctx.beginPath();ctx.arc(cx,cy,rb,a0,a1);ctx.arc(cx,cy,ra,a1,a0,true);ctx.closePath();
+        ctx.fillStyle=monColor(y.m[m]);ctx.fill();
+      }
+    }
+    // month labels
+    ctx.fillStyle='#93aabf';ctx.font=`${11*dpr}px ${getComputedStyle(document.body).getPropertyValue('--mono')}`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    for(let m=0;m<12;m++){const a=-Math.PI/2+(m+0.5)/12*2*Math.PI;const rr2=r1+16*dpr;
+      ctx.fillText(MONF[m][0],cx+Math.cos(a)*rr2,cy+Math.sin(a)*rr2);}
+    // year ticks along top
+    ctx.fillStyle='#5f7789';ctx.font=`${9*dpr}px ${getComputedStyle(document.body).getPropertyValue('--mono')}`;
+    [1900,1950,2000].forEach(yr=>{const i=YEARS.findIndex(y=>y.y===yr);if(i<0)return;
+      const r=rr(i);ctx.fillText(String(yr),cx,cy-r);});
+  }
+  function animate(){progress+=0.03;if(progress>=1){progress=1;draw();return;}draw();requestAnimationFrame(animate);}
+  function start(){layout();if(RM){progress=1;draw();}else{progress=0;animate();}}
+  // hover hit-test
+  cv.addEventListener('mousemove',e=>{
+    const r=cv.getBoundingClientRect();const mx=(e.clientX-r.left)*dpr,my=(e.clientY-r.top)*dpr;
+    const dx=mx-cx,dy=my-cy;const rad=Math.hypot(dx,dy);
+    if(rad<r0||rad>r1){hideTip();return;}
+    const yi=Math.min(YEARS.length-1,Math.floor((rad-r0)/(r1-r0)*YEARS.length));
+    let ang=Math.atan2(dy,dx)+Math.PI/2;if(ang<0)ang+=2*Math.PI;
+    const m=Math.min(11,Math.floor(ang/(2*Math.PI)*12));
+    const y=YEARS[yi];if(m>=y.m.length){hideTip();return;}
+    showTip(e.clientX,e.clientY,`${MONF[m]} ${y.y} · ${y.m[m].toFixed(2)}&Prime;`);
+  });
+  cv.addEventListener('mouseleave',hideTip);
+  // draw once layout is final, so the chart is full-size and never blank
+  if(document.readyState==='complete') start();
+  else addEventListener('load',start);
+  addEventListener('resize',()=>{layout();draw();});
+})();
+
+// ---- Plate III: departure stream ----
+(function(){
+  const svg=document.getElementById('stream');const NS='http://www.w3.org/2000/svg';
+  const W=960,H=340,padL=8,padR=8,padV=44,base=H/2;
+  const maxDev=Math.max(maxA-MEAN,MEAN-minA);
+  const x=i=>padL+i/(YEARS.length-1)*(W-padL-padR);
+  const yv=v=>base-(v-MEAN)/maxDev*(H/2-padV);
+  function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+  // gradient
+  const defs=el('defs',{});
+  const g=el('linearGradient',{id:'dgrad',x1:0,y1:0,x2:0,y2:1,gradientUnits:'objectBoundingBox'});
+  [['0','#2f7fc6'],['.34','#1c4a86'],['.5','#0e2233'],['.66','#7a3d1f'],['1','#d0863a']]
+    .forEach(([o,c])=>g.appendChild(el('stop',{offset:o,'stop-color':c})));
+  defs.appendChild(g);svg.appendChild(defs);
+  // area path (line then back along baseline)
+  let d=`M ${x(0)} ${base}`;
+  YEARS.forEach((y,i)=>{d+=` L ${x(i).toFixed(1)} ${yv(y.a).toFixed(1)}`;});
+  d+=` L ${x(YEARS.length-1)} ${base} Z`;
+  svg.appendChild(el('path',{d,fill:'url(#dgrad)','fill-opacity':'.92'}));
+  // the departure line itself
+  let dl=`M ${x(0)} ${yv(YEARS[0].a)}`;
+  YEARS.forEach((y,i)=>{if(i)dl+=` L ${x(i).toFixed(1)} ${yv(y.a).toFixed(1)}`;});
+  svg.appendChild(el('path',{d:dl,fill:'none',stroke:'#dfeaf5','stroke-width':'1','stroke-opacity':'.5'}));
+  // baseline
+  svg.appendChild(el('line',{x1:padL,y1:base,x2:W-padR,y2:base,stroke:'#93aabf','stroke-opacity':'.5','stroke-dasharray':'2 3'}));
+  const nrm=el('text',{x:padL+2,y:base-6,fill:'#93aabf','font-family':'var(--mono)','font-size':'11'});nrm.textContent='NORMAL · 33.3″';svg.appendChild(nrm);
+  // annotations
+  const notes=[[1919,'1919 · pluvial','up'],[1954,'1950s drought of record','dn'],
+    [1992,'1992 · wettest','up'],[2011,'2011','dn'],[2022,'2022 drought','dn'],[2026,'2026 so far','up']];
+  notes.forEach(([yr,label,dir])=>{
+    const i=YEARS.findIndex(y=>y.y===yr);if(i<0)return;const px=x(i),py=yv(YEARS[i].a);
+    svg.appendChild(el('circle',{cx:px,cy:py,r:2.6,fill:'#eef4fa'}));
+    const ty=dir==='up'?py-10:py+18;
+    const t=el('text',{x:px,y:ty,fill:'#cdd9e6','font-family':'var(--mono)','font-size':'10.5',
+      'text-anchor':px>W-160?'end':(px<120?'start':'middle')});t.textContent=label;svg.appendChild(t);
+  });
+  // decade ticks
+  [1900,1925,1950,1975,2000,2025].forEach(yr=>{const i=YEARS.findIndex(y=>y.y===yr);if(i<0)return;
+    const t=el('text',{x:x(i),y:H-6,fill:'#5f7789','font-family':'var(--mono)','font-size':'10','text-anchor':'middle'});
+    t.textContent=yr;svg.appendChild(t);});
+})();
+
+// ---- Plate IV: rain gauge (CoCoRaHS-style: funnel + calibrated cylinder) ----
+(function(){
+  const cv=document.getElementById('gauge');const ctx=cv.getContext('2d');
+  const slider=document.getElementById('g-slider');const play=document.getElementById('g-play');
+  const gYear=document.getElementById('g-year'),gIn=document.getElementById('g-in'),gTag=document.getElementById('g-tag');
+  slider.max=YEARS.length-1;
+  const MONO=getComputedStyle(document.body).getPropertyValue('--mono');
+  let dpr=Math.min(2,devicePixelRatio||1);
+  function layout(){const cssW=Math.min(240,cv.parentElement.clientWidth);const H=cssW*1.6;
+    cv.style.width=cssW+'px';cv.style.height=H+'px';cv.width=cssW*dpr;cv.height=H*dpr;}
+  layout();
+  let idx=YEARS.findIndex(y=>y.y===1992);if(idx<0)idx=YEARS.length-1;
+  let level=0,target=0,drops=[],playing=false,raf=null;
+  function fillFor(v){return Math.max(.012,Math.min(1,v/maxA));}
+  // gauge geometry in backing pixels
+  function geo(){
+    const cW=cv.width,cH=cv.height,cx=cW/2;
+    const tubeW=cW*0.30,tubeL=cx-tubeW/2,tubeR=cx+tubeW/2;
+    const funW=cW*0.62,rimRy=funW*0.11;
+    const funTop=cH*0.055,funH=cH*0.135,tubeTop=funTop+funH;
+    const tubeBottom=cH*0.955,tubeH=tubeBottom-tubeTop;
+    return {cW,cH,cx,tubeW,tubeL,tubeR,funW,rimRy,funTop,funH,tubeTop,tubeBottom,tubeH};
+  }
+  function tubePath(g){const r=g.tubeW*0.16;ctx.beginPath();
+    ctx.moveTo(g.tubeL,g.tubeTop);ctx.lineTo(g.tubeL,g.tubeBottom-r);
+    ctx.arcTo(g.tubeL,g.tubeBottom,g.tubeL+r,g.tubeBottom,r);
+    ctx.lineTo(g.tubeR-r,g.tubeBottom);ctx.arcTo(g.tubeR,g.tubeBottom,g.tubeR,g.tubeBottom-r,r);
+    ctx.lineTo(g.tubeR,g.tubeTop);ctx.closePath();}
+  function setYear(i,instant){
+    idx=Math.max(0,Math.min(YEARS.length-1,i));const y=YEARS[idx];
+    target=fillFor(y.a);slider.value=idx;
+    gYear.textContent=y.y;gIn.textContent=y.a.toFixed(1);
+    const dev=y.a-MEAN;const partial=y.m.length<12;
+    let label,col;
+    if(y.y===1992){label='Wettest on record';col='var(--wet)';}
+    else if(y.y===1954){label='Driest on record';col='var(--dry)';}
+    else if(partial){label='Partial year';col='var(--mist)';}
+    else if(dev>=0){label=`${dev.toFixed(1)}″ above average`;col='var(--wet)';}
+    else{label=`${(-dev).toFixed(1)}″ below average`;col='var(--dry)';}
+    gTag.textContent=label;gTag.style.color=col;
+    if(instant||RM)level=target;
+  }
+  function spawn(g){drops.push({x:g.cx+(Math.random()-.5)*g.funW*0.82,
+    y:g.funTop-Math.random()*46*dpr,v:(3.8+Math.random()*3)*dpr,len:(9+Math.random()*13)*dpr});}
+  function frame(){
+    const g=geo();ctx.clearRect(0,0,g.cW,g.cH);
+    const waterY=g.tubeBottom-level*g.tubeH;
+
+    // drops falling toward the funnel mouth
+    if(!RM){ctx.strokeStyle='rgba(150,210,245,.75)';ctx.lineWidth=1.5*dpr;
+      drops.forEach(d=>{if(d.y<g.tubeTop){ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(d.x,d.y+d.len);ctx.stroke();}});}
+
+    // funnel body
+    ctx.beginPath();
+    ctx.moveTo(g.cx-g.funW/2,g.funTop);ctx.lineTo(g.tubeL,g.tubeTop);
+    ctx.lineTo(g.tubeR,g.tubeTop);ctx.lineTo(g.cx+g.funW/2,g.funTop);ctx.closePath();
+    let fg=ctx.createLinearGradient(g.cx-g.funW/2,0,g.cx+g.funW/2,0);
+    fg.addColorStop(0,'rgba(120,150,175,.24)');fg.addColorStop(.35,'rgba(215,235,248,.13)');
+    fg.addColorStop(.7,'rgba(150,180,205,.07)');fg.addColorStop(1,'rgba(110,140,165,.26)');
+    ctx.fillStyle=fg;ctx.fill();
+    ctx.strokeStyle='rgba(175,200,222,.6)';ctx.lineWidth=1.4*dpr;ctx.stroke();
+    // funnel mouth (elliptical opening)
+    ctx.beginPath();ctx.ellipse(g.cx,g.funTop,g.funW/2,g.rimRy,0,0,2*Math.PI);
+    ctx.fillStyle='#0b1622';ctx.fill();
+    ctx.strokeStyle='rgba(195,218,238,.75)';ctx.lineWidth=1.7*dpr;ctx.stroke();
+    ctx.beginPath();ctx.ellipse(g.cx,g.funTop,g.funW/2,g.rimRy,0,0.12*Math.PI,0.88*Math.PI);
+    ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1.3*dpr;ctx.stroke();
+
+    // tube glass (behind water)
+    tubePath(g);
+    let tg=ctx.createLinearGradient(g.tubeL,0,g.tubeR,0);
+    tg.addColorStop(0,'rgba(110,140,165,.26)');tg.addColorStop(.16,'rgba(220,238,250,.15)');
+    tg.addColorStop(.5,'rgba(150,180,205,.05)');tg.addColorStop(.84,'rgba(120,150,175,.10)');
+    tg.addColorStop(1,'rgba(85,115,140,.28)');ctx.fillStyle=tg;ctx.fill();
+
+    // water (clipped to tube)
+    ctx.save();tubePath(g);ctx.clip();
+    const wg=ctx.createLinearGradient(0,waterY,0,g.tubeBottom);
+    wg.addColorStop(0,'#63b6ec');wg.addColorStop(1,'#164d86');
+    ctx.fillStyle=wg;ctx.fillRect(g.tubeL,waterY,g.tubeW,g.tubeBottom-waterY);
+    ctx.beginPath();ctx.ellipse(g.cx,waterY,g.tubeW/2,g.tubeW*0.12,0,0,2*Math.PI);
+    ctx.fillStyle='rgba(205,238,255,.55)';ctx.fill();
+    if(!RM){ctx.strokeStyle='rgba(160,215,248,.9)';ctx.lineWidth=1.5*dpr;
+      drops.forEach(d=>{if(d.y>=g.tubeTop&&d.y<waterY-2*dpr){ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(d.x,d.y+d.len);ctx.stroke();}});}
+    ctx.restore();
+
+    // glass specular highlight
+    ctx.save();tubePath(g);ctx.clip();
+    let sp=ctx.createLinearGradient(g.tubeL,0,g.tubeL+g.tubeW*0.5,0);
+    sp.addColorStop(0,'rgba(255,255,255,0)');sp.addColorStop(.5,'rgba(255,255,255,.22)');sp.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=sp;ctx.fillRect(g.tubeL+g.tubeW*0.12,g.tubeTop,g.tubeW*0.24,g.tubeH);
+    ctx.restore();
+
+    // calibration scale (right side of tube)
+    ctx.font=`${9.5*dpr}px ${MONO}`;ctx.textBaseline='middle';
+    const topT=Math.floor(maxA/5)*5;
+    for(let t=5;t<=topT;t+=5){const ty=g.tubeBottom-fillFor(t)*g.tubeH;const major=t%10===0;
+      ctx.strokeStyle=`rgba(205,224,238,${major?'.6':'.3'})`;ctx.lineWidth=1*dpr;
+      ctx.beginPath();ctx.moveTo(g.tubeR-(major?12:6)*dpr,ty);ctx.lineTo(g.tubeR-1*dpr,ty);ctx.stroke();
+      if(major){ctx.fillStyle='#93aabf';ctx.textAlign='left';ctx.fillText(t+'"',g.tubeR+7*dpr,ty);}}
+
+    // long-term average, etched
+    const avgY=g.tubeBottom-fillFor(MEAN)*g.tubeH;
+    ctx.strokeStyle='rgba(240,246,252,.7)';ctx.lineWidth=1.2*dpr;ctx.setLineDash([5*dpr,4*dpr]);
+    ctx.beginPath();ctx.moveTo(g.tubeL,avgY);ctx.lineTo(g.tubeR,avgY);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#c9d6e3';ctx.textAlign='right';ctx.fillText('avg',g.tubeL-7*dpr,avgY);
+
+    // tube outline (front)
+    tubePath(g);ctx.strokeStyle='rgba(182,206,226,.62)';ctx.lineWidth=1.6*dpr;ctx.stroke();
+
+    // physics
+    level+=(target-level)*0.1;
+    if(!RM){if(Math.random()<0.75)spawn(g);
+      drops.forEach(d=>d.y+=d.v);
+      drops=drops.filter(d=>d.y<waterY-2*dpr && d.y<g.tubeBottom);
+      if(drops.length>75)drops=drops.slice(-75);}
+    raf=requestAnimationFrame(frame);
+  }
+  slider.addEventListener('input',()=>{stop();setYear(+slider.value,false);});
+  function stop(){playing=false;play.textContent='▶ Sweep';}
+  function sweep(){
+    if(playing){stop();return;}
+    playing=true;play.textContent='❚❚ Pause';let i=idx>=YEARS.length-1?0:idx;
+    (function step(){if(!playing)return;setYear(i,false);i++;
+      if(i>=YEARS.length){stop();return;}setTimeout(step,RM?0:520);})();
+  }
+  play.addEventListener('click',sweep);
+  setYear(idx,true);
+  if(document.readyState==='complete') frame();
+  else addEventListener('load',frame);
+  addEventListener('resize',()=>{dpr=Math.min(2,devicePixelRatio||1);layout();});
+})();
+</script>
+</body>
+</html>
