@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Rain Almanac — Kendall County, Texas</title>
-<meta name="description" content="133 years of rainfall for Kendall County and Boerne, Texas — four ways to read the record. A companion to the Kendall County water-table tracker.">
+<meta name="description" content="133 years of rainfall for Kendall County and Boerne, Texas — six ways to read the record. A companion to the Kendall County water-table tracker.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a121c">
 <link rel="canonical" href="https://www.texaswaterwatchers.com/rain-almanac">
@@ -101,6 +101,24 @@
   .tooltip{position:fixed;pointer-events:none;z-index:50;background:#08111c;border:1px solid var(--line);
     border-radius:8px;padding:8px 11px;font-family:var(--mono);font-size:.72rem;color:var(--paper);
     opacity:0;transition:opacity .1s;box-shadow:0 8px 30px rgba(0,0,0,.5);white-space:nowrap}
+  /* Plate V — rolling ledger */
+  .ledger-scroll{overflow-x:auto;border-radius:10px;border:1px solid var(--line);-webkit-overflow-scrolling:touch}
+  table.ledger{border-collapse:separate;border-spacing:0;width:100%;min-width:740px;
+    font-family:var(--mono);font-size:.68rem;font-variant-numeric:tabular-nums}
+  table.ledger th,table.ledger td{padding:5px 5px;text-align:center;white-space:nowrap}
+  table.ledger thead th{position:sticky;top:0;background:#0c1826;color:var(--mist);z-index:2;
+    font-weight:400;font-size:.6rem;letter-spacing:.03em;border-bottom:1px solid var(--line)}
+  table.ledger tbody th{position:sticky;left:0;background:#0c1826;color:var(--paper);z-index:1;
+    text-align:left;font-weight:400;border-right:1px solid var(--line)}
+  table.ledger thead th:first-child{left:0;z-index:3}
+  table.ledger td{color:#0f1319;font-weight:600}
+  table.ledger td.empty{background:transparent;color:var(--faint);font-weight:400}
+  table.ledger tbody tr:hover th{color:var(--wet)}
+  /* Plate VI — heatmap */
+  .heat{display:block;width:100%;height:auto;border-radius:8px;cursor:crosshair}
+  .ryg-legend{display:flex;align-items:center;gap:10px;margin-top:14px;
+    font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist)}
+  .ryg-bar{width:130px;height:9px;border-radius:100px;background:linear-gradient(90deg,#d64b45,#e9d15b,#4fae63)}
   @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -110,7 +128,7 @@
     <h1>One hundred thirty-three<br>years of <em>rain</em></h1>
     <p class="lede">Every month of rain gauged near Boerne since 1893 — the heart of the Texas
       Hill Country, where limestone lets a wet spring soak straight into the Trinity Aquifer and
-      a dry year draws the water table down. Four ways to read the same long record.</p>
+      a dry year draws the water table down. Six ways to read the same long record.</p>
     <div class="stat-row">
       <div class="stat"><b id="s-mean">33.3"</b><span>Mean / year</span></div>
       <div class="stat dry"><b>10.3"</b><span>Driest · 1954</span></div>
@@ -194,11 +212,42 @@
     <p class="cap">Water level scaled to the wettest year on record. Dashed line = <b>33.3&Prime; average</b>.</p>
   </section>
 
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate V</span><span class="plate-kind">Wet or dry, every timescale</span>
+      <h2>The rolling ledger</h2>
+    </div>
+    <p class="guide">Each column averages the rain over the trailing 2 to 24 months. Read a row
+      left to right: red means it has been running dry over that window, green means wet. A dry spell
+      shows up first in the short columns and creeps rightward as it deepens into a real drought.</p>
+    <div class="card">
+      <div class="ledger-scroll"><table class="ledger" id="ledger"></table></div>
+      <div class="ryg-legend"><span>Drier</span><span class="ryg-bar"></span><span>Wetter</span>
+        <span style="margin-left:auto;color:var(--faint)">inches / month</span></div>
+    </div>
+    <p class="cap">Rolling-average rainfall · most recent months at the bottom. A dot marks a month not yet recorded.</p>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate VI</span><span class="plate-kind">A century of dry spells</span>
+      <h2>Drought across timescales</h2>
+    </div>
+    <p class="guide">The same idea stretched over the whole record. Left to right runs 1893 to today;
+      top to bottom is the averaging window — one month at the top down to twenty-four. A single dry
+      month is a thin red streak up top; a multi-year drought is a deep red wedge that sinks all the way down.</p>
+    <div class="card">
+      <canvas id="heat" class="heat" aria-label="Rolling-average rainfall heatmap from 1893 to 2026 by averaging window"></canvas>
+    </div>
+    <div class="ryg-legend"><span>Drier</span><span class="ryg-bar"></span><span>Wetter</span>
+      <span style="margin-left:auto;color:var(--faint)">hover for month &amp; window</span></div>
+  </section>
+
   <footer>
     <b>Source</b> — Cow Creek GCD monthly rainfall record for Kendall County, Texas.
     1893–May 2011: NWS COOP station 41-0902, Boerne. June 2011–present: average of Kendall County
     CoCoRaHS gauges.<br>
-    <b>A companion to the Kendall County water-table tracker</b> — four ways to read the same long rainfall record.
+    <b>A companion to the Kendall County water-table tracker</b> — six ways to read the same long rainfall record.
   </footer>
 </div>
 <div class="tooltip" id="tip"></div>
@@ -491,6 +540,64 @@ const MONF=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','D
   if(document.readyState==='complete') frame();
   else addEventListener('load',frame);
   addEventListener('resize',()=>{dpr=Math.min(2,devicePixelRatio||1);layout();});
+})();
+
+// ---- Plates V & VI: rolling averages (multi-timescale wet/dry) ----
+const SERIES=[];
+YEARS.forEach(yr=>yr.m.forEach((v,mi)=>SERIES.push({y:yr.y,mo:mi,v})));
+const RMEAN=MEAN/12;                       // ~2.78 in / month, the long-term normal
+function roll(i,w){ if(i<w-1)return null; let s=0; for(let k=i-w+1;k<=i;k++)s+=SERIES[k].v; return s/w; }
+// red (dry) → yellow (normal) → green (wet), absolute scale centred on the monthly normal
+function ryg(v){ if(v==null)return 'transparent';
+  const lo=1.15,hi=4.4;
+  if(v<=RMEAN){const t=Math.max(0,Math.min(1,(v-lo)/(RMEAN-lo)));return mix('#d64b45','#e9d15b',t);}
+  const t=Math.max(0,Math.min(1,(v-RMEAN)/(hi-RMEAN)));return mix('#e9d15b','#4fae63',t);}
+
+// Plate V — the ledger table (recent 36 months × windows 2–24)
+(function(){
+  const N=36,start=Math.max(0,SERIES.length-N),wins=[];
+  for(let w=2;w<=24;w++)wins.push(w);
+  let h='<thead><tr><th>Month</th><th>Rain</th>'+wins.map(w=>`<th>${w}mo</th>`).join('')+'</tr></thead><tbody>';
+  for(let i=start;i<SERIES.length;i++){const s=SERIES[i];
+    h+=`<tr><th>${MONF[s.mo]} ${s.y}</th><td style="background:${ryg(s.v)}">${s.v.toFixed(2)}</td>`;
+    for(const w of wins){const rv=roll(i,w);
+      h+= rv==null?'<td class="empty">·</td>':`<td style="background:${ryg(rv)}">${rv.toFixed(2)}</td>`;}
+    h+='</tr>';}
+  document.getElementById('ledger').innerHTML=h+'</tbody>';
+})();
+
+// Plate VI — the century heatmap (all months × windows 1–24)
+(function(){
+  const cv=document.getElementById('heat');const ctx=cv.getContext('2d');
+  const WMAX=24,n=SERIES.length;
+  let dpr=Math.min(2,devicePixelRatio||1),gutL=0,padB=0,colW=0,rowH=0;
+  function draw(){
+    const cssW=cv.parentElement.clientWidth;const cssH=Math.max(240,Math.round(cssW*0.44));
+    cv.style.width=cssW+'px';cv.style.height=cssH+'px';cv.width=cssW*dpr;cv.height=cssH*dpr;
+    const W=cv.width,H=cv.height;ctx.clearRect(0,0,W,H);
+    gutL=30*dpr;padB=15*dpr;colW=(W-gutL)/n;rowH=(H-padB)/WMAX;
+    for(let w=1;w<=WMAX;w++){const ry=(w-1)*rowH;
+      for(let i=w-1;i<n;i++){const rv=roll(i,w);ctx.fillStyle=ryg(rv);
+        ctx.fillRect(gutL+i*colW,ry,colW+1,rowH+1);}}
+    // y-axis window labels
+    ctx.fillStyle='#93aabf';ctx.font=`${9*dpr}px ${getComputedStyle(document.body).getPropertyValue('--mono')}`;
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    [1,6,12,18,24].forEach(w=>ctx.fillText(w+(w===1?'mo':''),gutL-5*dpr,(w-0.5)*rowH));
+    // x-axis decade labels
+    ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle='#5f7789';
+    [1900,1930,1960,1990,2020].forEach(yr=>{const i=SERIES.findIndex(s=>s.y===yr&&s.mo===0);if(i<0)return;
+      ctx.fillText(yr,gutL+i*colW,H-padB+3*dpr);});
+  }
+  cv.addEventListener('mousemove',e=>{
+    const r=cv.getBoundingClientRect();const mx=(e.clientX-r.left)*dpr,my=(e.clientY-r.top)*dpr;
+    const i=Math.floor((mx-gutL)/colW),w=Math.floor(my/rowH)+1;
+    if(i<0||i>=n||w<1||w>WMAX){hideTip();return;}
+    const rv=roll(i,w);if(rv==null){hideTip();return;}
+    const s=SERIES[i];showTip(e.clientX,e.clientY,`${MONF[s.mo]} ${s.y} · ${w}-mo avg · ${rv.toFixed(2)}&Prime;/mo`);
+  });
+  cv.addEventListener('mouseleave',hideTip);
+  if(document.readyState==='complete') draw(); else addEventListener('load',draw);
+  addEventListener('resize',()=>{dpr=Math.min(2,devicePixelRatio||1);draw();});
 })();
 </script>
 </body>
