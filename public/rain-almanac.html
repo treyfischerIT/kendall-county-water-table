@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Rain Almanac — Kendall County, Texas</title>
-<meta name="description" content="133 years of rainfall for Kendall County and Boerne, Texas — six ways to read the record. A companion to the Kendall County water-table tracker.">
+<meta name="description" content="133 years of rainfall for Kendall County and Boerne, Texas — eight ways to read the record. A companion to the Kendall County water-table tracker.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a121c">
 <link rel="canonical" href="https://www.texaswaterwatchers.com/rain-almanac">
@@ -119,6 +119,11 @@
   .ryg-legend{display:flex;align-items:center;gap:10px;margin-top:14px;
     font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist)}
   .ryg-bar{width:130px;height:9px;border-radius:100px;background:linear-gradient(90deg,#d64b45,#e9d15b,#4fae63)}
+  /* Plates III & IV — tracker + fingerprint legends */
+  .chip-legend{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:14px;
+    font-family:var(--mono);font-size:.63rem;letter-spacing:.09em;text-transform:uppercase;color:var(--mist)}
+  .chip-legend i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+  .chip-legend i.dot{width:8px;height:8px;border-radius:50%}
   @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -128,7 +133,7 @@
     <h1>One hundred thirty-three<br>years of <em>rain</em></h1>
     <p class="lede">Every month of rain gauged near Boerne since 1893 — the heart of the Texas
       Hill Country, where limestone lets a wet spring soak straight into the Trinity Aquifer and
-      a dry year draws the water table down. Six ways to read the same long record.</p>
+      a dry year draws the water table down. Eight ways to read the same long record.</p>
     <div class="stat-row">
       <div class="stat"><b id="s-mean">33.3"</b><span>Mean / year</span></div>
       <div class="stat dry"><b>10.3"</b><span>Driest · 1954</span></div>
@@ -170,7 +175,49 @@
 
   <section class="plate">
     <div class="plate-head">
-      <span class="plate-num">Plate III</span><span class="plate-kind">The whole record</span>
+      <span class="plate-num">Plate III</span><span class="plate-kind">This year against history</span>
+      <h2>The water-year tracker</h2>
+    </div>
+    <p class="guide">Rain adds up from January onward. Every year since 1893 is a faint climbing line;
+      together they fill the envelope between the driest and wettest years on record. The dashed line is
+      a normal year's pace — and the gold line is 2026 so far, tracking ahead of or behind normal.</p>
+    <div class="card">
+      <svg id="wytrack" class="viz-canvas" viewBox="0 0 960 430" preserveAspectRatio="xMidYMid meet"
+        aria-label="Cumulative rainfall by month for every year, 1893 to 2026"></svg>
+    </div>
+    <div class="chip-legend">
+      <span><i style="background:#f0b429"></i>2026 so far</span>
+      <span><i style="background:#cdd9e6"></i>Normal pace</span>
+      <span><i style="background:#4fae63"></i>Wettest · 1992</span>
+      <span><i style="background:#d64b45"></i>Driest · 1954</span>
+      <span style="margin-left:auto;color:var(--faint)">cumulative inches</span>
+    </div>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate IV</span><span class="plate-kind">How each month behaves</span>
+      <h2>The seasonal fingerprint</h2>
+    </div>
+    <p class="guide">Each shape is the spread of one calendar month's rainfall across 133 years — wide
+      where the month is unpredictable, with a long tail reaching up into the flood years. The white tick
+      is the median; the gold dot is the wettest that month has ever been. Two swells stand out — the
+      May and September rains.</p>
+    <div class="card">
+      <svg id="finger" class="viz-canvas" viewBox="0 0 960 380" preserveAspectRatio="xMidYMid meet"
+        aria-label="Distribution of rainfall by calendar month across 133 years"></svg>
+    </div>
+    <div class="chip-legend">
+      <span><i class="dot" style="background:#7fd0f5"></i>Spread of years</span>
+      <span><i style="background:#eef4fa"></i>Median</span>
+      <span><i class="dot" style="background:#f0b429"></i>Wettest on record</span>
+      <span style="margin-left:auto;color:var(--faint)">inches in the month</span>
+    </div>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate V</span><span class="plate-kind">The whole record</span>
       <h2>Rain stripes</h2>
     </div>
     <p class="guide">One stripe per year, 1893 at the left. Warm ochre is a dry year, deep blue a
@@ -188,7 +235,7 @@
 
   <section class="plate">
     <div class="plate-head">
-      <span class="plate-num">Plate IV</span><span class="plate-kind">The seasonal rhythm</span>
+      <span class="plate-num">Plate VI</span><span class="plate-kind">The seasonal rhythm</span>
       <h2>The rain spiral</h2>
     </div>
     <p class="guide">The same data wound into a clock. Twelve months around the dial, 1893 at the
@@ -203,7 +250,7 @@
 
   <section class="plate">
     <div class="plate-head">
-      <span class="plate-num">Plate V</span><span class="plate-kind">The departures</span>
+      <span class="plate-num">Plate VII</span><span class="plate-kind">The departures</span>
       <h2>Drought &amp; deluge</h2>
     </div>
     <p class="guide">How far each year ran above or below normal. Blue billows upward in the wet
@@ -218,7 +265,7 @@
 
   <section class="plate">
     <div class="plate-head">
-      <span class="plate-num">Plate VI</span><span class="plate-kind">One year at a time</span>
+      <span class="plate-num">Plate VIII</span><span class="plate-kind">One year at a time</span>
       <h2>The rain gauge</h2>
     </div>
     <p class="guide">Pick a year and watch it fall. The cistern fills to that year's total against
@@ -247,7 +294,7 @@
     <b>Source</b> — Cow Creek GCD monthly rainfall record for Kendall County, Texas.
     1893–May 2011: NWS COOP station 41-0902, Boerne. June 2011–present: average of Kendall County
     CoCoRaHS gauges.<br>
-    <b>A companion to the Kendall County water-table tracker</b> — six ways to read the same long rainfall record.
+    <b>A companion to the Kendall County water-table tracker</b> — eight ways to read the same long rainfall record.
   </footer>
 </div>
 <div class="tooltip" id="tip"></div>
@@ -598,6 +645,86 @@ function ryg(v){ if(v==null)return 'transparent';
   cv.addEventListener('mouseleave',hideTip);
   if(document.readyState==='complete') draw(); else addEventListener('load',draw);
   addEventListener('resize',()=>{dpr=Math.min(2,devicePixelRatio||1);draw();});
+})();
+
+// ---- Plates III & IV: within-year views ----
+const MO=Array.from({length:12},()=>[]);
+YEARS.forEach(y=>y.m.forEach((v,mi)=>MO[mi].push(v)));
+MO.forEach(a=>a.sort((x,y)=>x-y));
+function qtile(a,q){const i=(a.length-1)*q,lo=Math.floor(i);return a[lo]+(a[Math.ceil(i)]-a[lo])*(i-lo);}
+const NS='http://www.w3.org/2000/svg';
+function svgEl(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+// Plate III — the water-year tracker (cumulative envelope)
+(function(){
+  const svg=document.getElementById('wytrack');
+  const W=960,H=430,padL=42,padR=14,padT=16,padB=28;
+  const cum=y=>{let c=0;return y.m.map(v=>c+=v);};
+  const full=YEARS.filter(y=>y.m.length===12);
+  const CUM=full.map(cum);
+  const mn=[],mx=[],md=[];
+  for(let m=0;m<12;m++){const col=CUM.map(c=>c[m]).sort((a,b)=>a-b);mn[m]=col[0];mx[m]=col[col.length-1];md[m]=qtile(col,.5);}
+  const yMax=Math.ceil(mx[11]/10)*10;
+  const x=m=>padL+m/11*(W-padL-padR), y=v=>H-padB-(v/yMax)*(H-padT-padB);
+  for(let g=10;g<=yMax;g+=10){svg.appendChild(svgEl('line',{x1:padL,y1:y(g),x2:W-padR,y2:y(g),stroke:'rgba(147,170,191,.11)'}));
+    const t=svgEl('text',{x:padL-6,y:y(g)+3,fill:'#5f7789','font-family':'var(--mono)','font-size':'10','text-anchor':'end'});t.textContent=g+'"';svg.appendChild(t);}
+  const poly=(arr,attrs)=>{let d='M '+x(0)+' '+y(arr[0]);for(let m=1;m<arr.length;m++)d+=' L '+x(m).toFixed(1)+' '+y(arr[m]).toFixed(1);
+    svg.appendChild(svgEl('path',Object.assign({d,fill:'none'},attrs)));};
+  // envelope band
+  let band='M '+x(0)+' '+y(mx[0]);for(let m=1;m<12;m++)band+=' L '+x(m).toFixed(1)+' '+y(mx[m]).toFixed(1);
+  for(let m=11;m>=0;m--)band+=' L '+x(m).toFixed(1)+' '+y(mn[m]).toFixed(1);band+=' Z';
+  svg.appendChild(svgEl('path',{d:band,fill:'rgba(73,161,226,.12)'}));
+  full.forEach(yy=>poly(cum(yy),{stroke:'rgba(147,170,191,.06)','stroke-width':'1'}));
+  const cw=cum(YEARS.find(o=>o.y===1992)),cd=cum(YEARS.find(o=>o.y===1954));
+  poly(cw,{stroke:'rgba(79,174,99,.75)','stroke-width':'1.6'});
+  poly(cd,{stroke:'rgba(214,75,69,.75)','stroke-width':'1.6'});
+  poly(md,{stroke:'#cdd9e6','stroke-width':'1.5','stroke-dasharray':'4 3'});
+  const curY=YEARS[YEARS.length-1],cc=cum(curY);
+  poly(cc,{stroke:'#f0b429','stroke-width':'2.6','stroke-linecap':'round'});
+  const tag=(m,v,txt,col,anc)=>{const t=svgEl('text',{x:x(m)+(anc==='end'?-5:5),y:y(v)-4,fill:col,'font-family':'var(--mono)','font-size':'10.5','text-anchor':anc});t.textContent=txt;svg.appendChild(t);};
+  tag(11,cw[11],'1992 · '+cw[11].toFixed(0)+'"','#7fce93','end');
+  tag(11,cd[11],'1954 · '+cd[11].toFixed(0)+'"','#e88a84','end');
+  tag(cc.length-1,cc[cc.length-1],curY.y+' · '+cc[cc.length-1].toFixed(1)+'"','#f0b429','start');
+  for(let m=0;m<12;m++){const t=svgEl('text',{x:x(m),y:H-7,fill:'#5f7789','font-family':'var(--mono)','font-size':'10','text-anchor':'middle'});t.textContent=MONF[m];svg.appendChild(t);}
+  // hover guide
+  const guide=svgEl('line',{y1:padT,y2:H-padB,stroke:'rgba(255,255,255,.22)','stroke-width':'1',visibility:'hidden'});svg.appendChild(guide);
+  const hit=svgEl('rect',{x:padL,y:padT,width:W-padL-padR,height:H-padT-padB,fill:'transparent'});svg.appendChild(hit);
+  hit.addEventListener('mousemove',e=>{const r=svg.getBoundingClientRect();const sx=(e.clientX-r.left)/r.width*W;
+    let m=Math.round((sx-padL)/((W-padL-padR)/11));m=Math.max(0,Math.min(11,m));
+    guide.setAttribute('x1',x(m));guide.setAttribute('x2',x(m));guide.setAttribute('visibility','visible');
+    const c=(m<cc.length)?cc[m].toFixed(1)+'&Prime;':'—';
+    showTip(e.clientX,e.clientY,`Through ${MONF[m]} · normal ${md[m].toFixed(1)}&Prime; · ${curY.y} ${c}`);});
+  hit.addEventListener('mouseleave',()=>{guide.setAttribute('visibility','hidden');hideTip();});
+})();
+
+// Plate IV — the seasonal fingerprint (per-month distribution violins)
+(function(){
+  const svg=document.getElementById('finger');
+  const W=960,H=380,padL=34,padR=10,padT=14,padB=30;
+  let yMax=0;MO.forEach(a=>{if(a[a.length-1]>yMax)yMax=a[a.length-1];});yMax=Math.ceil(yMax/2)*2;
+  const bandW=(W-padL-padR)/12, y=v=>H-padB-(v/yMax)*(H-padT-padB);
+  for(let g=4;g<=yMax;g+=4){svg.appendChild(svgEl('line',{x1:padL,y1:y(g),x2:W-padR,y2:y(g),stroke:'rgba(147,170,191,.10)'}));
+    const t=svgEl('text',{x:padL-6,y:y(g)+3,fill:'#5f7789','font-family':'var(--mono)','font-size':'10','text-anchor':'end'});t.textContent=g+'"';svg.appendChild(t);}
+  const bw=0.9,steps=48;
+  const extreme=(m,hi)=>{let b=null;YEARS.forEach(o=>{const v=o.m[m];if(v==null)return;if(b===null||(hi?v>b.v:v<b.v))b={v,yr:o.y};});return b;};
+  for(let m=0;m<12;m++){
+    const cx=padL+(m+0.5)*bandW,s=MO[m];
+    let dens=[],maxd=0;
+    for(let k=0;k<=steps;k++){const yy=k/steps*yMax;let sum=0;for(const v of s){const u=(yy-v)/bw;sum+=Math.exp(-0.5*u*u);}
+      const d=sum/(s.length*bw*2.5066);dens.push([yy,d]);if(d>maxd)maxd=d;}
+    const half=bandW*0.42,sc=half/(maxd||1);
+    let p='';dens.forEach(([yy,d],k)=>{p+=(k?' L ':'M ')+(cx+d*sc).toFixed(1)+' '+y(yy).toFixed(1);});
+    for(let k=dens.length-1;k>=0;k--){const[yy,d]=dens[k];p+=' L '+(cx-d*sc).toFixed(1)+' '+y(yy).toFixed(1);}
+    p+=' Z';
+    svg.appendChild(svgEl('path',{d:p,fill:'rgba(73,161,226,.26)',stroke:'rgba(127,208,245,.5)','stroke-width':'1'}));
+    const med=qtile(s,.5);
+    svg.appendChild(svgEl('line',{x1:cx-half*0.7,y1:y(med),x2:cx+half*0.7,y2:y(med),stroke:'#eef4fa','stroke-width':'1.7'}));
+    const hi=extreme(m,true);svg.appendChild(svgEl('circle',{cx,cy:y(hi.v),r:'2.5',fill:'#f0b429'}));
+    const t=svgEl('text',{x:cx,y:H-9,fill:'#93aabf','font-family':'var(--mono)','font-size':'10.5','text-anchor':'middle'});t.textContent=MONF[m];svg.appendChild(t);
+    const hit=svgEl('rect',{x:padL+m*bandW,y:padT,width:bandW,height:H-padT-padB,fill:'transparent'});svg.appendChild(hit);
+    hit.addEventListener('mousemove',e=>showTip(e.clientX,e.clientY,`${MONF[m]} · median ${med.toFixed(2)}&Prime; · wettest ${hi.v.toFixed(2)}&Prime; (${hi.yr})`));
+    hit.addEventListener('mouseleave',hideTip);
+  }
 })();
 </script>
 </body>
