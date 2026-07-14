@@ -139,7 +139,38 @@
 
   <section class="plate">
     <div class="plate-head">
-      <span class="plate-num">Plate I</span><span class="plate-kind">The whole record</span>
+      <span class="plate-num">Plate I</span><span class="plate-kind">Wet or dry, every timescale</span>
+      <h2>The rolling ledger</h2>
+    </div>
+    <p class="guide">Each column averages the rain over the trailing 2 to 24 months. Read a row
+      left to right: red means it has been running dry over that window, green means wet. A dry spell
+      shows up first in the short columns and creeps rightward as it deepens into a real drought.</p>
+    <div class="card">
+      <div class="ledger-scroll"><table class="ledger" id="ledger"></table></div>
+      <div class="ryg-legend"><span>Drier</span><span class="ryg-bar"></span><span>Wetter</span>
+        <span style="margin-left:auto;color:var(--faint)">inches / month</span></div>
+    </div>
+    <p class="cap">Rolling-average rainfall · most recent months at the bottom. A dot marks a month not yet recorded.</p>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate II</span><span class="plate-kind">A century of dry spells</span>
+      <h2>Drought across timescales</h2>
+    </div>
+    <p class="guide">The same idea stretched over the whole record. Left to right runs 1893 to today;
+      top to bottom is the averaging window — one month at the top down to twenty-four. A single dry
+      month is a thin red streak up top; a multi-year drought is a deep red wedge that sinks all the way down.</p>
+    <div class="card">
+      <canvas id="heat" class="heat" aria-label="Rolling-average rainfall heatmap from 1893 to 2026 by averaging window"></canvas>
+    </div>
+    <div class="ryg-legend"><span>Drier</span><span class="ryg-bar"></span><span>Wetter</span>
+      <span style="margin-left:auto;color:var(--faint)">hover for month &amp; window</span></div>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="plate-num">Plate III</span><span class="plate-kind">The whole record</span>
       <h2>Rain stripes</h2>
     </div>
     <p class="guide">One stripe per year, 1893 at the left. Warm ochre is a dry year, deep blue a
@@ -157,7 +188,7 @@
 
   <section class="plate">
     <div class="plate-head">
-      <span class="plate-num">Plate II</span><span class="plate-kind">The seasonal rhythm</span>
+      <span class="plate-num">Plate IV</span><span class="plate-kind">The seasonal rhythm</span>
       <h2>The rain spiral</h2>
     </div>
     <p class="guide">The same data wound into a clock. Twelve months around the dial, 1893 at the
@@ -172,7 +203,7 @@
 
   <section class="plate">
     <div class="plate-head">
-      <span class="plate-num">Plate III</span><span class="plate-kind">The departures</span>
+      <span class="plate-num">Plate V</span><span class="plate-kind">The departures</span>
       <h2>Drought &amp; deluge</h2>
     </div>
     <p class="guide">How far each year ran above or below normal. Blue billows upward in the wet
@@ -187,7 +218,7 @@
 
   <section class="plate">
     <div class="plate-head">
-      <span class="plate-num">Plate IV</span><span class="plate-kind">One year at a time</span>
+      <span class="plate-num">Plate VI</span><span class="plate-kind">One year at a time</span>
       <h2>The rain gauge</h2>
     </div>
     <p class="guide">Pick a year and watch it fall. The cistern fills to that year's total against
@@ -210,37 +241,6 @@
       </div>
     </div>
     <p class="cap">Water level scaled to the wettest year on record. Dashed line = <b>33.3&Prime; average</b>.</p>
-  </section>
-
-  <section class="plate">
-    <div class="plate-head">
-      <span class="plate-num">Plate V</span><span class="plate-kind">Wet or dry, every timescale</span>
-      <h2>The rolling ledger</h2>
-    </div>
-    <p class="guide">Each column averages the rain over the trailing 2 to 24 months. Read a row
-      left to right: red means it has been running dry over that window, green means wet. A dry spell
-      shows up first in the short columns and creeps rightward as it deepens into a real drought.</p>
-    <div class="card">
-      <div class="ledger-scroll"><table class="ledger" id="ledger"></table></div>
-      <div class="ryg-legend"><span>Drier</span><span class="ryg-bar"></span><span>Wetter</span>
-        <span style="margin-left:auto;color:var(--faint)">inches / month</span></div>
-    </div>
-    <p class="cap">Rolling-average rainfall · most recent months at the bottom. A dot marks a month not yet recorded.</p>
-  </section>
-
-  <section class="plate">
-    <div class="plate-head">
-      <span class="plate-num">Plate VI</span><span class="plate-kind">A century of dry spells</span>
-      <h2>Drought across timescales</h2>
-    </div>
-    <p class="guide">The same idea stretched over the whole record. Left to right runs 1893 to today;
-      top to bottom is the averaging window — one month at the top down to twenty-four. A single dry
-      month is a thin red streak up top; a multi-year drought is a deep red wedge that sinks all the way down.</p>
-    <div class="card">
-      <canvas id="heat" class="heat" aria-label="Rolling-average rainfall heatmap from 1893 to 2026 by averaging window"></canvas>
-    </div>
-    <div class="ryg-legend"><span>Drier</span><span class="ryg-bar"></span><span>Wetter</span>
-      <span style="margin-left:auto;color:var(--faint)">hover for month &amp; window</span></div>
   </section>
 
   <footer>
