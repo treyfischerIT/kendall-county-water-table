@@ -195,8 +195,13 @@ async function handleStreams(url, ctx) {
   let period = (url.searchParams.get("period") || "P7D").toUpperCase();
   if (!STREAM_PERIODS.has(period)) period = "P7D";
   const key = new Request(`https://cache.local/streams/${CACHE_VERSION}/${period}`);
-  // USGS posts new readings ~every 15 min; refresh every 5 min so a rising
-  // creek stays current, SWR so nobody waits.
+  // USGS fair-use guidance (waterservices.usgs.gov docs): small requests should
+  // stay under ~5-10/sec steady; offenders get HTTP 429. Gauge readings are
+  // taken ~every 15 min and transmitted about hourly. With this edge cache we
+  // hit USGS at most once per 5 min per period per colo — orders of magnitude
+  // under the limit — and every visitor is served from our edge, never USGS.
+  // NOTE: waterservices.usgs.gov is slated for decommission in early 2027;
+  // migrate this URL to api.waterdata.usgs.gov (OGC API) before then.
   return cachedJson(key, 300, async () => {
     const u =
       `https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${STREAM_SITES}` +

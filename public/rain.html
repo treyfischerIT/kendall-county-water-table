@@ -40,9 +40,30 @@
     background:transparent;color:var(--paper);border:1px solid var(--line);border-radius:100px;padding:7px 14px;cursor:pointer}
   .btn:hover{border-color:var(--water)} :focus-visible{outline:2px solid var(--water);outline-offset:3px}
 
+  .stalebanner{margin-top:14px;padding:10px 14px;border:1px solid rgba(240,180,41,.38);border-radius:10px;
+    background:rgba(240,180,41,.07);font-family:var(--mono);font-size:.72rem;color:#ecd9a6;letter-spacing:.02em}
+
+  .mapwrap{margin-top:22px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    height:clamp(240px,42vw,380px);position:relative;background:var(--panel2);max-width:100%}
+  #map{position:absolute;inset:0;background:#0a121c;z-index:0}
+  .leaflet-container{font-family:var(--mono);font-size:.68rem}
+  .leaflet-control-attribution{background:rgba(8,17,28,.72)!important;color:var(--faint)!important}
+  .leaflet-control-attribution a{color:var(--mist)!important}
+  .leaflet-control-zoom a{background:#0d1927!important;color:var(--paper)!important;border:1px solid var(--line)!important}
+  .leaflet-tooltip{background:#08111c;border:1px solid rgba(147,170,191,.35);color:var(--paper);
+    font-family:var(--mono);font-size:.7rem;line-height:1.5;box-shadow:0 8px 26px rgba(0,0,0,.5);border-radius:7px}
+  .leaflet-tooltip-top:before{border-top-color:rgba(147,170,191,.35)}
+
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:22px}
   .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
-    border-radius:16px;padding:16px 16px 12px;position:relative;overflow:hidden}
+    border-radius:16px;padding:16px 16px 12px;position:relative;overflow:hidden;
+    transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+  .card:hover,.card:focus-visible{border-color:rgba(74,163,228,.42);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+  @media(prefers-reduced-motion:no-preference){
+    .card:hover,.card:focus-visible{transform:translateY(-2px)}
+  }
+  .card.pulse{animation:cardpulse 1s ease-out 2}
+  @keyframes cardpulse{0%{box-shadow:0 0 0 0 rgba(74,163,228,.6)}100%{box-shadow:0 0 0 16px rgba(74,163,228,0)}}
   .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--edge,transparent)}
   .card h3{font-family:var(--serif);font-weight:600;font-size:1.12rem;margin:0 0 .1em;line-height:1.15}
   .card .loc{font-family:var(--mono);font-size:.66rem;color:var(--mist);letter-spacing:.03em}
@@ -53,6 +74,9 @@
   .side{font-family:var(--mono);font-size:.68rem;color:var(--mist);text-align:right;line-height:1.6}
   .side b{color:var(--paper)}
   .bars{width:100%;height:auto;display:block;margin-top:10px}
+  .bars rect{transform-box:fill-box;transform-origin:center bottom}
+  .bars rect.dayhi{stroke:rgba(154,216,247,.85);stroke-width:1;filter:brightness(1.4)}
+  .bars circle.dayhi{fill:var(--rain-hi)}
   .cardfoot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;
     font-family:var(--mono);font-size:.63rem;color:var(--faint);letter-spacing:.02em}
   .state{font-family:var(--mono);font-size:.8rem;color:var(--mist);padding:40px 0;text-align:center}
@@ -63,10 +87,13 @@
     border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:.7rem;color:var(--paper);
     opacity:0;transition:opacity .08s;white-space:nowrap;box-shadow:0 8px 26px rgba(0,0,0,.5)}
   .scalekey{display:flex;align-items:center;gap:10px;margin-top:16px;font-family:var(--mono);
-    font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mist)}
+    font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);flex-wrap:wrap}
   .scalebar{width:120px;height:9px;border-radius:100px;background:linear-gradient(90deg,#24425f,#3f86cc,#7fd0f5)}
-  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <div class="wrap">
   <header>
@@ -81,9 +108,14 @@
       <span class="updated" id="updated"></span>
       <button class="btn" id="refresh">↻ Refresh</button>
     </div>
+    <div class="stalebanner" id="stale" role="status" hidden></div>
     <div class="scalekey"><span>Lighter day</span><span class="scalebar"></span><span>Heavier day</span>
-      <span style="margin-left:auto;color:var(--faint)">bar height = inches that day</span></div>
+      <span style="margin-left:auto;color:var(--faint)">bar height = inches that day · map dot = 7-day total</span></div>
   </header>
+
+  <div class="mapwrap" id="mapwrap" hidden aria-label="Map of rain gauges">
+    <div id="map"></div>
+  </div>
 
   <div id="grid" class="grid"></div>
   <div id="state" class="state">Fetching daily rainfall…</div>
@@ -99,6 +131,7 @@
 <div class="tip" id="tip"></div>
 
 <script>
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const tip=document.getElementById('tip');
 const showTip=(x,y,h)=>{tip.innerHTML=h;tip.style.opacity=1;const w=tip.offsetWidth;
   tip.style.left=Math.min(innerWidth-w-8,Math.max(8,x-w/2))+'px';tip.style.top=(y-tip.offsetHeight-12)+'px';};
@@ -110,6 +143,28 @@ const rainColor=(v,max)=>{ if(v==null)return 'transparent'; if(v<0.005)return '#
 const fmtDate=iso=>{const [y,m,d]=iso.split('-');return new Date(y,m-1,d).toLocaleDateString(undefined,{month:'short',day:'numeric'});};
 const inch=v=> v==null?'—' : v<0.005?'T' : v.toFixed(2);
 
+/* ---------- freshness (x-built-at header) ---------- */
+let BUILT_AT=null, THROUGH=null;
+function fmtAgo(ms){
+  const m=Math.max(0,Math.round((Date.now()-ms)/60000));
+  if(m<1)return 'just now';
+  if(m<60)return 'refreshed '+m+' min ago';
+  const h=Math.floor(m/60);
+  return 'refreshed '+h+' h '+(m%60)+' min ago';
+}
+function paintFreshness(){
+  const parts=[];
+  if(THROUGH)parts.push('Data through '+fmtDate(THROUGH));
+  if(BUILT_AT)parts.push(fmtAgo(BUILT_AT));
+  document.getElementById('updated').textContent=parts.join(' · ');
+}
+setInterval(paintFreshness,30000);
+
+/* ---------- shared date-column highlight ---------- */
+function dayHi(date,on){
+  document.querySelectorAll(`.bars [data-date="${date}"]`).forEach(el=>el.classList.toggle('dayhi',on));
+}
+
 function bars(vals,dates,gmax){
   const NS='http://www.w3.org/2000/svg', n=vals.length, W=360,H=76,pb=14,pt=6,gap=3;
   const bw=(W-(n-1)*gap)/n;
@@ -120,12 +175,14 @@ function bars(vals,dates,gmax){
   vals.forEach((v,i)=>{
     const x=i*(bw+gap);
     if(v==null){ // missing day marker
-      svg.appendChild(el('circle',{cx:x+bw/2,cy:H-pb+5,r:'1.1',fill:'#3a4d63'})); return; }
+      svg.appendChild(el('circle',{cx:x+bw/2,cy:H-pb+5,r:'1.1',fill:'#3a4d63','data-date':dates[i]})); return; }
     const h=Math.max(v<0.005?2:2,(v/(gmax||1))*(H-pb-pt));
     const rect=el('rect',{x:x.toFixed(1),y:(H-pb-h).toFixed(1),width:Math.max(1,bw).toFixed(1),height:h.toFixed(1),
-      rx:Math.min(3,bw/2),fill:rainColor(v,gmax)});
+      rx:Math.min(3,bw/2),fill:rainColor(v,gmax),'data-date':dates[i]});
+    rect.dataset.delay=i*30;
     rect.addEventListener('mousemove',e=>showTip(e.clientX,e.clientY,`${fmtDate(dates[i])} · ${inch(v)}${v>=0.005?'"':' (trace)'}`));
-    rect.addEventListener('mouseleave',hideTip);
+    rect.addEventListener('mouseenter',()=>dayHi(dates[i],true));
+    rect.addEventListener('mouseleave',()=>{hideTip();dayHi(dates[i],false);});
     svg.appendChild(rect);
   });
   return svg;
@@ -134,8 +191,69 @@ function bars(vals,dates,gmax){
 async function fetchRain(){
   const r=await fetch('/api/rain',{cache:'no-store'});
   if(!r.ok) throw new Error('feed returned '+r.status);
+  const builtAt=parseInt(r.headers.get('x-built-at'),10)||Date.now();
   const d=await r.json(); if(d.error) throw new Error(d.error);
-  return d;
+  return {d,builtAt};
+}
+
+/* ---------- map ---------- */
+let map=null, markers={};
+function initMap(){
+  if(map||!window.L)return;
+  document.getElementById('mapwrap').hidden=false;
+  map=L.map('map',{scrollWheelZoom:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {subdomains:'abcd',maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+}
+function renderMap(stations,dates,maxT7,last7,latest){
+  initMap(); if(!map)return;
+  Object.values(markers).forEach(m=>m.remove()); markers={};
+  const pts=[];
+  // driest first so the wettest dots sit on top
+  stations.map((s,i)=>({s,i,t7:last7(s.vals)}))
+    .sort((a,b)=>a.t7-b.t7)
+    .forEach(({s,i,t7})=>{
+      const t=Math.sqrt(Math.min(1,t7/(maxT7||1)));
+      const col=mix('#24425f','#7fd0f5',t);
+      const r=4.5+t*9;
+      const lt=latest(s.vals);
+      const ltTxt=lt?`${inch(lt.v)}${lt.v>=0.005?'"':''} on ${fmtDate(dates[lt.i])}`:'no recent report';
+      const m=L.circleMarker([s.lat,s.lon],{radius:r,color:col,weight:1.5,fillColor:col,fillOpacity:.6});
+      m._baseR=r;
+      m.bindTooltip(`<b>${s.name}</b><br>latest ${ltTxt} · 7-day ${t7.toFixed(2)}"`,{direction:'top',offset:[0,-6],opacity:1});
+      m.on('click',()=>{
+        const el=document.getElementById('card-r'+i);
+        if(!el)return;
+        el.scrollIntoView({behavior:RM?'auto':'smooth',block:'center'});
+        el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');
+      });
+      m.addTo(map);
+      markers[i]=m; pts.push([s.lat,s.lon]);
+    });
+  if(pts.length){
+    const b=L.latLngBounds(pts);
+    const fit=()=>{map.invalidateSize();map.fitBounds(b,{padding:[30,30],maxZoom:12});};
+    fit(); setTimeout(fit,150);   // refit once layout has settled
+  }
+}
+function highlightMarker(i,on){
+  const m=markers[i]; if(!m)return;
+  if(on){m.bringToFront();m.setRadius(m._baseR+3);m.setStyle({weight:2.5,fillOpacity:.9});}
+  else{m.setRadius(m._baseR);m.setStyle({weight:1.5,fillOpacity:.6});}
+}
+function linkCard(card,i){
+  card.tabIndex=0;
+  card.addEventListener('mouseenter',()=>highlightMarker(i,true));
+  card.addEventListener('mouseleave',()=>highlightMarker(i,false));
+  card.addEventListener('click',()=>{const m=markers[i];if(m){highlightMarker(i,true);m.openTooltip();}});
+  card.addEventListener('blur',()=>highlightMarker(i,false));
+  card.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    const m=markers[i]; if(!m||!map)return;
+    document.getElementById('mapwrap').scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'});
+    highlightMarker(i,true); m.openTooltip();
+    setTimeout(()=>{highlightMarker(i,false);m.closeTooltip();},2400);
+  });
 }
 
 function render(d){
@@ -156,12 +274,15 @@ function render(d){
     s+=` · area 7-day avg <b>${areaAvg.toFixed(2)}"</b>`;
     sEl.innerHTML=s;
   } else sEl.textContent='No rain reports available right now.';
-  document.getElementById('updated').textContent='Through '+fmtDate(d.updated);
+  THROUGH=d.updated;
+  paintFreshness();
 
-  const grid=document.getElementById('grid');grid.innerHTML='';
-  stations.forEach(s=>{
+  const grid=document.getElementById('grid');
+  const animate=grid.childElementCount===0&&!RM;    // first paint only
+  grid.innerHTML='';
+  stations.forEach((s,i)=>{
     const lt=latest(s.vals), t7=last7(s.vals), t14=total(s.vals);
-    const card=document.createElement('div');card.className='card';
+    const card=document.createElement('div');card.className='card';card.id='card-r'+i;
     card.style.setProperty('--edge',rainColor(t7,gmax*4));
     const big = lt ? (lt.v<0.005?`<span class="none">Trace</span>`:`${lt.v.toFixed(2)}<small> in</small>`) : `<span class="none">—</span>`;
     const when = lt ? fmtDate(dates[lt.i]) : '';
@@ -176,18 +297,65 @@ function render(d){
     const foot=document.createElement('div');foot.className='cardfoot';
     foot.innerHTML=`<span>daily totals · ${fmtDate(dates[0])} – ${fmtDate(dates[dates.length-1])}</span><span>inches</span>`;
     card.appendChild(foot);
+    linkCard(card,i);
     grid.appendChild(card);
   });
   document.getElementById('state').hidden=true;
+
+  // bars grow up from the baseline on first render, staggered per day
+  if(animate){
+    const rects=grid.querySelectorAll('.bars rect');
+    rects.forEach(r=>{r.style.transform='scaleY(0.02)';});
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      rects.forEach(r=>{
+        r.style.transition='transform .5s cubic-bezier(.2,.7,.3,1) '+(r.dataset.delay||0)+'ms';
+        r.style.transform='scaleY(1)';
+      });
+    }));
+  }
+
+  const maxT7=Math.max(0.01,...stations.map(s=>last7(s.vals)));
+  renderMap(stations,dates,maxT7,last7,latest);
 }
 
+/* ---------- load, with localStorage fallback ---------- */
+const CACHE_KEY='rain:v1';
+function saveCache(d,builtAt){
+  try{localStorage.setItem(CACHE_KEY,JSON.stringify({builtAt,savedAt:Date.now(),d}));}catch(_){}
+}
+function readCache(){
+  try{const raw=localStorage.getItem(CACHE_KEY);return raw?JSON.parse(raw):null;}catch(_){return null;}
+}
 let busy=false;
 async function load(){
   if(busy)return; busy=true;
   const state=document.getElementById('state');
-  try{ render(await fetchRain()); }
-  catch(e){ state.hidden=false; state.innerHTML=`Couldn't load rainfall (${e.message}). <button class="btn" onclick="load()">Retry</button>`; }
-  finally{ busy=false; }
+  const stale=document.getElementById('stale');
+  try{
+    const {d,builtAt}=await fetchRain();
+    BUILT_AT=builtAt;
+    stale.hidden=true;
+    render(d);
+    saveCache(d,builtAt);
+  }catch(e){
+    const c=readCache();
+    if(c&&c.d){
+      BUILT_AT=c.builtAt||c.savedAt||null;
+      try{
+        render(c.d);
+        state.hidden=true;
+        stale.hidden=false;
+        stale.textContent='Live update failed — showing data from '
+          +(c.d.updated?fmtDate(c.d.updated):new Date(c.savedAt).toLocaleString())+'.';
+      }catch(_){
+        state.hidden=false;
+        state.innerHTML=`Couldn't load rainfall (${e.message}). <button class="btn" onclick="load()">Retry</button>`;
+      }
+    }else{
+      state.hidden=false;
+      state.innerHTML=`Couldn't load rainfall (${e.message}). <button class="btn" onclick="load()">Retry</button>`;
+    }
+  }finally{ busy=false; }
 }
 document.getElementById('refresh').addEventListener('click',load);
 load();

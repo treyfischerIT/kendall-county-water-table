@@ -49,9 +49,33 @@
   .updated{font-family:var(--mono);font-size:.68rem;color:var(--faint);letter-spacing:.04em}
   :focus-visible{outline:2px solid var(--water);outline-offset:3px}
 
+  .stalebanner{margin-top:14px;padding:10px 14px;border:1px solid rgba(240,180,41,.38);border-radius:10px;
+    background:rgba(240,180,41,.07);font-family:var(--mono);font-size:.72rem;color:#ecd9a6;letter-spacing:.02em}
+
+  .mapwrap{margin-top:22px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    height:clamp(240px,42vw,380px);position:relative;background:var(--panel2);max-width:100%}
+  #map{position:absolute;inset:0;background:#0a121c;z-index:0}
+  .leaflet-container{font-family:var(--mono);font-size:.68rem}
+  .leaflet-control-attribution{background:rgba(8,17,28,.72)!important;color:var(--faint)!important}
+  .leaflet-control-attribution a{color:var(--mist)!important}
+  .leaflet-control-zoom a{background:#0d1927!important;color:var(--paper)!important;border:1px solid var(--line)!important}
+  .leaflet-tooltip{background:#08111c;border:1px solid rgba(147,170,191,.35);color:var(--paper);
+    font-family:var(--mono);font-size:.7rem;line-height:1.5;box-shadow:0 8px 26px rgba(0,0,0,.5);border-radius:7px}
+  .leaflet-tooltip-top:before{border-top-color:rgba(147,170,191,.35)}
+  .maplegend{display:flex;gap:14px 18px;flex-wrap:wrap;margin-top:10px;font-family:var(--mono);
+    font-size:.62rem;letter-spacing:.09em;text-transform:uppercase;color:var(--mist)}
+  .maplegend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:22px}
   .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
-    border-radius:16px;padding:16px 16px 12px;position:relative;overflow:hidden}
+    border-radius:16px;padding:16px 16px 12px;position:relative;overflow:hidden;
+    transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+  .card:hover,.card:focus-visible{border-color:rgba(74,163,228,.42);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+  @media(prefers-reduced-motion:no-preference){
+    .card:hover,.card:focus-visible{transform:translateY(-2px)}
+  }
+  .card.pulse{animation:cardpulse 1s ease-out 2}
+  @keyframes cardpulse{0%{box-shadow:0 0 0 0 rgba(74,163,228,.6)}100%{box-shadow:0 0 0 16px rgba(74,163,228,0)}}
   .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--edge,transparent)}
   .card .water{font-family:var(--mono);font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
   .card h3{font-family:var(--serif);font-weight:600;font-size:1.12rem;margin:.15em 0 .1em;line-height:1.15}
@@ -62,6 +86,13 @@
   .cfs{font-family:var(--mono);font-size:.72rem;color:var(--mist);text-align:right;line-height:1.5}
   .trend{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.68rem;
     letter-spacing:.06em;padding:4px 9px;border-radius:100px;border:1px solid currentColor;white-space:nowrap}
+  .d24{font-family:var(--mono);font-size:.68rem;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+  .range{display:flex;align-items:center;gap:8px;margin-top:10px;font-family:var(--mono);
+    font-size:.6rem;color:var(--faint);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+  .rangebar{flex:1;height:5px;border-radius:100px;background:rgba(147,170,191,.13);overflow:hidden}
+  .rangebar i{display:block;height:100%;border-radius:100px;width:0;
+    background:linear-gradient(90deg,rgba(74,163,228,.25),var(--water) 70%,var(--water-hi));
+    transition:width .9s cubic-bezier(.25,.7,.3,1)}
   .hydro{width:100%;height:auto;display:block;margin-top:8px}
   .cardfoot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;
     font-family:var(--mono);font-size:.64rem;color:var(--faint);letter-spacing:.02em}
@@ -75,8 +106,11 @@
   .tip{position:fixed;pointer-events:none;z-index:50;background:#08111c;border:1px solid var(--line);
     border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:.7rem;color:var(--paper);
     opacity:0;transition:opacity .08s;white-space:nowrap;box-shadow:0 8px 26px rgba(0,0,0,.5)}
-  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <div class="wrap">
   <header>
@@ -96,7 +130,18 @@
       </div>
       <button class="btn" id="refresh" aria-label="Refresh now">↻ Refresh</button>
     </div>
+    <div class="stalebanner" id="stale" role="status" hidden></div>
   </header>
+
+  <div class="mapwrap" id="mapwrap" hidden aria-label="Map of stream gauges">
+    <div id="map"></div>
+  </div>
+  <div class="maplegend" id="maplegend" hidden>
+    <span><i style="background:var(--rise-fast)"></i>Rising fast</span>
+    <span><i style="background:var(--rise)"></i>Rising</span>
+    <span><i style="background:var(--fall)"></i>Falling / steady</span>
+    <span style="margin-left:auto;color:var(--faint)">dot size = how fast it's rising · click a dot to jump to its card</span>
+  </div>
 
   <div id="grid" class="grid"></div>
   <div id="state" class="state">Fetching live levels from the USGS…</div>
@@ -112,16 +157,17 @@
 
 <script>
 const STATIONS=[
-  {id:'08183900',water:'Cibolo Creek',name:'near Boerne',loc:'Boerne · the home gauge'},
-  {id:'08183978',water:'Cibolo Creek',name:'at Specht Rd',loc:'Bulverde · ~15 mi SE'},
-  {id:'08184050',water:'Cibolo Creek',name:'at Smithson Valley Rd',loc:'Bulverde · ~20 mi SE'},
-  {id:'08166700',water:'Cypress Creek',name:'at Saur Farm',loc:'Comfort · ~21 mi NW'},
-  {id:'08166250',water:'Guadalupe River',name:'near Center Point',loc:'Center Point · ~26 mi NW'},
-  {id:'08167000',water:'Guadalupe River',name:'at Comfort',loc:'Comfort · ~15 mi NW'},
-  {id:'08167200',water:'Guadalupe River',name:'at FM 474, Bergheim',loc:'Bergheim · ~8 mi SE'},
-  {id:'08167500',water:'Guadalupe River',name:'near Spring Branch',loc:'Spring Branch · ~21 mi E'},
+  {id:'08183900',water:'Cibolo Creek',name:'near Boerne',loc:'Boerne · the home gauge',lat:29.77498889,lon:-98.7094694},
+  {id:'08183978',water:'Cibolo Creek',name:'at Specht Rd',loc:'Bulverde · ~15 mi SE',lat:29.73677778,lon:-98.4933722},
+  {id:'08184050',water:'Cibolo Creek',name:'at Smithson Valley Rd',loc:'Bulverde · ~20 mi SE',lat:29.74826667,lon:-98.4076833},
+  {id:'08166700',water:'Cypress Creek',name:'at Saur Farm',loc:'Comfort · ~21 mi NW',lat:30.0114361,lon:-98.9741361},
+  {id:'08166250',water:'Guadalupe River',name:'near Center Point',loc:'Center Point · ~26 mi NW',lat:29.98777778,lon:-99.11},
+  {id:'08167000',water:'Guadalupe River',name:'at Comfort',loc:'Comfort · ~15 mi NW',lat:29.96523889,lon:-98.8971667},
+  {id:'08167200',water:'Guadalupe River',name:'at FM 474, Bergheim',loc:'Bergheim · ~8 mi SE',lat:29.89358333,lon:-98.6698333},
+  {id:'08167500',water:'Guadalupe River',name:'near Spring Branch',loc:'Spring Branch · ~21 mi E',lat:29.8604957,lon:-98.3836275},
 ];
 const BY_ID=Object.fromEntries(STATIONS.map(s=>[s.id,s]));
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const tip=document.getElementById('tip');
 const showTip=(x,y,h)=>{tip.innerHTML=h;tip.style.opacity=1;const w=tip.offsetWidth;
   tip.style.left=Math.min(innerWidth-w-8,Math.max(8,x-w/2))+'px';tip.style.top=(y-tip.offsetHeight-12)+'px';};
@@ -129,10 +175,28 @@ const hideTip=()=>tip.style.opacity=0;
 let PERIOD='P7D';
 const fmtT=t=>new Date(t).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 
+/* ---------- freshness (x-built-at header) ---------- */
+let BUILT_AT=null, LATEST=null;
+function fmtAgo(ms){
+  const m=Math.max(0,Math.round((Date.now()-ms)/60000));
+  if(m<1)return 'just now';
+  if(m<60)return 'refreshed '+m+' min ago';
+  const h=Math.floor(m/60);
+  return 'refreshed '+h+' h '+(m%60)+' min ago';
+}
+function paintFreshness(){
+  const parts=[];
+  if(LATEST)parts.push('Data as of '+fmtT(LATEST));
+  if(BUILT_AT)parts.push(fmtAgo(BUILT_AT));
+  document.getElementById('updated').textContent=parts.join(' · ');
+}
+setInterval(paintFreshness,30000);
+
 async function fetchLevels(){
   // Served by our own Worker (/api/streams), which caches the USGS feed at the edge.
   const r=await fetch(`/api/streams?period=${PERIOD}`,{cache:'no-store'});
   if(!r.ok) throw new Error('feed returned '+r.status);
+  const builtAt=parseInt(r.headers.get('x-built-at'),10)||Date.now();
   const d=await r.json();
   const out={};
   (d.value.timeSeries||[]).forEach(ts=>{
@@ -146,7 +210,7 @@ async function fetchLevels(){
     if(!pts.length) return;
     (out[site]=out[site]||{})[pc]={unit,pts};
   });
-  return out;
+  return {data:out,builtAt};
 }
 
 function trendOf(pts){
@@ -180,14 +244,14 @@ function hydro(series,accent){
   grad.appendChild(el('stop',{offset:0,'stop-color':accent,'stop-opacity':.28}));
   grad.appendChild(el('stop',{offset:1,'stop-color':accent,'stop-opacity':0}));
   const defs=el('defs',{});defs.appendChild(grad);svg.appendChild(defs);
-  svg.appendChild(el('path',{d:area,fill:`url(#${gid})`}));
-  svg.appendChild(el('path',{d,fill:'none',stroke:accent,'stroke-width':'2','stroke-linejoin':'round','stroke-linecap':'round','vector-effect':'non-scaling-stroke'}));
+  svg.appendChild(el('path',{d:area,fill:`url(#${gid})`,'data-area':'1'}));
+  svg.appendChild(el('path',{d,fill:'none',stroke:accent,'stroke-width':'2','stroke-linejoin':'round','stroke-linecap':'round','vector-effect':'non-scaling-stroke','data-line':'1'}));
   const last=pts[pts.length-1];
   svg.appendChild(el('circle',{cx:x(last.t),cy:y(last.v),r:3.2,fill:'#08111c',stroke:'var(--water-hi)','stroke-width':'2','vector-effect':'non-scaling-stroke'}));
   // min/max labels
   const mn=el('text',{x:pl+1,y:H-4,fill:'#5f7789','font-family':'var(--mono)','font-size':'9'});mn.textContent=(lo+pad).toFixed(1);svg.appendChild(mn);
   const mxT=el('text',{x:pl+1,y:pt+2,fill:'#5f7789','font-family':'var(--mono)','font-size':'9'});mxT.textContent=(hi-pad).toFixed(1);svg.appendChild(mxT);
-  // hover
+  // hover crosshair + tooltip
   const guide=el('line',{y1:pt,y2:H-pb,stroke:'rgba(255,255,255,.25)','stroke-width':'1','vector-effect':'non-scaling-stroke',visibility:'hidden'});svg.appendChild(guide);
   const dot=el('circle',{r:3,fill:'var(--water-hi)',visibility:'hidden'});svg.appendChild(dot);
   svg.addEventListener('mousemove',e=>{const r=svg.getBoundingClientRect();const tx=t0+(e.clientX-r.left)/r.width*(t1-t0);
@@ -210,11 +274,106 @@ function classify(delta,unit){
   return{k:'steady',lbl:'Steady',col:'var(--steady)',ar:'▬'};
 }
 
+/* ---------- map ---------- */
+let map=null, markers={};
+const MARKER_COL={fast:'#f0b429',rise:'#38bdf8',fall:'#8aa0b5',steady:'#8aa0b5'};
+function initMap(){
+  if(map||!window.L)return;
+  document.getElementById('mapwrap').hidden=false;
+  document.getElementById('maplegend').hidden=false;
+  map=L.map('map',{scrollWheelZoom:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {subdomains:'abcd',maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+}
+function markerFor(c){
+  const col=MARKER_COL[c.cl.k];
+  const speed=(c.unit==='ft'&&c.tr.delta>0)?Math.min(9,c.tr.delta*.45):(c.cl.k==='rise'?2:0);
+  const r=5.5+speed;
+  const lvl=c.unit==='ft'?c.tr.cur.toFixed(2)+' ft':Math.round(c.tr.cur).toLocaleString()+' cfs';
+  const d24=c.unit==='ft'
+    ?(c.tr.delta>=0?'+':'')+c.tr.delta.toFixed(1)+' ft / 24h'
+    :(c.tr.delta>=0?'+':'')+Math.round(c.tr.delta).toLocaleString()+' cfs / 24h';
+  const m=L.circleMarker([c.st.lat,c.st.lon],{radius:r,color:col,weight:1.5,fillColor:col,fillOpacity:.55});
+  m._baseR=r;
+  m.bindTooltip(`<b>${c.st.water} ${c.st.name}</b><br>${lvl} · ${d24}`,{direction:'top',offset:[0,-6],opacity:1});
+  m.on('click',()=>{
+    const el=document.getElementById('card-'+c.st.id);
+    if(!el)return;
+    el.scrollIntoView({behavior:RM?'auto':'smooth',block:'center'});
+    el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');
+  });
+  return m;
+}
+function renderMap(cards){
+  initMap(); if(!map)return;
+  Object.values(markers).forEach(m=>m.remove()); markers={};
+  const pts=[];
+  // add falling/steady first so risers sit on top
+  cards.slice().reverse().forEach(c=>{
+    const m=markerFor(c); m.addTo(map);
+    markers[c.st.id]=m; pts.push([c.st.lat,c.st.lon]);
+  });
+  if(pts.length){
+    const b=L.latLngBounds(pts);
+    const fit=()=>{map.invalidateSize();map.fitBounds(b,{padding:[30,30],maxZoom:12});};
+    fit(); setTimeout(fit,150);   // refit once layout has settled
+  }
+}
+function highlightMarker(id,on){
+  const m=markers[id]; if(!m)return;
+  if(on){m.bringToFront();m.setRadius(m._baseR+3);m.setStyle({weight:2.5,fillOpacity:.9});}
+  else{m.setRadius(m._baseR);m.setStyle({weight:1.5,fillOpacity:.55});}
+}
+function linkCard(card,id){
+  card.tabIndex=0;
+  card.addEventListener('mouseenter',()=>highlightMarker(id,true));
+  card.addEventListener('mouseleave',()=>highlightMarker(id,false));
+  card.addEventListener('click',()=>{const m=markers[id];if(m){highlightMarker(id,true);m.openTooltip();}});
+  card.addEventListener('blur',()=>highlightMarker(id,false));
+  card.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    const m=markers[id]; if(!m||!map)return;
+    document.getElementById('mapwrap').scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'});
+    highlightMarker(id,true); m.openTooltip();
+    setTimeout(()=>{highlightMarker(id,false);m.closeTooltip();},2400);
+  });
+}
+
+/* ---------- small animations ---------- */
+function countUp(el,target,fmt){
+  if(RM||Math.abs(target)<0.001){el.textContent=fmt(target);return;}
+  const t0=performance.now(),dur=650;
+  const step=t=>{
+    const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3);
+    el.textContent=fmt(target*e);
+    if(k<1)requestAnimationFrame(step);
+  };
+  el.textContent=fmt(0);
+  requestAnimationFrame(step);
+}
+function drawIn(card){
+  card.querySelectorAll('.hydro path[data-line]').forEach(p=>{
+    let len=0; try{len=p.getTotalLength();}catch(_){}
+    if(!len)return;
+    p.style.strokeDasharray=len+' '+len;
+    p.style.strokeDashoffset=len;
+    p.getBoundingClientRect();               // flush
+    p.style.transition='stroke-dashoffset .6s ease-out';
+    p.style.strokeDashoffset='0';
+    p.addEventListener('transitionend',()=>{p.style.strokeDasharray='';p.style.transition='';},{once:true});
+  });
+  card.querySelectorAll('.hydro path[data-area]').forEach(p=>{
+    p.style.opacity=0;
+    requestAnimationFrame(()=>{p.style.transition='opacity .7s ease .2s';p.style.opacity=1;});
+  });
+}
+
 function render(data){
   const cards=STATIONS.map(st=>{
     const rec=data[st.id]; if(!rec)return null;
     const gh=rec['00065'], q=rec['00060'];
-    const feat=gh||q; const unit=feat.unit;
+    const feat=gh||q; if(!feat)return null;
+    const unit=feat.unit;
     const tr=trendOf(feat.pts);
     const cl=classify(tr.delta,unit);
     return {st,gh,q,feat,unit,tr,cl};
@@ -233,17 +392,22 @@ function render(data){
     sEl.innerHTML=s;
   } else sEl.textContent='No gauge data available right now.';
   const latest=Math.max(...cards.map(c=>c.tr.at));
-  if(isFinite(latest)) document.getElementById('updated').textContent='USGS reading '+fmtT(latest);
+  if(isFinite(latest)) LATEST=latest;
+  paintFreshness();
 
-  const grid=document.getElementById('grid');grid.innerHTML='';
-  cards.forEach(c=>{
+  const grid=document.getElementById('grid');
+  const animate=grid.childElementCount===0&&!RM;    // first paint of this view only
+  grid.innerHTML='';
+  cards.forEach((c,ci)=>{
     const {st,gh,q,feat,unit,tr,cl}=c;
-    const card=document.createElement('div');card.className='card';
+    const card=document.createElement('div');card.className='card';card.id='card-'+st.id;
     card.style.setProperty('--edge',cl.col);
     const cfsTxt = q ? `${Math.round(q.pts[q.pts.length-1].v).toLocaleString()}<small> cfs</small>` : '';
     const primary = gh ? `${tr.cur.toFixed(2)}<small> ft</small>` : `${Math.round(tr.cur).toLocaleString()}<small> cfs</small>`;
-    const d24 = unit==='ft' ? `${tr.delta>=0?'+':''}${tr.delta.toFixed(1)} ft / 24h`
-                            : `${tr.delta>=0?'+':''}${Math.round(tr.delta).toLocaleString()} cfs / 24h`;
+    // recent min–max range for the level bar
+    let rlo=Infinity,rhi=-Infinity;feat.pts.forEach(p=>{if(p.v<rlo)rlo=p.v;if(p.v>rhi)rhi=p.v;});
+    const fill=rhi>rlo?Math.max(0,Math.min(100,(tr.cur-rlo)/(rhi-rlo)*100)):100;
+    const fmtR=v=>unit==='ft'?v.toFixed(1):Math.round(v).toLocaleString();
     card.innerHTML=`
       <div class="water">${st.water}</div>
       <h3>${st.name}</h3>
@@ -252,27 +416,68 @@ function render(data){
         <div class="lvl">${primary}</div>
         <div class="cfs">${gh&&q?cfsTxt:''}<br><span class="trend" style="color:${cl.col}">${cl.ar} ${cl.lbl}</span></div>
       </div>
-      <div class="d24" style="font-family:var(--mono);font-size:.68rem;color:${cl.col};letter-spacing:.04em">${d24}</div>`;
+      <div class="d24" style="color:${cl.col}"><span class="d24n"></span></div>
+      <div class="range" title="Current level within this view's low–high range">
+        <span>${fmtR(rlo)}</span><div class="rangebar"><i></i></div><span>${fmtR(rhi)}</span>
+      </div>`;
+    const fmtD=v=>unit==='ft'
+      ?`${cl.ar} ${v>=0?'+':''}${v.toFixed(1)} ft / 24h`
+      :`${cl.ar} ${v>=0?'+':''}${Math.round(v).toLocaleString()} cfs / 24h`;
+    const dEl=card.querySelector('.d24n');
     card.appendChild(hydro(feat, gh?'var(--water)':'#7cc6a6'));
     const foot=document.createElement('div');foot.className='cardfoot';
     foot.innerHTML=`<span>${unit==='ft'?'gauge height':'streamflow'} · ${PERIOD==='P1D'?'24 h':PERIOD==='P7D'?'7 days':'30 days'}</span>
       <a href="https://waterdata.usgs.gov/monitoring-location/USGS-${st.id}/" target="_blank" rel="noopener">USGS ${st.id} ↗</a>`;
     card.appendChild(foot);
+    linkCard(card,st.id);
     grid.appendChild(card);
+    // level bar fill (transitions from 0 when animating; instant otherwise)
+    const barEl=card.querySelector('.rangebar i');
+    if(animate){requestAnimationFrame(()=>requestAnimationFrame(()=>{barEl.style.width=fill+'%';}));}
+    else barEl.style.width=fill+'%';
+    if(animate){countUp(dEl,tr.delta,fmtD);drawIn(card);}
+    else dEl.textContent=fmtD(tr.delta);
   });
   document.getElementById('state').hidden=true;
+  renderMap(cards);
 }
 
+/* ---------- load, with localStorage fallback ---------- */
+const cacheKey=()=>'creeks:'+PERIOD;
+function saveCache(data,builtAt){
+  try{localStorage.setItem(cacheKey(),JSON.stringify({builtAt,savedAt:Date.now(),data}));}catch(_){}
+}
+function readCache(){
+  try{const raw=localStorage.getItem(cacheKey());return raw?JSON.parse(raw):null;}catch(_){return null;}
+}
 let busy=false;
 async function load(){
   if(busy)return; busy=true;
   const state=document.getElementById('state');
+  const stale=document.getElementById('stale');
   try{
-    const data=await fetchLevels();
+    const {data,builtAt}=await fetchLevels();
+    BUILT_AT=builtAt;
+    stale.hidden=true;
     render(data);
+    saveCache(data,builtAt);
   }catch(e){
-    state.hidden=false;
-    state.innerHTML=`Couldn't reach the USGS feed (${e.message}). <button class="btn" onclick="load()">Retry</button>`;
+    const c=readCache();
+    if(c&&c.data){
+      BUILT_AT=c.builtAt||c.savedAt||null;
+      try{
+        render(c.data);
+        state.hidden=true;
+        stale.hidden=false;
+        stale.textContent='Live update failed — showing data from '+fmtT(LATEST||c.savedAt)+'.';
+      }catch(_){
+        state.hidden=false;
+        state.innerHTML=`Couldn't reach the USGS feed (${e.message}). <button class="btn" onclick="load()">Retry</button>`;
+      }
+    }else{
+      state.hidden=false;
+      state.innerHTML=`Couldn't reach the USGS feed (${e.message}). <button class="btn" onclick="load()">Retry</button>`;
+    }
   }finally{busy=false;}
 }
 
