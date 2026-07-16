@@ -33,6 +33,14 @@ const ALLOWED_WELLS = new Set([
 ]);
 const DEFAULT_WELL = "6811417";
 
+// USGS real-time stream gauges around Boerne (Cibolo, Guadalupe, Cypress).
+// The list lives here so /api/streams can't be used as an open proxy to USGS.
+const STREAM_SITES =
+  "08183900,08183978,08184050,08166700,08166250,08167000,08167200,08167500";
+const STREAM_PERIODS = new Set(["P1D", "P7D", "P30D"]);
+// Bounding box (west,south,east,north) for daily rainfall stations near Boerne.
+const RAIN_BBOX = "-99.15,29.50,-98.30,30.20";
+
 // Per-isolate map of in-flight builds — the thundering-herd guard.
 const inflight = new Map();
 
@@ -42,6 +50,12 @@ export default {
 
     if (url.pathname === "/api/well") {
       return handleWell(url, ctx);
+    }
+    if (url.pathname === "/api/streams") {
+      return handleStreams(url, ctx);
+    }
+    if (url.pathname === "/api/rain") {
+      return handleRain(ctx);
     }
 
     // Everything else = static assets from ./public
@@ -170,6 +184,126 @@ function aggregate(raw, wellId) {
     daily,
     recent,
   };
+}
+
+// --- Streams (USGS) and rainfall (ACIS) — cached, viral-safe proxies ---------
+// Both external feeds are fetched server-side and cached at the edge with
+// stale-while-revalidate, so visitors hit our edge, not the upstream API, and a
+// spike never waits on a rebuild. Same pattern as the well endpoint above.
+
+async function handleStreams(url, ctx) {
+  let period = (url.searchParams.get("period") || "P7D").toUpperCase();
+  if (!STREAM_PERIODS.has(period)) period = "P7D";
+  const key = new Request(`https://cache.local/streams/${CACHE_VERSION}/${period}`);
+  // USGS posts new readings ~every 15 min; refresh every 5 min so a rising
+  // creek stays current, SWR so nobody waits.
+  return cachedJson(key, 300, async () => {
+    const u =
+      `https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${STREAM_SITES}` +
+      `&parameterCd=00065,00060&period=${period}&siteStatus=all`;
+    const r = await fetch(u, { cache: "no-store" });
+    if (!r.ok) throw new Error(`USGS ${r.status}`);
+    return await r.json();
+  }, ctx);
+}
+
+async function handleRain(ctx) {
+  const key = new Request(`https://cache.local/rain/${CACHE_VERSION}`);
+  // Daily totals from the CoCoRaHS/COOP networks via ACIS. They trickle in
+  // through the morning, so an hourly refresh is plenty.
+  return cachedJson(key, 3600, async () => {
+    const end = new Date();
+    const start = new Date(end.getTime() - 13 * 864e5);
+    const iso = (d) => d.toISOString().slice(0, 10);
+    const params = JSON.stringify({
+      bbox: RAIN_BBOX,
+      sdate: iso(start),
+      edate: iso(end),
+      elems: "pcpn",
+      meta: "name,ll,sids,county",
+    });
+    const u = `https://data.rcc-acis.org/MultiStnData?params=${encodeURIComponent(params)}`;
+    const r = await fetch(u);
+    if (!r.ok) throw new Error(`ACIS ${r.status}`);
+    const raw = await r.json();
+
+    // Dates line up positionally with each station's data array (sdate..edate).
+    const dates = [];
+    for (let t = start.getTime(); t <= end.getTime(); t += 864e5) dates.push(iso(new Date(t)));
+    const BO = [29.7947, -98.732]; // Boerne
+    const miDist = (la, lo) => {
+      const R = 3958.8, r = Math.PI / 180;
+      const a = Math.sin((la - BO[0]) * r / 2) ** 2 +
+        Math.cos(BO[0] * r) * Math.cos(la * r) * Math.sin((lo - BO[1]) * r / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    };
+    // ACIS precip codes: 'M' missing, 'T' trace, values may carry a flag letter.
+    const pcp = (v) => {
+      if (v == null || v === "M") return null;
+      if (v === "T") return 0.002;
+      const n = parseFloat(v);
+      return isNaN(n) ? null : n;
+    };
+    const stations = [];
+    for (const s of raw.data || []) {
+      const ll = s.meta && s.meta.ll;
+      if (!ll) continue;
+      const lon = ll[0], lat = ll[1];
+      const d = miDist(lat, lon);
+      if (d > 24) continue; // keep it Boerne-area
+      const vals = (s.data || []).map((x) => pcp(Array.isArray(x) ? x[0] : x));
+      if (!vals.slice(-3).some((v) => v != null)) continue; // must have reported recently
+      stations.push({
+        name: s.meta.name,
+        lat: +lat.toFixed(4),
+        lon: +lon.toFixed(4),
+        dist: +d.toFixed(1),
+        vals,
+      });
+    }
+    const total = (v) => v.reduce((a, b) => a + (b || 0), 0);
+    stations.sort((a, b) => total(b.vals) - total(a.vals)); // wettest first
+    return { updated: iso(end), dates, stations: stations.slice(0, 30) };
+  }, ctx);
+}
+
+// Generic edge-cached JSON with background revalidation past the TTL.
+async function cachedJson(cacheKey, ttlSec, builder, ctx) {
+  const cache = caches.default;
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    const builtAt = Number(cached.headers.get("x-built-at")) || 0;
+    if (Date.now() - builtAt > ttlSec * 1000) {
+      ctx.waitUntil(
+        (async () => {
+          try {
+            await cache.put(cacheKey, cachedResponse(await builder(), ttlSec));
+          } catch (_) {
+            /* keep serving the last good copy — stale-if-error */
+          }
+        })(),
+      );
+    }
+    return cached;
+  }
+  let payload;
+  try {
+    payload = await builder();
+  } catch (e) {
+    return json({ error: e.message }, 502, { "Cache-Control": "public, max-age=30" });
+  }
+  const resp = cachedResponse(payload, ttlSec);
+  ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+  return resp;
+}
+
+function cachedResponse(payload, ttlSec) {
+  return json(payload, 200, {
+    "Cache-Control":
+      `public, max-age=${ttlSec}, s-maxage=${EDGE_SECONDS}, ` +
+      `stale-while-revalidate=${EDGE_SECONDS}, stale-if-error=${EDGE_SECONDS}`,
+    "x-built-at": String(Date.now()),
+  });
 }
 
 function json(obj, status = 200, extra = {}) {

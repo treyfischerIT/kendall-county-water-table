@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Boerne-Area Creeks & Rivers — Live Levels</title>
-<meta name="description" content="Live USGS gauge heights and streamflow for creeks and rivers around Boerne, Texas — the Cibolo, the Guadalupe, and Cypress Creek — showing which are rising or falling right now.">
+<meta name="description" content="Live USGS gauge heights and streamflow for creeks and rivers around Boerne, Texas — rising or falling right now.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a121c">
 <link rel="canonical" href="https://www.texaswaterwatchers.com/creeks">
@@ -130,10 +130,9 @@ let PERIOD='P7D';
 const fmtT=t=>new Date(t).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 
 async function fetchLevels(){
-  const ids=STATIONS.map(s=>s.id).join(',');
-  const url=`https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${ids}&parameterCd=00065,00060&period=${PERIOD}&siteStatus=all`;
-  const r=await fetch(url,{cache:'no-store'});
-  if(!r.ok) throw new Error('USGS returned '+r.status);
+  // Served by our own Worker (/api/streams), which caches the USGS feed at the edge.
+  const r=await fetch(`/api/streams?period=${PERIOD}`,{cache:'no-store'});
+  if(!r.ok) throw new Error('feed returned '+r.status);
   const d=await r.json();
   const out={};
   (d.value.timeSeries||[]).forEach(ts=>{

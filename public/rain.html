@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boerne-Area Rainfall — Live Daily Totals</title>
+<meta name="description" content="Live daily rainfall totals at CoCoRaHS and NWS co-op gauges around Boerne, Texas.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a121c">
+<link rel="canonical" href="https://www.texaswaterwatchers.com/rain">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127783;</text></svg>">
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0a121c; --panel:#101f2f; --panel2:#0d1927;
+    --paper:#eef4fa; --mist:#93aabf; --faint:#5f7789;
+    --line:rgba(147,170,191,.16);
+    --water:#4aa3e4; --rain-hi:#7fd0f5;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#12233a 0%,var(--ink) 55%) no-repeat;
+    color:var(--paper);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:1080px;margin:0 auto;padding:clamp(24px,4vw,52px) clamp(16px,4vw,36px) 72px}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--water);margin:0}
+  h1{font-family:var(--serif);font-weight:600;line-height:1.03;letter-spacing:-.01em;
+    font-size:clamp(2rem,5.5vw,3.4rem);margin:.28em 0 .12em;text-wrap:balance}
+  .lede{color:#cdd9e6;max-width:66ch;margin:.3em 0 0;font-size:1.02rem}
+  .bar{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin:26px 0 4px;
+    padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .summary{font-family:var(--mono);font-size:.82rem;color:var(--mist);letter-spacing:.02em}
+  .summary b{color:var(--paper)} .summary .hi{color:var(--rain-hi)}
+  .spacer{margin-left:auto}
+  .updated{font-family:var(--mono);font-size:.68rem;color:var(--faint);letter-spacing:.04em}
+  .btn{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--paper);border:1px solid var(--line);border-radius:100px;padding:7px 14px;cursor:pointer}
+  .btn:hover{border-color:var(--water)} :focus-visible{outline:2px solid var(--water);outline-offset:3px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:22px}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:16px;padding:16px 16px 12px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--edge,transparent)}
+  .card h3{font-family:var(--serif);font-weight:600;font-size:1.12rem;margin:0 0 .1em;line-height:1.15}
+  .card .loc{font-family:var(--mono);font-size:.66rem;color:var(--mist);letter-spacing:.03em}
+  .readline{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:12px 0 2px}
+  .amt{font-family:var(--serif);font-size:2.1rem;font-weight:600;line-height:.95;font-variant-numeric:tabular-nums}
+  .amt small{font-size:.9rem;color:var(--mist);font-family:var(--sans);font-weight:400;margin-left:3px}
+  .amt .none{color:var(--faint);font-size:1.3rem}
+  .side{font-family:var(--mono);font-size:.68rem;color:var(--mist);text-align:right;line-height:1.6}
+  .side b{color:var(--paper)}
+  .bars{width:100%;height:auto;display:block;margin-top:10px}
+  .cardfoot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;
+    font-family:var(--mono);font-size:.63rem;color:var(--faint);letter-spacing:.02em}
+  .state{font-family:var(--mono);font-size:.8rem;color:var(--mist);padding:40px 0;text-align:center}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.68rem;line-height:1.7;color:var(--faint);letter-spacing:.02em}
+  footer b{color:var(--mist);font-weight:400}
+  .tip{position:fixed;pointer-events:none;z-index:50;background:#08111c;border:1px solid var(--line);
+    border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:.7rem;color:var(--paper);
+    opacity:0;transition:opacity .08s;white-space:nowrap;box-shadow:0 8px 26px rgba(0,0,0,.5)}
+  .scalekey{display:flex;align-items:center;gap:10px;margin-top:16px;font-family:var(--mono);
+    font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mist)}
+  .scalebar{width:120px;height:9px;border-radius:100px;background:linear-gradient(90deg,#24425f,#3f86cc,#7fd0f5)}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Live · daily rainfall · CoCoRaHS &amp; NWS co-op</p>
+    <h1>Boerne-area rainfall</h1>
+    <p class="lede">How much rain has fallen at gauges around Boerne over the past two weeks —
+      daily totals from the volunteer <a href="https://cocorahs.org" target="_blank" rel="noopener" style="color:var(--water)">CoCoRaHS</a>
+      network and National Weather Service cooperative observers. Each bar is one day's total, in inches.</p>
+    <div class="bar">
+      <span class="summary" id="summary">Loading rain gauges…</span>
+      <span class="spacer"></span>
+      <span class="updated" id="updated"></span>
+      <button class="btn" id="refresh">↻ Refresh</button>
+    </div>
+    <div class="scalekey"><span>Lighter day</span><span class="scalebar"></span><span>Heavier day</span>
+      <span style="margin-left:auto;color:var(--faint)">bar height = inches that day</span></div>
+  </header>
+
+  <div id="grid" class="grid"></div>
+  <div id="state" class="state">Fetching daily rainfall…</div>
+
+  <footer>
+    <b>Source</b> — CoCoRaHS and NWS Cooperative Observer daily precipitation, via the Applied Climate
+    Information System (ACIS / rcc-acis.org), pulled and cached by this site's Cloudflare Worker.
+    Provisional; volunteer reports usually post by mid-morning. Stations within ~24 miles of Boerne that
+    reported in the last three days, most rain first.<br>
+    <b>A companion to the Kendall County water-table tracker.</b>
+  </footer>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+const tip=document.getElementById('tip');
+const showTip=(x,y,h)=>{tip.innerHTML=h;tip.style.opacity=1;const w=tip.offsetWidth;
+  tip.style.left=Math.min(innerWidth-w-8,Math.max(8,x-w/2))+'px';tip.style.top=(y-tip.offsetHeight-12)+'px';};
+const hideTip=()=>tip.style.opacity=0;
+const hx=h=>{h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];};
+const mix=(c1,c2,t)=>{const a=hx(c1),b=hx(c2);return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;};
+const rainColor=(v,max)=>{ if(v==null)return 'transparent'; if(v<0.005)return '#2b4763';
+  const t=Math.sqrt(Math.min(1,v/(max||1))); return mix('#24425f','#7fd0f5',t); };
+const fmtDate=iso=>{const [y,m,d]=iso.split('-');return new Date(y,m-1,d).toLocaleDateString(undefined,{month:'short',day:'numeric'});};
+const inch=v=> v==null?'—' : v<0.005?'T' : v.toFixed(2);
+
+function bars(vals,dates,gmax){
+  const NS='http://www.w3.org/2000/svg', n=vals.length, W=360,H=76,pb=14,pt=6,gap=3;
+  const bw=(W-(n-1)*gap)/n;
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const svg=el('svg',{class:'bars',viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none',role:'img',
+    'aria-label':'Daily rainfall totals, last two weeks'});
+  svg.appendChild(el('line',{x1:0,y1:H-pb,x2:W,y2:H-pb,stroke:'rgba(147,170,191,.18)','stroke-width':'1','vector-effect':'non-scaling-stroke'}));
+  vals.forEach((v,i)=>{
+    const x=i*(bw+gap);
+    if(v==null){ // missing day marker
+      svg.appendChild(el('circle',{cx:x+bw/2,cy:H-pb+5,r:'1.1',fill:'#3a4d63'})); return; }
+    const h=Math.max(v<0.005?2:2,(v/(gmax||1))*(H-pb-pt));
+    const rect=el('rect',{x:x.toFixed(1),y:(H-pb-h).toFixed(1),width:Math.max(1,bw).toFixed(1),height:h.toFixed(1),
+      rx:Math.min(3,bw/2),fill:rainColor(v,gmax)});
+    rect.addEventListener('mousemove',e=>showTip(e.clientX,e.clientY,`${fmtDate(dates[i])} · ${inch(v)}${v>=0.005?'"':' (trace)'}`));
+    rect.addEventListener('mouseleave',hideTip);
+    svg.appendChild(rect);
+  });
+  return svg;
+}
+
+async function fetchRain(){
+  const r=await fetch('/api/rain',{cache:'no-store'});
+  if(!r.ok) throw new Error('feed returned '+r.status);
+  const d=await r.json(); if(d.error) throw new Error(d.error);
+  return d;
+}
+
+function render(d){
+  const {dates,stations}=d;
+  const total=v=>v.reduce((a,b)=>a+(b||0),0);
+  const last7=v=>v.slice(-7).reduce((a,b)=>a+(b||0),0);
+  const latest=v=>{for(let i=v.length-1;i>=0;i--)if(v[i]!=null)return {v:v[i],i};return null;};
+  let gmax=0; stations.forEach(s=>s.vals.forEach(v=>{if(v!=null&&v>gmax)gmax=v;}));
+  // headline: heaviest single day
+  let peak={v:-1};
+  stations.forEach(s=>s.vals.forEach((v,i)=>{if(v!=null&&v>peak.v)peak={v,i,name:s.name};}));
+
+  const sEl=document.getElementById('summary');
+  if(stations.length){
+    const areaAvg = stations.reduce((a,s)=>a+last7(s.vals),0)/stations.length;
+    let s=`<b>${stations.length}</b> gauges within 24 mi`;
+    if(peak.v>=0.01) s+=` · heaviest day <span class="hi"><b>${peak.v.toFixed(2)}"</b></span> at <b>${peak.name}</b> on ${fmtDate(dates[peak.i])}`;
+    s+=` · area 7-day avg <b>${areaAvg.toFixed(2)}"</b>`;
+    sEl.innerHTML=s;
+  } else sEl.textContent='No rain reports available right now.';
+  document.getElementById('updated').textContent='Through '+fmtDate(d.updated);
+
+  const grid=document.getElementById('grid');grid.innerHTML='';
+  stations.forEach(s=>{
+    const lt=latest(s.vals), t7=last7(s.vals), t14=total(s.vals);
+    const card=document.createElement('div');card.className='card';
+    card.style.setProperty('--edge',rainColor(t7,gmax*4));
+    const big = lt ? (lt.v<0.005?`<span class="none">Trace</span>`:`${lt.v.toFixed(2)}<small> in</small>`) : `<span class="none">—</span>`;
+    const when = lt ? fmtDate(dates[lt.i]) : '';
+    card.innerHTML=`
+      <h3>${s.name}</h3>
+      <div class="loc">${s.dist} mi from Boerne · ${s.lat}, ${s.lon}</div>
+      <div class="readline">
+        <div><div class="amt">${big}</div><div class="loc" style="margin-top:2px">latest daily total · ${when}</div></div>
+        <div class="side">7-day <b>${t7.toFixed(2)}"</b><br>14-day <b>${t14.toFixed(2)}"</b></div>
+      </div>`;
+    card.appendChild(bars(s.vals,dates,gmax));
+    const foot=document.createElement('div');foot.className='cardfoot';
+    foot.innerHTML=`<span>daily totals · ${fmtDate(dates[0])} – ${fmtDate(dates[dates.length-1])}</span><span>inches</span>`;
+    card.appendChild(foot);
+    grid.appendChild(card);
+  });
+  document.getElementById('state').hidden=true;
+}
+
+let busy=false;
+async function load(){
+  if(busy)return; busy=true;
+  const state=document.getElementById('state');
+  try{ render(await fetchRain()); }
+  catch(e){ state.hidden=false; state.innerHTML=`Couldn't load rainfall (${e.message}). <button class="btn" onclick="load()">Retry</button>`; }
+  finally{ busy=false; }
+}
+document.getElementById('refresh').addEventListener('click',load);
+load();
+setInterval(()=>{if(!document.hidden)load();},30*60*1000);
+</script>
+</body>
+</html>
