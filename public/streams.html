@@ -33,12 +33,12 @@
 
   /* ---- cross-nav ---- */
   /* nav band: identical metrics on /, /rain, /streams so it never shifts between pages */
-  .navband{border-bottom:1px solid var(--line)}
+  .navband{background:rgba(74,163,228,.07);border-bottom:1px solid rgba(74,163,228,.30)}
   .crossnav{max-width:1080px;margin:0 auto;display:flex;gap:4px 22px;flex-wrap:wrap;
     font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;padding:14px clamp(16px,4vw,36px)}
-  .crossnav a{color:var(--faint);text-decoration:none;padding:2px 0;border-bottom:1px solid transparent;transition:color .15s}
-  .crossnav a:hover{color:var(--water)}
-  .crossnav a[aria-current="page"]{color:var(--water);border-bottom-color:rgba(74,163,228,.6)}
+  .crossnav a{color:#c3d4e4;text-decoration:none;padding:2px 0;border-bottom:1px solid rgba(147,170,191,.35);transition:color .15s,border-color .15s}
+  .crossnav a:hover{color:var(--water);border-bottom-color:var(--water)}
+  .crossnav a[aria-current="page"]{color:var(--water);border-bottom-color:var(--water);font-weight:600}
 
   .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--water);margin:0}
   h1{font-family:var(--serif);font-weight:600;line-height:1.03;letter-spacing:-.01em;
