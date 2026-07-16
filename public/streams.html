@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Boerne-Area Creeks & Rivers — Live Levels</title>
-<meta name="description" content="Pick a gauge and read its story — live USGS levels for the Cibolo, Guadalupe, and Cypress Creek around Boerne, Texas.">
+<title>Kendall County–Area Creeks & Rivers — Live Levels</title>
+<meta name="description" content="Pick a gauge and read its story — live USGS levels for the Cibolo, Guadalupe, and Cypress Creek across the Kendall County, Texas area, with a human-scale view of the rising water.">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0a121c">
+<meta name="theme-color" content="#0e1b2a">
 <link rel="canonical" href="https://www.texaswaterwatchers.com/streams">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127754;</text></svg>">
 </head>
@@ -15,10 +15,10 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root{
-    --ink:#0a121c; --panel:#101f2f; --panel2:#0d1927;
-    --paper:#eef4fa; --mist:#93aabf; --faint:#5f7789;
-    --line:rgba(147,170,191,.16);
-    --water:#4aa3e4; --water-hi:#9ad8f7;
+    --ink:#0e1b2a; --panel:#13263a; --panel2:#0f2032;
+    --paper:#eaf2fb; --mist:#93aec7; --faint:#5f7789;
+    --line:rgba(147,174,199,.18);
+    --water:#38bdf8; --water-hi:#9ad8f7;
     --rise:#38bdf8; --rise-fast:#f0b429; --fall:#8aa0b5; --steady:#7b93a8;
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
     --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
@@ -26,14 +26,14 @@
   }
   *{box-sizing:border-box}
   [hidden]{display:none!important}
-  body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#12233a 0%,var(--ink) 55%) no-repeat;
+  body{margin:0;background:var(--ink);
     color:var(--paper);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   .wrap{max-width:1080px;margin:0 auto;padding:clamp(20px,3.5vw,44px) clamp(16px,4vw,36px) 72px}
   :focus-visible{outline:2px solid var(--water);outline-offset:3px}
 
   /* ---- cross-nav ---- */
   /* nav band: identical metrics on /, /rain, /streams so it never shifts between pages */
-  .navband{background:rgba(74,163,228,.07);border-bottom:1px solid rgba(74,163,228,.30)}
+  .navband{background:rgba(56,189,248,.07);border-bottom:1px solid rgba(56,189,248,.30)}
   .crossnav{max-width:1080px;margin:0 auto;display:flex;gap:4px 22px;flex-wrap:wrap;
     font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;padding:14px clamp(16px,4vw,36px)}
   .crossnav a{color:#c3d4e4;text-decoration:none;padding:2px 0;border-bottom:1px solid rgba(147,170,191,.35);transition:color .15s,border-color .15s}
@@ -65,7 +65,7 @@
   /* ---- water motifs ---- */
   .waveline{height:20px;overflow:hidden;margin:24px 0 -6px;opacity:.55}
   .waveline svg{width:100%;height:100%;display:block}
-  .waveline path{fill:none;stroke:rgba(74,163,228,.34);stroke-width:1.2;vector-effect:non-scaling-stroke}
+  .waveline path{fill:none;stroke:rgba(56,189,248,.34);stroke-width:1.2;vector-effect:non-scaling-stroke}
   .waveline .w2{stroke:rgba(154,216,247,.16)}
   @media(prefers-reduced-motion:no-preference){
     .waveline .w1{animation:wdrift 19s linear infinite}
@@ -74,31 +74,46 @@
     .shimmer2{animation:shimmerdrift 36s linear infinite}
     .ripplering{transform-box:fill-box;transform-origin:center;animation:ripple 4.4s ease-out infinite}
     .ilvl::after{animation:waterline 9s linear infinite}
-    .crkdrift{animation:crkdrift 7s linear infinite}
   }
   @keyframes wdrift{to{transform:translateX(120px)}}
   @keyframes shimmerdrift{to{transform:translateX(120px)}}
   @keyframes ripple{0%{transform:scale(.55);opacity:.65}100%{transform:scale(2.6);opacity:0}}
   @keyframes waterline{to{background-position-x:26px}}
-  @keyframes crkdrift{to{stroke-dashoffset:-126}}
 
-  /* ---- the creek from above ---- */
+  /* ---- perspective panel ---- */
   .xsec{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
   .xhead{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mist)}
   .xnote{display:block;font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:3px;letter-spacing:.02em}
-  .crkwrap{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden;
-    background:linear-gradient(180deg,#0e1d2e,#091320);box-shadow:inset 0 0 40px rgba(0,0,0,.35)}
-  .crkwrap svg{display:block;width:100%;height:auto}
-  .xslab{font-family:var(--mono);font-size:13px;paint-order:stroke;stroke:#0d1927;stroke-width:3.5px}
+  .xslab{font-family:var(--mono);font-size:13px;paint-order:stroke;stroke:#0f2032;stroke-width:3.5px}
+
+  /* ---- standing in the creek + replay ---- */
+  .scnwrap{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    background:linear-gradient(180deg,#0d1c2d,#0a1421);box-shadow:inset 0 0 40px rgba(0,0,0,.35)}
+  .scnwrap svg{display:block;width:100%;height:auto}
+  .rpbar{display:flex;align-items:center;gap:10px 14px;margin-top:10px;flex-wrap:wrap}
+  .rpbar .btn:disabled{opacity:.4;cursor:default}
+  .rpbar .btn:disabled:hover{border-color:var(--line)}
+  .rpout{font-family:var(--mono);font-size:.68rem;color:var(--mist);letter-spacing:.02em;
+    font-variant-numeric:tabular-nums;min-width:16ch}
+  #rscrub{flex:1;min-width:150px;height:44px;background:transparent;cursor:pointer;
+    -webkit-appearance:none;appearance:none;margin:0}
+  #rscrub:disabled{opacity:.35;cursor:default}
+  #rscrub::-webkit-slider-runnable-track{height:6px;border-radius:100px;background:rgba(147,170,191,.18)}
+  #rscrub::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;
+    background:var(--water);border:2px solid #0f2032;margin-top:-8px;box-shadow:0 0 0 3px rgba(56,189,248,.25)}
+  #rscrub::-moz-range-track{height:6px;border-radius:100px;background:rgba(147,170,191,.18)}
+  #rscrub::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--water);border:2px solid #0f2032;
+    box-shadow:0 0 0 3px rgba(56,189,248,.25)}
+  #rscrub:focus-visible{outline:2px solid var(--water);outline-offset:2px}
 
   /* ---- hero map ---- */
   .mapwrap{margin-top:22px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
     height:clamp(220px,50vw,430px);position:relative;background:var(--panel2);max-width:100%}
-  #map{position:absolute;inset:0;background:#0a121c;z-index:0}
+  #map{position:absolute;inset:0;background:var(--ink);z-index:0}
   .leaflet-container{font-family:var(--mono);font-size:.68rem}
   .leaflet-control-attribution{background:rgba(8,17,28,.72)!important;color:var(--faint)!important}
   .leaflet-control-attribution a{color:var(--mist)!important}
-  .leaflet-control-zoom a{background:#0d1927!important;color:var(--paper)!important;border:1px solid var(--line)!important}
+  .leaflet-control-zoom a{background:#0f2032!important;color:var(--paper)!important;border:1px solid var(--line)!important}
   .leaflet-interactive{cursor:pointer}
   .glabel{background:rgba(8,17,28,.82);border:1px solid rgba(147,170,191,.3);color:var(--paper);
     font-family:var(--mono);font-size:.62rem;line-height:1.4;padding:2px 6px;border-radius:6px;
@@ -116,7 +131,7 @@
   .chipcard{flex:0 0 auto;min-width:158px;text-align:left;background:linear-gradient(180deg,var(--panel),var(--panel2));
     border:1px solid var(--line);border-radius:12px;padding:9px 12px 7px;cursor:pointer;color:var(--paper);
     font-family:var(--sans);transition:border-color .15s,transform .15s}
-  .chipcard:hover{border-color:rgba(74,163,228,.45);box-shadow:0 12px 24px rgba(0,0,0,.45)}
+  .chipcard:hover{border-color:rgba(56,189,248,.45);box-shadow:0 12px 24px rgba(0,0,0,.45)}
   @media(prefers-reduced-motion:no-preference){.chipcard:hover{transform:translateY(-2px)}}
   .chipcard.on{border-color:var(--water);box-shadow:0 0 0 1px var(--water),0 10px 24px rgba(0,0,0,.35)}
   .chipcard .cw{font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
@@ -155,9 +170,9 @@
   #chartbox{transition:opacity .2s}
   #chartbox svg{display:block;width:100%;height:auto}
   .axis{font-family:var(--mono);font-size:10px;fill:var(--faint)}
-  .tag{font-family:var(--mono);font-size:10px;fill:var(--mist);paint-order:stroke;stroke:#0d1927;stroke-width:3px}
+  .tag{font-family:var(--mono);font-size:10px;fill:var(--mist);paint-order:stroke;stroke:#0f2032;stroke-width:3px}
   .tag.hi{fill:var(--water-hi)}
-  .rhlabel{font-family:var(--mono);font-size:10px;fill:var(--rise-fast);paint-order:stroke;stroke:#0d1927;stroke-width:3px}
+  .rhlabel{font-family:var(--mono);font-size:10px;fill:var(--rise-fast);paint-order:stroke;stroke:#0f2032;stroke-width:3px}
   .pill{position:absolute;top:2px;left:0;pointer-events:none;background:#08111c;border:1px solid rgba(147,170,191,.35);
     border-radius:7px;padding:5px 9px;font-family:var(--mono);font-size:.68rem;color:var(--paper);
     white-space:nowrap;box-shadow:0 8px 26px rgba(0,0,0,.5);z-index:5;font-variant-numeric:tabular-nums}
@@ -173,12 +188,12 @@
     font-size:.62rem;color:var(--faint);letter-spacing:.02em;font-variant-numeric:tabular-nums}
   .rangebar{flex:1;min-width:120px;height:6px;border-radius:100px;background:rgba(147,170,191,.13);position:relative}
   .rangebar i{display:block;position:relative;height:100%;border-radius:100px;width:0;
-    background:linear-gradient(90deg,rgba(74,163,228,.25),var(--water) 70%,var(--water-hi));
+    background:linear-gradient(90deg,rgba(56,189,248,.25),var(--water) 70%,var(--water-hi));
     transition:width .8s cubic-bezier(.25,.7,.3,1)}
   .rangebar i::after{content:"";position:absolute;right:-2px;top:-2px;bottom:-2px;width:8px;border-radius:100px;
     background:radial-gradient(closest-side,rgba(154,216,247,.85),rgba(154,216,247,0))}
   .rangebar b{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--water-hi);
-    border:2px solid #0d1927;transform:translate(-50%,-50%);left:0;transition:left .8s cubic-bezier(.25,.7,.3,1)}
+    border:2px solid #0f2032;transform:translate(-50%,-50%);left:0;transition:left .8s cubic-bezier(.25,.7,.3,1)}
   .ctxsrc{margin-left:auto}
   .ctxsrc a{color:var(--mist);text-decoration:none;border-bottom:1px solid var(--line)}
   .ctxsrc a:hover{color:var(--water)}
@@ -214,9 +229,10 @@
 <div class="wrap">
   <header>
     <p class="eyebrow">Live · U.S. Geological Survey stream gauges</p>
-    <h1>Boerne-area creeks &amp; rivers</h1>
-    <p class="lede">Pick a gauge — on the map, in the rail, or from the list — and read its story:
-      how high the water is right now, how fast it's moving, and where the last few days took it.
+    <h1>Creeks &amp; rivers of the Kendall County area</h1>
+    <p class="lede">Pick a gauge on the Cibolo, the Guadalupe, or Cypress Creek — on the map, in the
+      rail, or from the list — and read its story: how high the water is running across the Kendall
+      County area right now, how fast it's moving, and where the last few days took it.
       Gauge height in feet, updated by the USGS about every 15&nbsp;minutes.</p>
     <div class="bar">
       <span class="summary" id="summary">Loading gauges…</span>
@@ -279,10 +295,16 @@
       <span id="ctxhi"></span>
       <span class="ctxsrc" id="ctxsrc"></span>
     </div>
-    <div class="xsec">
-      <div class="xhead">The creek from above — how full it's running</div>
-      <span class="xnote" id="cnote"></span>
-      <div class="crkwrap" id="crkwrap"></div>
+    <div class="xsec" id="scnpanel">
+      <div class="xhead">Standing in the creek — the last 24 hours</div>
+      <span class="xnote" id="snote"></span>
+      <div class="scnwrap" id="scnwrap"></div>
+      <div class="rpbar">
+        <button class="btn" id="rplay">▶ Replay 24 h</button>
+        <input type="range" id="rscrub" min="0" max="1000" value="1000" step="5"
+          aria-label="Scrub through the last 24 hours of readings">
+        <span class="rpout" id="rpout"></span>
+      </div>
     </div>
   </section>
 
@@ -675,7 +697,7 @@ function renderChart(c,animate){
   // crosshair + zoom band
   const guide=el('line',{y1:mt,y2:H-mb,stroke:'rgba(255,255,255,.3)','stroke-width':'1','vector-effect':'non-scaling-stroke',visibility:'hidden'});
   const dot=el('circle',{r:3.4,fill:'var(--water-hi)',visibility:'hidden'});
-  const band=el('rect',{y:mt,height:H-mt-mb,fill:'rgba(74,163,228,.16)',stroke:'rgba(154,216,247,.5)',
+  const band=el('rect',{y:mt,height:H-mt-mb,fill:'rgba(56,189,248,.16)',stroke:'rgba(154,216,247,.5)',
     'stroke-width':'1','vector-effect':'non-scaling-stroke',visibility:'hidden'});
   svg.appendChild(band);svg.appendChild(guide);svg.appendChild(dot);
 
@@ -794,104 +816,202 @@ $('resetzoom').addEventListener('click',resetZoom);
 let rsz=null;
 addEventListener('resize',()=>{
   clearTimeout(rsz);
-  rsz=setTimeout(()=>{const c=cardFor(SELECTED);if(c){renderChart(c,false);creekSet(c);}},180);
+  rsz=setTimeout(()=>{const c=cardFor(SELECTED);if(c){renderChart(c,false);
+    if(SCN&&SCN.mobile!==(innerWidth<560))sceneSet(c);}},180);
 });
 
-/* ---------- the creek from above (pseudo-3D meander, built once) ----------
-   Water width + brightness track where the current level sits in the loaded
-   window's min–max. Honest illustration — not literal channel width. */
-let CRK=null;
-const CRK_PATH="M-20 100 C 60 66, 150 66, 215 100 S 330 140, 425 104 S 545 62, 625 96 S 705 134, 745 112";
-const CRK_WLO=9, CRK_WHI=44;
-function mixc(a,b,t){
-  const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16));
-  const A=h(a),B=h(b);
-  return "rgb("+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(",")+")";
-}
-function buildCreek(){
+/* ---------- standing in the creek + 24 h replay ----------
+   Side elevation with a 5 ft 9 in figure on the bed, everything on one real
+   feet scale. The replay steps through the actual last-24 h readings and
+   drives this scene AND the creek-from-above ribbon together. */
+let SCN=null, RPD=null, RP={on:false,raf:null};
+const SCN_TOP=26, SCN_BED=210;
+const scnXL=y=>y<=46?0:(y-46)/164*170;          // bank slope x at height y
+const scnXR=y=>y<=46?720:720-(y-46)/164*170;
+const scnY=ft=>SCN_BED-ft*(SCN_BED-SCN_TOP)/SCN.cap;
+const FIG_D="M0 1.5 a8.2 8.2 0 1 0 .01 0 Z "+
+  "M0 21.5 C6.8 21.5 10.6 24.5 10.6 30.5 L9.4 55 L8.4 97 Q8.4 100 5.8 100 L4.6 100 "+
+  "Q2.4 100 2.3 97.4 L1.9 63 L-1.9 63 L-2.3 97.4 Q-2.4 100 -4.6 100 L-5.8 100 "+
+  "Q-8.4 100 -8.4 97 L-9.4 55 L-10.6 30.5 C-10.6 24.5 -6.8 21.5 0 21.5 Z";
+function buildScene(cap){
   const NS="http://www.w3.org/2000/svg";
   const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
   const mobile=innerWidth<560;
-  const svg=el("svg",{viewBox:mobile?"150 0 420 200":"0 0 720 200",role:"img",
-    "aria-label":"Illustration: creek water level relative to its recent range."});
-  const P=CRK_PATH;
-  // hill contours on the far ground
-  svg.appendChild(el("path",{d:"M0 30 Q 200 8 380 26 T 720 22",fill:"none",stroke:"rgba(147,170,191,.10)","stroke-width":"1"}));
-  svg.appendChild(el("path",{d:"M0 48 Q 240 22 430 42 T 720 36",fill:"none",stroke:"rgba(147,170,191,.07)","stroke-width":"1"}));
-  // limestone terraces stepping down to the bed (offset upward = receding planes)
-  svg.appendChild(el("path",{d:P,fill:"none",stroke:"#6e5f47","stroke-opacity":.09,"stroke-width":CRK_WHI+24,"stroke-linecap":"round",transform:"translate(0,-5)"}));
-  svg.appendChild(el("path",{d:P,fill:"none",stroke:"#8a7a5e","stroke-opacity":.12,"stroke-width":CRK_WHI+12,"stroke-linecap":"round",transform:"translate(0,-2.5)"}));
-  // window-high extent: faint amber stain edge + the dry gravel bed it bounds
-  svg.appendChild(el("path",{d:P,fill:"none",stroke:"#f0b429","stroke-opacity":.08,"stroke-width":CRK_WHI+4,"stroke-linecap":"round"}));
-  svg.appendChild(el("path",{d:P,fill:"none",stroke:"#7d6f56","stroke-opacity":.20,"stroke-width":CRK_WHI,"stroke-linecap":"round"}));
-  // the water volume: contact shadow, body, lit surface band, bright thread, drift
-  const shadow=el("path",{d:P,fill:"none",stroke:"#06121f","stroke-opacity":.45,"stroke-width":CRK_WLO,"stroke-linecap":"round",transform:"translate(0,3.5)"});
-  const water=el("path",{d:P,fill:"none",stroke:"#3f95d6","stroke-width":CRK_WLO,"stroke-linecap":"round","stroke-linejoin":"round"});
-  const lit=el("path",{d:P,fill:"none",stroke:"#bfe6ff","stroke-opacity":.16,"stroke-width":4,"stroke-linecap":"round",transform:"translate(0,-2)"});
-  const thread=el("path",{d:P,fill:"none",stroke:"#9ad8f7","stroke-opacity":.7,"stroke-width":4.5,"stroke-linecap":"round"});
-  const drift=el("path",{d:P,fill:"none",stroke:"#dff2ff","stroke-opacity":.13,"stroke-width":6,
-    "stroke-dasharray":"16 110","stroke-linecap":"round",class:"crkdrift",visibility:"hidden"});
-  [shadow,water,lit,thread,drift].forEach(p=>svg.appendChild(p));
-  // cypress silhouettes along the banks
-  const tree=(x,y,s)=>{
-    const g=el("g",{transform:"translate("+x+" "+y+") scale("+s+")",fill:"#0c1d2b"});
-    g.appendChild(el("ellipse",{cx:1.5,cy:4.5,rx:8,ry:2,fill:"#050d16","fill-opacity":.5}));
-    g.appendChild(el("ellipse",{cx:0,cy:-15,rx:8.5,ry:13,"fill-opacity":.92}));
-    g.appendChild(el("ellipse",{cx:-6,cy:-8,rx:5.5,ry:8,"fill-opacity":.85}));
-    g.appendChild(el("ellipse",{cx:6,cy:-9,rx:5.5,ry:8.5,"fill-opacity":.85}));
-    g.appendChild(el("rect",{x:-1.2,y:-5,width:2.4,height:9,"fill-opacity":.95}));
-    svg.appendChild(g);
+  const svg=el("svg",{viewBox:mobile?"110 0 500 240":"0 0 720 240",role:"img",
+    "aria-label":"Illustration: creek cross-elevation with a 5 foot 9 inch figure for scale."});
+  const defs=el("defs",{});
+  const grad=(id,coords,stops)=>{
+    const g=el("linearGradient",Object.assign({id,gradientUnits:"userSpaceOnUse"},coords));
+    stops.forEach(([o,c,op])=>g.appendChild(el("stop",{offset:o,"stop-color":c,"stop-opacity":op==null?1:op})));
+    defs.appendChild(g);
   };
-  tree(120,36,.7);tree(258,72,.6);tree(660,34,.65);tree(150,186,.85);tree(468,184,.9);tree(700,188,.7);
-  // annotations
-  const hiT=el("text",{x:706,y:24,"text-anchor":"end",class:"xslab sec",fill:"#d9b24a"});
-  const loT=el("text",{x:330,y:180,"text-anchor":"middle",class:"xslab sec",fill:"#93aabf"});
-  const nowT=el("text",{x:425,"text-anchor":"middle",class:"xslab",fill:"#cfeaff"});
-  [hiT,loT,nowT].forEach(t=>svg.appendChild(t));
-  $("crkwrap").innerHTML="";
-  $("crkwrap").appendChild(svg);
-  const w=CRK&&CRK.w!=null?CRK.w:null;
-  CRK={svg,shadow,water,lit,thread,drift,hiT,loT,nowT,mobile,w,raf:null,nowVal:""};
-  if(w!=null)paintCreek(w);
+  grad("scns",{x1:0,y1:40,x2:0,y2:240},[[0,"#1c2e42"],[1,"#0d1826"]]);
+  grad("scnw",{x1:0,y1:SCN_TOP,x2:0,y2:SCN_BED},[[0,"#5fb6ee",.42],[.5,"#2f77ad",.55],[1,"#0b2b4a",.8]]);
+  const clip=el("clipPath",{id:"scnclip"});
+  clip.appendChild(el("path",{d:"M0 46 L170 210 L550 210 L720 46 L720 0 L0 0 Z"}));
+  defs.appendChild(clip);
+  svg.appendChild(defs);
+  // banks + bed as one ground mass, with a few limestone strata hints
+  svg.appendChild(el("path",{d:"M0 46 L170 210 L550 210 L720 46 L720 240 L0 240 Z",fill:"url(#scns)"}));
+  [[4,100,46],[4,150,102],[8,180,130]].forEach(([x0,y,x1])=>{
+    svg.appendChild(el("line",{x1:x0,y1:y,x2:x1,y2:y,stroke:"#8a7a5e","stroke-opacity":.14,"stroke-width":1.5}));
+    svg.appendChild(el("line",{x1:720-x1,y1:y,x2:720-x0,y2:y,stroke:"#8a7a5e","stroke-opacity":.14,"stroke-width":1.5}));
+  });
+  svg.appendChild(el("line",{x1:170,y1:210,x2:550,y2:210,stroke:"rgba(147,170,191,.3)","stroke-width":1}));
+  // feet ruler (shared scale for everything in the scene)
+  const step=cap<=12?2:5;
+  const rx=mobile?146:44;
+  for(let f=step;f<=cap;f+=step){
+    const y=SCN_BED-f*(SCN_BED-SCN_TOP)/cap;
+    svg.appendChild(el("line",{x1:rx-6,y1:y,x2:rx+4,y2:y,stroke:"rgba(147,170,191,.4)","stroke-width":1}));
+    svg.appendChild(el("line",{x1:rx+4,y1:y,x2:mobile?600:710,y2:y,stroke:"rgba(147,170,191,.06)","stroke-width":1}));
+    const t=el("text",{x:rx-10,y:y+3,"text-anchor":"end",class:"axis"});t.textContent=f;svg.appendChild(t);
+  }
+  const ut=el("text",{x:rx-10,y:SCN_TOP-8,"text-anchor":"end",class:"axis"});ut.textContent="ft";svg.appendChild(ut);
+  // the human figure: 5 ft 9 in on the same scale, standing on the bed
+  const fh=5.75*(SCN_BED-SCN_TOP)/cap;
+  const fig=el("g",{transform:"translate(330 "+(SCN_BED-fh)+") scale("+(fh/100)+")"});
+  fig.appendChild(el("path",{d:FIG_D,fill:"#8fa7bc","fill-opacity":.92}));
+  svg.appendChild(fig);
+  const fl=el("text",{x:348,y:SCN_BED-fh+8,"text-anchor":"start",class:"axis"});
+  fl.textContent="5\u20329\u2033 for scale";svg.appendChild(fl);
+  // window-high stain on the banks (annotation, set per gauge)
+  const hiStain=el("line",{x1:0,x2:720,stroke:"var(--rise-fast)","stroke-width":3,"stroke-opacity":.10,"clip-path":"url(#scnclip)"});
+  const hiLine=el("line",{x1:0,x2:720,stroke:"var(--rise-fast)","stroke-width":1,"stroke-opacity":.3,"clip-path":"url(#scnclip)"});
+  const hiT=el("text",{x:mobile?134:56,"text-anchor":"start",class:"xslab sec",fill:"#d9b24a"});
+  svg.appendChild(hiStain);svg.appendChild(hiLine);svg.appendChild(hiT);
+  const loLine=el("line",{x1:0,x2:720,stroke:"#7f95a9","stroke-width":1,"stroke-dasharray":"4 4","stroke-opacity":.45,"clip-path":"url(#scnclip)"});
+  const loT=el("text",{x:mobile?134:56,"text-anchor":"start",class:"xslab sec",fill:"#93aec7"});
+  svg.appendChild(loLine);svg.appendChild(loT);
+  // the water: translucent body over the figure, lit surface band, surface line
+  const wrect=el("rect",{x:0,width:720,y:SCN_BED,height:0,fill:"url(#scnw)","clip-path":"url(#scnclip)"});
+  const lit=el("line",{stroke:"#bfe6ff","stroke-width":2.2,"stroke-opacity":.28,"clip-path":"url(#scnclip)"});
+  const surf=el("line",{stroke:"#9ad8f7","stroke-width":1.6,"stroke-opacity":.9,"clip-path":"url(#scnclip)"});
+  const nowT=el("text",{"text-anchor":"end",class:"xslab",fill:"#cfeaff"});
+  [wrect,lit,surf,nowT].forEach(n=>svg.appendChild(n));
+  $("scnwrap").innerHTML="";
+  $("scnwrap").appendChild(svg);
+  const level=SCN&&SCN.level!=null?SCN.level:null;
+  SCN={svg,cap,wrect,lit,surf,nowT,hiStain,hiLine,hiT,loLine,loT,level,mobile,raf:null};
+  if(level!=null)paintScene(level);
 }
-function paintCreek(w){
-  CRK.w=w;
-  const t=Math.max(0,Math.min(1,(w-CRK_WLO)/(CRK_WHI-CRK_WLO)));
-  CRK.shadow.setAttribute("stroke-width",w+2);
-  CRK.water.setAttribute("stroke-width",w);
-  CRK.water.setAttribute("stroke",mixc("#2e6da6","#5fb6ee",t));
-  CRK.lit.setAttribute("stroke-width",Math.max(3,w*.3));
-  CRK.thread.setAttribute("stroke-width",Math.max(4,w*.15));
-  CRK.drift.setAttribute("stroke-width",Math.max(5,w*.5));
-  CRK.nowT.setAttribute("y",104-w/2-9);
-  CRK.nowT.textContent=CRK.nowVal;
+function paintScene(v){
+  SCN.level=v;
+  const wy=Math.max(SCN_TOP+2,Math.min(SCN_BED,scnY(v)));
+  SCN.wrect.setAttribute("y",wy);
+  SCN.wrect.setAttribute("height",Math.max(0,240-wy));
+  const xl=scnXL(wy),xr=scnXR(wy);
+  SCN.surf.setAttribute("x1",xl);SCN.surf.setAttribute("x2",xr);
+  SCN.surf.setAttribute("y1",wy);SCN.surf.setAttribute("y2",wy);
+  SCN.lit.setAttribute("x1",xl);SCN.lit.setAttribute("x2",xr);
+  SCN.lit.setAttribute("y1",wy+2.2);SCN.lit.setAttribute("y2",wy+2.2);
+  SCN.nowT.setAttribute("x",Math.min(xr-10,SCN.mobile?598:706));
+  SCN.nowT.setAttribute("y",wy-8);
+  SCN.nowT.textContent=(RP.on?"":"now ")+v.toFixed(2)+" ft";
 }
-function creekSet(c){
-  if(!CRK||CRK.mobile!==(innerWidth<560))buildCreek();
-  const feat=c.feat,unit=c.unit;
+function sceneSet(c){
+  stopReplay();
+  const panel=$("scnpanel");
+  if(c.unit!=="ft"){panel.hidden=true;return;}
+  panel.hidden=false;
   let lo=Infinity,hi=-Infinity;
-  feat.pts.forEach(p=>{if(p.v<lo)lo=p.v;if(p.v>hi)hi=p.v;});
-  const t=hi>lo?Math.max(0,Math.min(1,(c.tr.cur-lo)/(hi-lo))):1;
-  const target=CRK_WLO+t*(CRK_WHI-CRK_WLO);
-  CRK.nowVal="now "+fmtLvl(c.tr.cur,unit)+" "+unit;
-  CRK.hiT.textContent=PERIOD_LBL[PERIOD]+" high "+fmtLvl(hi,unit)+" = the gravel bar edge";
-  CRK.loT.textContent="low "+fmtLvl(lo,unit)+" ran as a thread";
-  $("cnote").textContent="water drawn relative to this gauge's "+PERIOD_LBL[PERIOD]+" range (low "+fmtLvl(lo,unit)+" · high "+fmtLvl(hi,unit)+") — not literal channel width";
-  CRK.svg.setAttribute("aria-label",
-    "Illustration: creek water at "+fmtLvl(c.tr.cur,unit)+" "+unit+", "+Math.round(t*100)+"% of the way between this window's low and high.");
-  CRK.drift.setAttribute("visibility",(c.cl.k==="rise"||c.cl.k==="fast")&&!RM?"visible":"hidden");
-  const from=CRK.w==null?CRK_WLO:CRK.w;
-  if(CRK.raf)cancelAnimationFrame(CRK.raf);
-  if(RM||Math.abs(target-from)<.5){paintCreek(target);return;}
+  c.feat.pts.forEach(p=>{if(p.v<lo)lo=p.v;if(p.v>hi)hi=p.v;});
+  const rawStep=hi*1.15<=12?2:5;
+  const cap=Math.max(8,Math.ceil(hi*1.15/rawStep)*rawStep);
+  if(!SCN||SCN.cap!==cap||SCN.mobile!==(innerWidth<560))buildScene(cap);
+  SCN.hiStain.setAttribute("y1",scnY(hi));SCN.hiStain.setAttribute("y2",scnY(hi));
+  SCN.hiLine.setAttribute("y1",scnY(hi));SCN.hiLine.setAttribute("y2",scnY(hi));
+  SCN.hiT.setAttribute("y",scnY(hi)-6);
+  SCN.hiT.textContent=PERIOD_LBL[PERIOD]+" high "+fmtLvl(hi,"ft");
+  SCN.loLine.setAttribute("y1",scnY(lo));SCN.loLine.setAttribute("y2",scnY(lo));
+  SCN.loT.setAttribute("y",scnY(lo)+15);
+  SCN.loT.textContent=PERIOD_LBL[PERIOD]+" low "+fmtLvl(lo,"ft");
+  const cramped=scnY(lo)-scnY(hi)<26;      // near-flat window: the caption carries the low
+  SCN.loLine.setAttribute("visibility",cramped?"hidden":"visible");
+  SCN.loT.setAttribute("visibility",cramped?"hidden":"visible");
+  $("snote").textContent="true to scale in feet — gauge height above the USGS datum ("+PERIOD_LBL[PERIOD]+" low "+fmtLvl(lo,"ft")+" · high "+fmtLvl(hi,"ft")+"), not the exact depth at any one spot in the creek";
+  SCN.svg.setAttribute("aria-label",
+    "Illustration: water at "+fmtLvl(c.tr.cur,"ft")+" ft beside a 5 foot 9 inch figure on the same scale.");
+  prepReplay(c);
+  const target=c.tr.cur;
+  const from=SCN.level==null?0:SCN.level;
+  if(SCN.raf)cancelAnimationFrame(SCN.raf);
+  if(RM||Math.abs(scnY(target)-scnY(from))<1){paintScene(target);return;}
   const t0=performance.now(),dur=800;
   const step=now=>{
     const k=Math.min(1,(now-t0)/dur);
-    const e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;   // easeInOutCubic
-    paintCreek(from+(target-from)*e);
-    if(k<1)CRK.raf=requestAnimationFrame(step);else CRK.raf=null;
+    const e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    paintScene(from+(target-from)*e);
+    if(k<1)SCN.raf=requestAnimationFrame(step);else SCN.raf=null;
   };
-  CRK.raf=requestAnimationFrame(step);
+  SCN.raf=requestAnimationFrame(step);
 }
+/* --- the replay engine (drives the scene AND the ribbon) --- */
+function prepReplay(c){
+  const pts=c.feat.pts;
+  const cut=pts[pts.length-1].t-864e5;
+  const rp=pts.filter(p=>p.t>=cut);
+  const ok=rp.length>=8&&(rp[rp.length-1].t-rp[0].t)>=20*36e5;
+  RPD=ok?{pts:rp,t0:rp[0].t,t1:rp[rp.length-1].t}:null;
+  const b=$("rplay"),s=$("rscrub");
+  b.disabled=!ok||RM;
+  b.title=!ok?"needs a full 24 h of readings":(RM?"replay animation is off (reduced motion) — drag the timeline":"");
+  s.disabled=!ok;
+  s.value=1000;
+  $("rpout").textContent=!ok?"needs 24 h of readings":(RM?"drag the timeline":"press play or drag");
+}
+function lvlAt(tt){
+  const p=RPD.pts;
+  if(tt<=p[0].t)return p[0].v;
+  for(let i=1;i<p.length;i++)if(p[i].t>=tt){
+    const a=p[i-1],b=p[i],k=(tt-a.t)/((b.t-a.t)||1);
+    return a.v+(b.v-a.v)*k;
+  }
+  return p[p.length-1].v;
+}
+function showAt(frac){
+  if(!RPD)return;
+  const tt=RPD.t0+frac*(RPD.t1-RPD.t0);
+  const v=lvlAt(tt);
+  paintScene(v);
+  $("rpout").textContent=new Date(tt).toLocaleString(undefined,{weekday:"short",hour:"numeric",minute:"2-digit"})
+    +" · "+v.toFixed(2)+" ft";
+}
+function stopReplay(){
+  if(!RP.on&&!RP.raf)return;
+  RP.on=false;
+  if(RP.raf)cancelAnimationFrame(RP.raf);
+  RP.raf=null;
+  const b=$("rplay");if(b)b.textContent="▶ Replay 24 h";
+}
+function startReplay(){
+  if(!RPD||RM)return;
+  RP.on=true;
+  $("rplay").textContent="❚❚ Pause";
+  const dur=11000;
+  const sv=+$("rscrub").value;
+  const startFrac=sv>=995?0:sv/1000;
+  const t0=performance.now()-startFrac*dur;
+  const step=now=>{
+    if(!RP.on)return;
+    const p=Math.min(1,(now-t0)/dur);
+    $("rscrub").value=Math.round(p*1000);
+    showAt(p);
+    if(p<1)RP.raf=requestAnimationFrame(step);
+    else{
+      stopReplay();
+      const c=cardFor(SELECTED);
+      if(c)paintScene(c.tr.cur);
+      $("rpout").textContent="back to now";
+    }
+  };
+  RP.raf=requestAnimationFrame(step);
+}
+$("rplay").addEventListener("click",()=>{RP.on?stopReplay():startReplay();});
+$("rscrub").addEventListener("input",e=>{
+  if(RP.on)stopReplay();
+  showAt(+e.target.value/1000);
+});
 
 /* ---------- inspector ---------- */
 function renderInspector(animate){
@@ -918,7 +1038,7 @@ function renderInspector(animate){
     cfsEl.textContent=Math.round(c.q.pts[c.q.pts.length-1].v).toLocaleString()+' cfs flowing';
   }else cfsEl.hidden=true;
   renderChart(c,animate);
-  creekSet(c);  // creek scene: the water swells/narrows to the new level
+  sceneSet(c);  // standing-in-the-creek scene + 24 h replay prep
   // context strip: min–max of the loaded window + current thumb
   let rlo=Infinity,rhi=-Infinity;
   c.feat.pts.forEach(p=>{if(p.v<rlo)rlo=p.v;if(p.v>rhi)rhi=p.v;});
