@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boerne-Area Creeks & Rivers — Live Levels</title>
+<meta name="description" content="Live USGS gauge heights and streamflow for creeks and rivers around Boerne, Texas — the Cibolo, the Guadalupe, and Cypress Creek — showing which are rising or falling right now.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a121c">
+<link rel="canonical" href="https://www.texaswaterwatchers.com/creeks">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127754;</text></svg>">
+</head>
+<body>
+<style>
+  :root{
+    --ink:#0a121c; --panel:#101f2f; --panel2:#0d1927;
+    --paper:#eef4fa; --mist:#93aabf; --faint:#5f7789;
+    --line:rgba(147,170,191,.16);
+    --water:#4aa3e4; --water-hi:#9ad8f7;
+    --rise:#38bdf8; --rise-fast:#f0b429; --fall:#8aa0b5; --steady:#7b93a8;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#12233a 0%,var(--ink) 55%) no-repeat;
+    color:var(--paper);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:1080px;margin:0 auto;padding:clamp(24px,4vw,52px) clamp(16px,4vw,36px) 72px}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--water);margin:0}
+  h1{font-family:var(--serif);font-weight:600;line-height:1.03;letter-spacing:-.01em;
+    font-size:clamp(2rem,5.5vw,3.4rem);margin:.28em 0 .12em;text-wrap:balance}
+  .lede{color:#cdd9e6;max-width:64ch;margin:.3em 0 0;font-size:1.02rem}
+  .lede a{color:var(--water)}
+  .bar{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin:26px 0 4px;
+    padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .summary{font-family:var(--mono);font-size:.82rem;color:var(--mist);letter-spacing:.02em}
+  .summary b{color:var(--paper)}
+  .summary .up{color:var(--rise)} .summary .fast{color:var(--rise-fast)}
+  .spacer{margin-left:auto}
+  .toggle{display:inline-flex;border:1px solid var(--line);border-radius:100px;overflow:hidden}
+  .toggle button{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;background:transparent;
+    color:var(--mist);border:0;padding:7px 13px;cursor:pointer;text-transform:uppercase}
+  .toggle button.on{background:var(--water);color:#06121f}
+  .btn{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--paper);border:1px solid var(--line);border-radius:100px;
+    padding:7px 14px;cursor:pointer;transition:border-color .15s}
+  .btn:hover{border-color:var(--water)}
+  .updated{font-family:var(--mono);font-size:.68rem;color:var(--faint);letter-spacing:.04em}
+  :focus-visible{outline:2px solid var(--water);outline-offset:3px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:22px}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+    border-radius:16px;padding:16px 16px 12px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--edge,transparent)}
+  .card .water{font-family:var(--mono);font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .card h3{font-family:var(--serif);font-weight:600;font-size:1.12rem;margin:.15em 0 .1em;line-height:1.15}
+  .card .loc{font-family:var(--mono);font-size:.66rem;color:var(--mist);letter-spacing:.03em}
+  .readline{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:12px 0 4px}
+  .lvl{font-family:var(--serif);font-size:2.1rem;font-weight:600;line-height:.95;font-variant-numeric:tabular-nums}
+  .lvl small{font-size:.9rem;color:var(--mist);font-family:var(--sans);font-weight:400;margin-left:3px}
+  .cfs{font-family:var(--mono);font-size:.72rem;color:var(--mist);text-align:right;line-height:1.5}
+  .trend{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.68rem;
+    letter-spacing:.06em;padding:4px 9px;border-radius:100px;border:1px solid currentColor;white-space:nowrap}
+  .hydro{width:100%;height:auto;display:block;margin-top:8px}
+  .cardfoot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;
+    font-family:var(--mono);font-size:.64rem;color:var(--faint);letter-spacing:.02em}
+  .cardfoot a{color:var(--mist);text-decoration:none;border-bottom:1px solid var(--line)}
+  .cardfoot a:hover{color:var(--water)}
+  .state{font-family:var(--mono);font-size:.8rem;color:var(--mist);padding:40px 0;text-align:center}
+  .nodata{color:var(--faint);font-family:var(--mono);font-size:.72rem;padding:26px 0;text-align:center}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.68rem;line-height:1.7;color:var(--faint);letter-spacing:.02em}
+  footer b{color:var(--mist);font-weight:400}
+  .tip{position:fixed;pointer-events:none;z-index:50;background:#08111c;border:1px solid var(--line);
+    border-radius:7px;padding:7px 10px;font-family:var(--mono);font-size:.7rem;color:var(--paper);
+    opacity:0;transition:opacity .08s;white-space:nowrap;box-shadow:0 8px 26px rgba(0,0,0,.5)}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Live · U.S. Geological Survey stream gauges</p>
+    <h1>Boerne-area creeks &amp; rivers</h1>
+    <p class="lede">How high the water is running right now on the Cibolo, the Guadalupe, and Cypress
+      Creek around Boerne — and whether each gauge is rising or falling. Gauge height in feet, updated
+      by the USGS about every 15&nbsp;minutes.</p>
+    <div class="bar">
+      <span class="summary" id="summary">Loading gauges…</span>
+      <span class="spacer"></span>
+      <span class="updated" id="updated"></span>
+      <div class="toggle" id="period" role="group" aria-label="Time range">
+        <button data-p="P1D">24 h</button>
+        <button data-p="P7D" class="on">7 days</button>
+        <button data-p="P30D">30 days</button>
+      </div>
+      <button class="btn" id="refresh" aria-label="Refresh now">↻ Refresh</button>
+    </div>
+  </header>
+
+  <div id="grid" class="grid"></div>
+  <div id="state" class="state">Fetching live levels from the USGS…</div>
+
+  <footer>
+    <b>Source</b> — U.S. Geological Survey, National Water Information System (waterdata.usgs.gov).
+    Provisional real-time data, subject to revision. Gauge height is the water's height above the
+    gauge datum, not depth. <b>Not a flood-warning tool</b> — for warnings see the National Weather Service.<br>
+    <b>A companion to the Kendall County water-table tracker.</b>
+  </footer>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+const STATIONS=[
+  {id:'08183900',water:'Cibolo Creek',name:'near Boerne',loc:'Boerne · the home gauge'},
+  {id:'08183978',water:'Cibolo Creek',name:'at Specht Rd',loc:'Bulverde · ~15 mi SE'},
+  {id:'08184050',water:'Cibolo Creek',name:'at Smithson Valley Rd',loc:'Bulverde · ~20 mi SE'},
+  {id:'08166700',water:'Cypress Creek',name:'at Saur Farm',loc:'Comfort · ~21 mi NW'},
+  {id:'08166250',water:'Guadalupe River',name:'near Center Point',loc:'Center Point · ~26 mi NW'},
+  {id:'08167000',water:'Guadalupe River',name:'at Comfort',loc:'Comfort · ~15 mi NW'},
+  {id:'08167200',water:'Guadalupe River',name:'at FM 474, Bergheim',loc:'Bergheim · ~8 mi SE'},
+  {id:'08167500',water:'Guadalupe River',name:'near Spring Branch',loc:'Spring Branch · ~21 mi E'},
+];
+const BY_ID=Object.fromEntries(STATIONS.map(s=>[s.id,s]));
+const tip=document.getElementById('tip');
+const showTip=(x,y,h)=>{tip.innerHTML=h;tip.style.opacity=1;const w=tip.offsetWidth;
+  tip.style.left=Math.min(innerWidth-w-8,Math.max(8,x-w/2))+'px';tip.style.top=(y-tip.offsetHeight-12)+'px';};
+const hideTip=()=>tip.style.opacity=0;
+let PERIOD='P7D';
+const fmtT=t=>new Date(t).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+
+async function fetchLevels(){
+  const ids=STATIONS.map(s=>s.id).join(',');
+  const url=`https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${ids}&parameterCd=00065,00060&period=${PERIOD}&siteStatus=all`;
+  const r=await fetch(url,{cache:'no-store'});
+  if(!r.ok) throw new Error('USGS returned '+r.status);
+  const d=await r.json();
+  const out={};
+  (d.value.timeSeries||[]).forEach(ts=>{
+    const site=ts.sourceInfo.siteCode[0].value;
+    const pc=ts.variable.variableCode[0].value;           // 00065 gage ht · 00060 discharge
+    const unit=(ts.variable.unit.unitCode||'').replace('ft3/s','cfs');
+    const pts=(ts.values[0].value||[])
+      .filter(v=>v.value!==''&&v.value!=='-999999'&&v.value!=null)
+      .map(v=>({t:new Date(v.dateTime).getTime(),v:parseFloat(v.value)}))
+      .filter(p=>isFinite(p.v)).sort((a,b)=>a.t-b.t);
+    if(!pts.length) return;
+    (out[site]=out[site]||{})[pc]={unit,pts};
+  });
+  return out;
+}
+
+function trendOf(pts){
+  const last=pts[pts.length-1];
+  const dayAgo=last.t-864e5;
+  let ref=pts[0];
+  for(const p of pts){ if(p.t<=dayAgo) ref=p; else break; }
+  const d=last.v-ref.v;
+  return {cur:last.v,at:last.t,delta:d,refv:ref.v};
+}
+
+function hydro(series,accent){
+  const pts=series.pts, unit=series.unit;
+  const NS='http://www.w3.org/2000/svg', W=400,H=120,pl=6,pr=6,pt=10,pb=16;
+  const t0=pts[0].t,t1=pts[pts.length-1].t;
+  let lo=Infinity,hi=-Infinity;pts.forEach(p=>{if(p.v<lo)lo=p.v;if(p.v>hi)hi=p.v;});
+  if(hi-lo<0.01){hi+=0.5;lo-=0.5;}
+  const pad=(hi-lo)*0.12;lo-=pad;hi+=pad;
+  const x=t=>pl+(t1===t0?0:(t-t0)/(t1-t0))*(W-pl-pr);
+  const y=v=>H-pb-(v-lo)/(hi-lo)*(H-pt-pb);
+  const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const svg=el('svg',{class:'hydro',viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none',role:'img',
+    'aria-label':`${unit} over time, ${pts.length} readings`});
+  // grid: min & max guide
+  [lo+pad,hi-pad].forEach(g=>svg.appendChild(el('line',{x1:pl,y1:y(g),x2:W-pr,y2:y(g),stroke:'rgba(147,170,191,.10)'})));
+  let d='M '+x(pts[0].t).toFixed(1)+' '+y(pts[0].v).toFixed(1);
+  pts.forEach((p,i)=>{if(i)d+=' L '+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1);});
+  const area=d+` L ${x(t1).toFixed(1)} ${H-pb} L ${x(t0).toFixed(1)} ${H-pb} Z`;
+  const gid='g'+Math.floor(pts[0].t%1e7)+pts.length;
+  const grad=el('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+  grad.appendChild(el('stop',{offset:0,'stop-color':accent,'stop-opacity':.28}));
+  grad.appendChild(el('stop',{offset:1,'stop-color':accent,'stop-opacity':0}));
+  const defs=el('defs',{});defs.appendChild(grad);svg.appendChild(defs);
+  svg.appendChild(el('path',{d:area,fill:`url(#${gid})`}));
+  svg.appendChild(el('path',{d,fill:'none',stroke:accent,'stroke-width':'2','stroke-linejoin':'round','stroke-linecap':'round','vector-effect':'non-scaling-stroke'}));
+  const last=pts[pts.length-1];
+  svg.appendChild(el('circle',{cx:x(last.t),cy:y(last.v),r:3.2,fill:'#08111c',stroke:'var(--water-hi)','stroke-width':'2','vector-effect':'non-scaling-stroke'}));
+  // min/max labels
+  const mn=el('text',{x:pl+1,y:H-4,fill:'#5f7789','font-family':'var(--mono)','font-size':'9'});mn.textContent=(lo+pad).toFixed(1);svg.appendChild(mn);
+  const mxT=el('text',{x:pl+1,y:pt+2,fill:'#5f7789','font-family':'var(--mono)','font-size':'9'});mxT.textContent=(hi-pad).toFixed(1);svg.appendChild(mxT);
+  // hover
+  const guide=el('line',{y1:pt,y2:H-pb,stroke:'rgba(255,255,255,.25)','stroke-width':'1','vector-effect':'non-scaling-stroke',visibility:'hidden'});svg.appendChild(guide);
+  const dot=el('circle',{r:3,fill:'var(--water-hi)',visibility:'hidden'});svg.appendChild(dot);
+  svg.addEventListener('mousemove',e=>{const r=svg.getBoundingClientRect();const tx=t0+(e.clientX-r.left)/r.width*(t1-t0);
+    let best=pts[0];for(const p of pts){if(Math.abs(p.t-tx)<Math.abs(best.t-tx))best=p;}
+    guide.setAttribute('x1',x(best.t));guide.setAttribute('x2',x(best.t));guide.setAttribute('visibility','visible');
+    dot.setAttribute('cx',x(best.t));dot.setAttribute('cy',y(best.v));dot.setAttribute('visibility','visible');
+    showTip(e.clientX,e.clientY,`${best.v.toFixed(2)} ${unit} · ${fmtT(best.t)}`);});
+  svg.addEventListener('mouseleave',()=>{guide.setAttribute('visibility','hidden');dot.setAttribute('visibility','hidden');hideTip();});
+  return svg;
+}
+
+function classify(delta,unit){
+  const ft=unit==='ft';
+  if(ft){ if(delta>=2)return{k:'fast',lbl:'Rising fast',col:'var(--rise-fast)',ar:'▲'};
+    if(delta>=0.1)return{k:'rise',lbl:'Rising',col:'var(--rise)',ar:'▲'};
+    if(delta<=-0.1)return{k:'fall',lbl:'Falling',col:'var(--fall)',ar:'▼'};
+    return{k:'steady',lbl:'Steady',col:'var(--steady)',ar:'▬'};}
+  if(delta>0)return{k:'rise',lbl:'Rising',col:'var(--rise)',ar:'▲'};
+  if(delta<0)return{k:'fall',lbl:'Falling',col:'var(--fall)',ar:'▼'};
+  return{k:'steady',lbl:'Steady',col:'var(--steady)',ar:'▬'};
+}
+
+function render(data){
+  const cards=STATIONS.map(st=>{
+    const rec=data[st.id]; if(!rec)return null;
+    const gh=rec['00065'], q=rec['00060'];
+    const feat=gh||q; const unit=feat.unit;
+    const tr=trendOf(feat.pts);
+    const cl=classify(tr.delta,unit);
+    return {st,gh,q,feat,unit,tr,cl};
+  }).filter(Boolean);
+  // rising first, biggest change first
+  const rank={fast:0,rise:1,steady:2,fall:3};
+  cards.sort((a,b)=> (rank[a.cl.k]-rank[b.cl.k]) || (b.tr.delta-a.tr.delta));
+
+  const rising=cards.filter(c=>c.cl.k==='rise'||c.cl.k==='fast');
+  const top=cards.slice().sort((a,b)=>b.tr.delta-a.tr.delta)[0];
+  const sEl=document.getElementById('summary');
+  if(cards.length){
+    let s=`<b>${cards.length}</b> gauges · <span class="${rising.length?'up':''}"><b>${rising.length}</b> rising</span>`;
+    if(top&&top.tr.delta>=0.1&&top.unit==='ft')
+      s+=` · biggest riser <b>${top.st.water} ${top.st.name}</b> <span class="${top.cl.k==='fast'?'fast':'up'}">${top.cl.ar} ${top.tr.delta.toFixed(1)} ft / 24h</span>`;
+    sEl.innerHTML=s;
+  } else sEl.textContent='No gauge data available right now.';
+  const latest=Math.max(...cards.map(c=>c.tr.at));
+  if(isFinite(latest)) document.getElementById('updated').textContent='USGS reading '+fmtT(latest);
+
+  const grid=document.getElementById('grid');grid.innerHTML='';
+  cards.forEach(c=>{
+    const {st,gh,q,feat,unit,tr,cl}=c;
+    const card=document.createElement('div');card.className='card';
+    card.style.setProperty('--edge',cl.col);
+    const cfsTxt = q ? `${Math.round(q.pts[q.pts.length-1].v).toLocaleString()}<small> cfs</small>` : '';
+    const primary = gh ? `${tr.cur.toFixed(2)}<small> ft</small>` : `${Math.round(tr.cur).toLocaleString()}<small> cfs</small>`;
+    const d24 = unit==='ft' ? `${tr.delta>=0?'+':''}${tr.delta.toFixed(1)} ft / 24h`
+                            : `${tr.delta>=0?'+':''}${Math.round(tr.delta).toLocaleString()} cfs / 24h`;
+    card.innerHTML=`
+      <div class="water">${st.water}</div>
+      <h3>${st.name}</h3>
+      <div class="loc">${st.loc}</div>
+      <div class="readline">
+        <div class="lvl">${primary}</div>
+        <div class="cfs">${gh&&q?cfsTxt:''}<br><span class="trend" style="color:${cl.col}">${cl.ar} ${cl.lbl}</span></div>
+      </div>
+      <div class="d24" style="font-family:var(--mono);font-size:.68rem;color:${cl.col};letter-spacing:.04em">${d24}</div>`;
+    card.appendChild(hydro(feat, gh?'var(--water)':'#7cc6a6'));
+    const foot=document.createElement('div');foot.className='cardfoot';
+    foot.innerHTML=`<span>${unit==='ft'?'gauge height':'streamflow'} · ${PERIOD==='P1D'?'24 h':PERIOD==='P7D'?'7 days':'30 days'}</span>
+      <a href="https://waterdata.usgs.gov/monitoring-location/USGS-${st.id}/" target="_blank" rel="noopener">USGS ${st.id} ↗</a>`;
+    card.appendChild(foot);
+    grid.appendChild(card);
+  });
+  document.getElementById('state').hidden=true;
+}
+
+let busy=false;
+async function load(){
+  if(busy)return; busy=true;
+  const state=document.getElementById('state');
+  try{
+    const data=await fetchLevels();
+    render(data);
+  }catch(e){
+    state.hidden=false;
+    state.innerHTML=`Couldn't reach the USGS feed (${e.message}). <button class="btn" onclick="load()">Retry</button>`;
+  }finally{busy=false;}
+}
+
+document.getElementById('period').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-p]');if(!b)return;
+  PERIOD=b.dataset.p;[...e.currentTarget.children].forEach(c=>c.classList.toggle('on',c===b));
+  document.getElementById('state').hidden=false;document.getElementById('state').textContent='Loading…';
+  document.getElementById('grid').innerHTML='';load();
+});
+document.getElementById('refresh').addEventListener('click',load);
+load();
+setInterval(()=>{if(!document.hidden)load();},5*60*1000);  // auto-refresh every 5 min
+</script>
+</body>
+</html>
