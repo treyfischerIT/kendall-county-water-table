@@ -6,28 +6,28 @@
 <title>Kendall County Area Rainfall — Live Daily Totals</title>
 <meta name="description" content="Live daily rainfall at CoCoRaHS and NWS co-op gauges across the Kendall County, Texas area — each station a rain gauge filling to its 7-day total.">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0a121c">
+<meta name="theme-color" content="#0e1b2a">
 <link rel="canonical" href="https://www.texaswaterwatchers.com/rain">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127783;</text></svg>">
 </head>
 <body>
 <style>
   :root{
-    --ink:#0a121c; --panel:#101f2f; --panel2:#0d1927;
-    --paper:#eef4fa; --mist:#93aabf; --faint:#5f7789;
-    --line:rgba(147,170,191,.16);
-    --water:#4aa3e4; --rain-hi:#7fd0f5;
+    --ink:#0e1b2a; --panel:#13263a; --panel2:#0f2032;
+    --paper:#eaf2fb; --mist:#93aec7; --faint:#5f7789;
+    --line:rgba(147,174,199,.18);
+    --water:#38bdf8; --rain-hi:#7fd0f5;
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
     --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
     --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box}
   [hidden]{display:none!important}
-  body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#12233a 0%,var(--ink) 55%) no-repeat;
+  body{margin:0;background:var(--ink);
     color:var(--paper);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   .wrap{max-width:1080px;margin:0 auto;padding:clamp(24px,4vw,52px) clamp(16px,4vw,36px) 72px}
   /* nav band: identical metrics on /, /rain, /streams so it never shifts between pages */
-  .navband{background:rgba(74,163,228,.07);border-bottom:1px solid rgba(74,163,228,.30)}
+  .navband{background:rgba(56,189,248,.07);border-bottom:1px solid rgba(56,189,248,.30)}
   .crossnav{max-width:1080px;margin:0 auto;display:flex;gap:4px 22px;flex-wrap:wrap;
     font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;padding:14px clamp(16px,4vw,36px)}
   .crossnav a{color:#c3d4e4;text-decoration:none;padding:2px 0;border-bottom:1px solid rgba(147,170,191,.35);transition:color .15s,border-color .15s}
@@ -52,11 +52,11 @@
 
   .mapwrap{margin-top:22px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
     height:clamp(240px,42vw,380px);position:relative;background:var(--panel2);max-width:100%}
-  #map{position:absolute;inset:0;background:#0a121c;z-index:0}
+  #map{position:absolute;inset:0;background:#0e1b2a;z-index:0}
   .leaflet-container{font-family:var(--mono);font-size:.68rem}
   .leaflet-control-attribution{background:rgba(8,17,28,.72)!important;color:var(--faint)!important}
   .leaflet-control-attribution a{color:var(--mist)!important}
-  .leaflet-control-zoom a{background:#0d1927!important;color:var(--paper)!important;border:1px solid var(--line)!important}
+  .leaflet-control-zoom a{background:var(--panel2)!important;color:var(--paper)!important;border:1px solid var(--line)!important}
   .leaflet-tooltip{background:#08111c;border:1px solid rgba(147,170,191,.35);color:var(--paper);
     font-family:var(--mono);font-size:.7rem;line-height:1.5;box-shadow:0 8px 26px rgba(0,0,0,.5);border-radius:7px}
   .leaflet-tooltip-top:before{border-top-color:rgba(147,170,191,.35)}
@@ -65,12 +65,12 @@
   .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
     border-radius:16px;padding:16px 16px 12px;position:relative;overflow:hidden;
     transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
-  .card:hover,.card:focus-visible{border-color:rgba(74,163,228,.42);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+  .card:hover,.card:focus-visible{border-color:rgba(56,189,248,.42);box-shadow:0 12px 32px rgba(0,0,0,.35)}
   @media(prefers-reduced-motion:no-preference){
     .card:hover,.card:focus-visible{transform:translateY(-2px)}
   }
   .card.pulse{animation:cardpulse 1s ease-out 2}
-  @keyframes cardpulse{0%{box-shadow:0 0 0 0 rgba(74,163,228,.6)}100%{box-shadow:0 0 0 16px rgba(74,163,228,0)}}
+  @keyframes cardpulse{0%{box-shadow:0 0 0 0 rgba(56,189,248,.6)}100%{box-shadow:0 0 0 16px rgba(56,189,248,0)}}
   .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--edge,transparent)}
   .card h3{font-family:var(--serif);font-weight:600;font-size:1.12rem;margin:0 0 .1em;line-height:1.15}
   .card .loc{font-family:var(--mono);font-size:.66rem;color:var(--mist);letter-spacing:.03em}
