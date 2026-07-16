@@ -26,8 +26,10 @@
   body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#12233a 0%,var(--ink) 55%) no-repeat;
     color:var(--paper);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   .wrap{max-width:1080px;margin:0 auto;padding:clamp(24px,4vw,52px) clamp(16px,4vw,36px) 72px}
-  .crossnav{display:flex;gap:4px 22px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;
-    letter-spacing:.05em;margin:0 0 22px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  /* nav band: identical metrics on /, /rain, /streams so it never shifts between pages */
+  .navband{border-bottom:1px solid var(--line)}
+  .crossnav{max-width:1080px;margin:0 auto;display:flex;gap:4px 22px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;padding:14px clamp(16px,4vw,36px)}
   .crossnav a{color:var(--faint);text-decoration:none;padding:2px 0;border-bottom:1px solid transparent;transition:color .15s}
   .crossnav a:hover{color:var(--water)}
   .crossnav a[aria-current="page"]{color:var(--water);border-bottom-color:rgba(74,163,228,.6)}
@@ -115,12 +117,14 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<div class="wrap">
+<div class="navband">
   <nav class="crossnav" aria-label="Texas Water Watchers sites">
     <a href="/">&#128167; Water table</a>
     <a href="/rain" aria-current="page">&#127783;&#65039; Rainfall</a>
     <a href="/streams">&#127754; Creeks &amp; rivers</a>
   </nav>
+</div>
+<div class="wrap">
   <header>
     <p class="eyebrow">Live · daily rainfall · CoCoRaHS &amp; NWS co-op</p>
     <h1>Boerne-area rainfall</h1>

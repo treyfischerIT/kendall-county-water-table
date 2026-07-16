@@ -32,8 +32,10 @@
   :focus-visible{outline:2px solid var(--water);outline-offset:3px}
 
   /* ---- cross-nav ---- */
-  .crossnav{display:flex;gap:4px 22px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;
-    letter-spacing:.05em;margin:0 0 22px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  /* nav band: identical metrics on /, /rain, /streams so it never shifts between pages */
+  .navband{border-bottom:1px solid var(--line)}
+  .crossnav{max-width:1080px;margin:0 auto;display:flex;gap:4px 22px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;padding:14px clamp(16px,4vw,36px)}
   .crossnav a{color:var(--faint);text-decoration:none;padding:2px 0;border-bottom:1px solid transparent;transition:color .15s}
   .crossnav a:hover{color:var(--water)}
   .crossnav a[aria-current="page"]{color:var(--water);border-bottom-color:rgba(74,163,228,.6)}
@@ -69,17 +71,29 @@
     .waveline .w1{animation:wdrift 19s linear infinite}
     .waveline .w2{animation:wdrift 31s linear infinite reverse}
     .shimmer{animation:shimmerdrift 16s linear infinite}
+    .shimmer2{animation:shimmerdrift 36s linear infinite}
     .ripplering{transform-box:fill-box;transform-origin:center;animation:ripple 4.4s ease-out infinite}
     .ilvl::after{animation:waterline 9s linear infinite}
+    .crkdrift{animation:crkdrift 7s linear infinite}
   }
   @keyframes wdrift{to{transform:translateX(120px)}}
   @keyframes shimmerdrift{to{transform:translateX(120px)}}
   @keyframes ripple{0%{transform:scale(.55);opacity:.65}100%{transform:scale(2.6);opacity:0}}
   @keyframes waterline{to{background-position-x:26px}}
+  @keyframes crkdrift{to{stroke-dashoffset:-126}}
+
+  /* ---- the creek from above ---- */
+  .xsec{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+  .xhead{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mist)}
+  .xnote{display:block;font-family:var(--mono);font-size:.6rem;color:var(--faint);margin-top:3px;letter-spacing:.02em}
+  .crkwrap{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    background:linear-gradient(180deg,#0e1d2e,#091320);box-shadow:inset 0 0 40px rgba(0,0,0,.35)}
+  .crkwrap svg{display:block;width:100%;height:auto}
+  .xslab{font-family:var(--mono);font-size:13px;paint-order:stroke;stroke:#0d1927;stroke-width:3.5px}
 
   /* ---- hero map ---- */
   .mapwrap{margin-top:22px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
-    height:clamp(300px,46vw,430px);position:relative;background:var(--panel2);max-width:100%}
+    height:clamp(220px,50vw,430px);position:relative;background:var(--panel2);max-width:100%}
   #map{position:absolute;inset:0;background:#0a121c;z-index:0}
   .leaflet-container{font-family:var(--mono);font-size:.68rem}
   .leaflet-control-attribution{background:rgba(8,17,28,.72)!important;color:var(--faint)!important}
@@ -98,12 +112,12 @@
 
   /* ---- gauges rail ---- */
   .rail{display:flex;gap:10px;margin-top:16px;overflow-x:auto;padding:4px 2px 10px;
-    scrollbar-width:thin;scrollbar-color:rgba(147,170,191,.3) transparent}
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(147,170,191,.3) transparent}
   .chipcard{flex:0 0 auto;min-width:158px;text-align:left;background:linear-gradient(180deg,var(--panel),var(--panel2));
     border:1px solid var(--line);border-radius:12px;padding:9px 12px 7px;cursor:pointer;color:var(--paper);
     font-family:var(--sans);transition:border-color .15s,transform .15s}
-  .chipcard:hover{border-color:rgba(74,163,228,.45)}
-  @media(prefers-reduced-motion:no-preference){.chipcard:hover{transform:translateY(-1px)}}
+  .chipcard:hover{border-color:rgba(74,163,228,.45);box-shadow:0 12px 24px rgba(0,0,0,.45)}
+  @media(prefers-reduced-motion:no-preference){.chipcard:hover{transform:translateY(-2px)}}
   .chipcard.on{border-color:var(--water);box-shadow:0 0 0 1px var(--water),0 10px 24px rgba(0,0,0,.35)}
   .chipcard .cw{font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
   .chipcard .cn{font-family:var(--serif);font-size:.92rem;font-weight:600;line-height:1.15;margin:1px 0 3px;white-space:nowrap}
@@ -114,7 +128,8 @@
 
   /* ---- inspector ---- */
   .inspector{margin-top:14px;background:linear-gradient(180deg,var(--panel),var(--panel2));
-    border:1px solid var(--line);border-radius:16px;padding:clamp(14px,2.6vw,24px);position:relative;overflow:hidden}
+    border:1px solid var(--line);border-radius:16px;padding:clamp(14px,2.6vw,24px);position:relative;overflow:hidden;
+    box-shadow:0 24px 60px rgba(0,0,0,.42),0 3px 10px rgba(0,0,0,.3)}
   .inspector::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--edge,var(--water))}
   .ihead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
   .ihead .water{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
@@ -174,18 +189,29 @@
   footer b{color:var(--mist);font-weight:400}
   @media(max-width:560px){
     .ihead{flex-direction:column}
-    .pick select{max-width:100%}
+    .pick select{max-width:100%;padding:11px 10px}
     .ctxsrc{margin-left:0;width:100%}
+    .toggle button{padding:14px 15px;font-size:.72rem}
+    .btn{padding:14px 16px}
+    .kbdhint,.updated{font-size:.68rem}
+    .ctx,.maplegend{font-size:.66rem}
+    .xhead,.xnote{font-size:.66rem}
+    .chipcard .cd{font-size:.66rem}
+    .chipcard .cw{font-size:.62rem}
+    .xslab{font-size:26px}
+    .xslab.sec{display:none}
   }
   @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
-<div class="wrap">
+<div class="navband">
   <nav class="crossnav" aria-label="Texas Water Watchers sites">
     <a href="/">&#128167; Water table</a>
     <a href="/rain">&#127783;&#65039; Rainfall</a>
     <a href="/streams" aria-current="page">&#127754; Creeks &amp; rivers</a>
   </nav>
+</div>
+<div class="wrap">
   <header>
     <p class="eyebrow">Live · U.S. Geological Survey stream gauges</p>
     <h1>Boerne-area creeks &amp; rivers</h1>
@@ -252,6 +278,11 @@
       <div class="rangebar" title="Current level within this window's low–high range"><i id="ctxfill"></i><b id="ctxthumb"></b></div>
       <span id="ctxhi"></span>
       <span class="ctxsrc" id="ctxsrc"></span>
+    </div>
+    <div class="xsec">
+      <div class="xhead">The creek from above — how full it's running</div>
+      <span class="xnote" id="cnote"></span>
+      <div class="crkwrap" id="crkwrap"></div>
     </div>
   </section>
 
@@ -395,11 +426,12 @@ function renderMap(){
   ripples.forEach(m=>m.remove()); ripples=[];
   if(ring){ring.remove();ring=null;}
   const pts=[];
+  const small=innerWidth<480;   // phones: labels on tap, bigger dots
   // draw falling/steady first so risers sit on top
   CARDS.slice().sort((a,b)=>Math.abs(a.tr.delta)-Math.abs(b.tr.delta)).forEach(c=>{
     const col=MARKER_COL[c.cl.k];
     const mag=c.unit==='ft'?Math.abs(c.tr.delta):0;
-    const r=6+Math.min(9,mag*.6);
+    const r=(small?8:6)+Math.min(9,mag*.6);
     const rising=c.cl.k==='rise'||c.cl.k==='fast';
     // rising gauges ripple outward, slowly; more rise = a touch faster. still water stays still.
     if(rising&&!RM){
@@ -409,10 +441,14 @@ function renderMap(){
       if(rp._path)rp._path.style.animationDuration=Math.max(2.6,5.2-Math.min(2.4,mag*.25))+'s';
       ripples.push(rp);
     }
+    // invisible finger-sized hit area beneath the visible dot
+    const hit=L.circleMarker([c.st.lat,c.st.lon],{radius:Math.max(r+8,20),stroke:false,fillColor:'#000',fillOpacity:0});
+    hit.on('click',()=>selectGauge(c.st.id));
+    hit.addTo(map); ripples.push(hit);
     const m=L.circleMarker([c.st.lat,c.st.lon],{radius:r,color:col,weight:1.5,fillColor:col,fillOpacity:.55});
     m._baseR=r;
     m.bindTooltip(`${c.st.short} · ${fmtLvl(c.tr.cur,c.unit)} ${c.unit}`,
-      {permanent:true,direction:'right',offset:[r+4,0],className:'glabel',opacity:1});
+      {permanent:!small,direction:'right',offset:[r+4,0],className:'glabel',opacity:1});
     m.on('click',()=>selectGauge(c.st.id));
     m.addTo(map);
     markers[c.st.id]=m;
@@ -552,7 +588,7 @@ function renderChart(c,animate){
     : span<=3.2*864e5
     ? t=>new Date(t).toLocaleString(undefined,{weekday:'short',hour:'numeric'})
     : t=>new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'});
-  const nx=W<560?3:5;
+  const nx=W<420?2:W<560?3:5;
   for(let i=0;i<=nx;i++){
     const tt=t0+span*i/nx;
     const tx=el('text',{x:x(tt),y:H-9,'text-anchor':i===0?'start':i===nx?'end':'middle',class:'axis'});
@@ -585,12 +621,21 @@ function renderChart(c,animate){
     sg.appendChild(el('stop',{offset:1,'stop-color':'#9ad8f7','stop-opacity':0}));
     defs.appendChild(sg);
     const shg=el('g',{'clip-path':`url(#${gid}c)`});
-    shg.appendChild(el('rect',{x:ml-240,y:mt,width:(W-ml-mr)+480,height:H-mt-mb,fill:`url(#${gid}s)`,class:'shimmer','pointer-events':'none'}));
+    // parallax: a dim slow layer behind, a brighter quicker layer in front
+    const back=el('rect',{x:ml-240,y:mt,width:(W-ml-mr)+480,height:H-mt-mb,fill:`url(#${gid}s)`,
+      opacity:.5,class:'shimmer2','pointer-events':'none'});
+    shg.appendChild(back);
+    shg.appendChild(el('rect',{x:ml-240,y:mt,width:(W-ml-mr)+480,height:H-mt-mb,fill:`url(#${gid}s)`,
+      class:'shimmer','pointer-events':'none'}));
     svg.appendChild(shg);
   }
   // soft glow under the surface line
   svg.appendChild(el('path',{d,fill:'none',stroke:'#9ad8f7','stroke-width':'6','stroke-opacity':'.10',
     'stroke-linejoin':'round','stroke-linecap':'round','vector-effect':'non-scaling-stroke'}));
+  // lit top-plane band just beneath the surface stroke
+  const litBand=el('path',{d,fill:'none',stroke:'#cfeaff','stroke-width':'1.4','stroke-opacity':'.20',
+    'stroke-linejoin':'round','stroke-linecap':'round','vector-effect':'non-scaling-stroke',transform:'translate(0,2.4)'});
+  svg.appendChild(litBand);
   const line=el('path',{d,fill:'none',stroke:'var(--water)','stroke-width':'2','stroke-linejoin':'round',
     'stroke-linecap':'round','vector-effect':'non-scaling-stroke'});
   svg.appendChild(line);
@@ -657,13 +702,18 @@ function renderChart(c,animate){
   svg.addEventListener('pointerdown',e=>{
     if(e.pointerType==='mouse'&&e.button!==0)return;
     try{svg.setPointerCapture(e.pointerId);}catch(_){}
-    drag={x0:pxOf(e),moved:false};
+    drag={x0:pxOf(e),cx:e.clientX,cy:e.clientY,moved:false};
   });
   svg.addEventListener('pointermove',e=>{
     const px=pxOf(e);
     if(drag){
-      if(Math.abs(px-drag.x0)>10)drag.moved=true;
-      if(drag.moved){
+      // only a clearly-horizontal drag becomes a zoom; vertical intent scrolls the page
+      if(!drag.moved){
+        const dx=Math.abs(e.clientX-drag.cx),dy=Math.abs(e.clientY-drag.cy);
+        if(dx>12&&dx>1.4*dy)drag.moved=true;
+        else if(dy>16&&dy>dx){drag=null;}
+      }
+      if(drag&&drag.moved){
         hideCrosshair();
         const a=Math.max(ml,Math.min(drag.x0,px)),b=Math.min(W-mr,Math.max(drag.x0,px));
         band.setAttribute('x',a);band.setAttribute('width',Math.max(0,b-a));
@@ -744,8 +794,104 @@ $('resetzoom').addEventListener('click',resetZoom);
 let rsz=null;
 addEventListener('resize',()=>{
   clearTimeout(rsz);
-  rsz=setTimeout(()=>{const c=cardFor(SELECTED);if(c)renderChart(c,false);},180);
+  rsz=setTimeout(()=>{const c=cardFor(SELECTED);if(c){renderChart(c,false);creekSet(c);}},180);
 });
+
+/* ---------- the creek from above (pseudo-3D meander, built once) ----------
+   Water width + brightness track where the current level sits in the loaded
+   window's min–max. Honest illustration — not literal channel width. */
+let CRK=null;
+const CRK_PATH="M-20 100 C 60 66, 150 66, 215 100 S 330 140, 425 104 S 545 62, 625 96 S 705 134, 745 112";
+const CRK_WLO=9, CRK_WHI=44;
+function mixc(a,b,t){
+  const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16));
+  const A=h(a),B=h(b);
+  return "rgb("+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(",")+")";
+}
+function buildCreek(){
+  const NS="http://www.w3.org/2000/svg";
+  const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const mobile=innerWidth<560;
+  const svg=el("svg",{viewBox:mobile?"150 0 420 200":"0 0 720 200",role:"img",
+    "aria-label":"Illustration: creek water level relative to its recent range."});
+  const P=CRK_PATH;
+  // hill contours on the far ground
+  svg.appendChild(el("path",{d:"M0 30 Q 200 8 380 26 T 720 22",fill:"none",stroke:"rgba(147,170,191,.10)","stroke-width":"1"}));
+  svg.appendChild(el("path",{d:"M0 48 Q 240 22 430 42 T 720 36",fill:"none",stroke:"rgba(147,170,191,.07)","stroke-width":"1"}));
+  // limestone terraces stepping down to the bed (offset upward = receding planes)
+  svg.appendChild(el("path",{d:P,fill:"none",stroke:"#6e5f47","stroke-opacity":.09,"stroke-width":CRK_WHI+24,"stroke-linecap":"round",transform:"translate(0,-5)"}));
+  svg.appendChild(el("path",{d:P,fill:"none",stroke:"#8a7a5e","stroke-opacity":.12,"stroke-width":CRK_WHI+12,"stroke-linecap":"round",transform:"translate(0,-2.5)"}));
+  // window-high extent: faint amber stain edge + the dry gravel bed it bounds
+  svg.appendChild(el("path",{d:P,fill:"none",stroke:"#f0b429","stroke-opacity":.08,"stroke-width":CRK_WHI+4,"stroke-linecap":"round"}));
+  svg.appendChild(el("path",{d:P,fill:"none",stroke:"#7d6f56","stroke-opacity":.20,"stroke-width":CRK_WHI,"stroke-linecap":"round"}));
+  // the water volume: contact shadow, body, lit surface band, bright thread, drift
+  const shadow=el("path",{d:P,fill:"none",stroke:"#06121f","stroke-opacity":.45,"stroke-width":CRK_WLO,"stroke-linecap":"round",transform:"translate(0,3.5)"});
+  const water=el("path",{d:P,fill:"none",stroke:"#3f95d6","stroke-width":CRK_WLO,"stroke-linecap":"round","stroke-linejoin":"round"});
+  const lit=el("path",{d:P,fill:"none",stroke:"#bfe6ff","stroke-opacity":.16,"stroke-width":4,"stroke-linecap":"round",transform:"translate(0,-2)"});
+  const thread=el("path",{d:P,fill:"none",stroke:"#9ad8f7","stroke-opacity":.7,"stroke-width":4.5,"stroke-linecap":"round"});
+  const drift=el("path",{d:P,fill:"none",stroke:"#dff2ff","stroke-opacity":.13,"stroke-width":6,
+    "stroke-dasharray":"16 110","stroke-linecap":"round",class:"crkdrift",visibility:"hidden"});
+  [shadow,water,lit,thread,drift].forEach(p=>svg.appendChild(p));
+  // cypress silhouettes along the banks
+  const tree=(x,y,s)=>{
+    const g=el("g",{transform:"translate("+x+" "+y+") scale("+s+")",fill:"#0c1d2b"});
+    g.appendChild(el("ellipse",{cx:1.5,cy:4.5,rx:8,ry:2,fill:"#050d16","fill-opacity":.5}));
+    g.appendChild(el("ellipse",{cx:0,cy:-15,rx:8.5,ry:13,"fill-opacity":.92}));
+    g.appendChild(el("ellipse",{cx:-6,cy:-8,rx:5.5,ry:8,"fill-opacity":.85}));
+    g.appendChild(el("ellipse",{cx:6,cy:-9,rx:5.5,ry:8.5,"fill-opacity":.85}));
+    g.appendChild(el("rect",{x:-1.2,y:-5,width:2.4,height:9,"fill-opacity":.95}));
+    svg.appendChild(g);
+  };
+  tree(120,36,.7);tree(258,72,.6);tree(660,34,.65);tree(150,186,.85);tree(468,184,.9);tree(700,188,.7);
+  // annotations
+  const hiT=el("text",{x:706,y:24,"text-anchor":"end",class:"xslab sec",fill:"#d9b24a"});
+  const loT=el("text",{x:330,y:180,"text-anchor":"middle",class:"xslab sec",fill:"#93aabf"});
+  const nowT=el("text",{x:425,"text-anchor":"middle",class:"xslab",fill:"#cfeaff"});
+  [hiT,loT,nowT].forEach(t=>svg.appendChild(t));
+  $("crkwrap").innerHTML="";
+  $("crkwrap").appendChild(svg);
+  const w=CRK&&CRK.w!=null?CRK.w:null;
+  CRK={svg,shadow,water,lit,thread,drift,hiT,loT,nowT,mobile,w,raf:null,nowVal:""};
+  if(w!=null)paintCreek(w);
+}
+function paintCreek(w){
+  CRK.w=w;
+  const t=Math.max(0,Math.min(1,(w-CRK_WLO)/(CRK_WHI-CRK_WLO)));
+  CRK.shadow.setAttribute("stroke-width",w+2);
+  CRK.water.setAttribute("stroke-width",w);
+  CRK.water.setAttribute("stroke",mixc("#2e6da6","#5fb6ee",t));
+  CRK.lit.setAttribute("stroke-width",Math.max(3,w*.3));
+  CRK.thread.setAttribute("stroke-width",Math.max(4,w*.15));
+  CRK.drift.setAttribute("stroke-width",Math.max(5,w*.5));
+  CRK.nowT.setAttribute("y",104-w/2-9);
+  CRK.nowT.textContent=CRK.nowVal;
+}
+function creekSet(c){
+  if(!CRK||CRK.mobile!==(innerWidth<560))buildCreek();
+  const feat=c.feat,unit=c.unit;
+  let lo=Infinity,hi=-Infinity;
+  feat.pts.forEach(p=>{if(p.v<lo)lo=p.v;if(p.v>hi)hi=p.v;});
+  const t=hi>lo?Math.max(0,Math.min(1,(c.tr.cur-lo)/(hi-lo))):1;
+  const target=CRK_WLO+t*(CRK_WHI-CRK_WLO);
+  CRK.nowVal="now "+fmtLvl(c.tr.cur,unit)+" "+unit;
+  CRK.hiT.textContent=PERIOD_LBL[PERIOD]+" high "+fmtLvl(hi,unit)+" = the gravel bar edge";
+  CRK.loT.textContent="low "+fmtLvl(lo,unit)+" ran as a thread";
+  $("cnote").textContent="water drawn relative to this gauge's "+PERIOD_LBL[PERIOD]+" range (low "+fmtLvl(lo,unit)+" · high "+fmtLvl(hi,unit)+") — not literal channel width";
+  CRK.svg.setAttribute("aria-label",
+    "Illustration: creek water at "+fmtLvl(c.tr.cur,unit)+" "+unit+", "+Math.round(t*100)+"% of the way between this window's low and high.");
+  CRK.drift.setAttribute("visibility",(c.cl.k==="rise"||c.cl.k==="fast")&&!RM?"visible":"hidden");
+  const from=CRK.w==null?CRK_WLO:CRK.w;
+  if(CRK.raf)cancelAnimationFrame(CRK.raf);
+  if(RM||Math.abs(target-from)<.5){paintCreek(target);return;}
+  const t0=performance.now(),dur=800;
+  const step=now=>{
+    const k=Math.min(1,(now-t0)/dur);
+    const e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;   // easeInOutCubic
+    paintCreek(from+(target-from)*e);
+    if(k<1)CRK.raf=requestAnimationFrame(step);else CRK.raf=null;
+  };
+  CRK.raf=requestAnimationFrame(step);
+}
 
 /* ---------- inspector ---------- */
 function renderInspector(animate){
@@ -772,6 +918,7 @@ function renderInspector(animate){
     cfsEl.textContent=Math.round(c.q.pts[c.q.pts.length-1].v).toLocaleString()+' cfs flowing';
   }else cfsEl.hidden=true;
   renderChart(c,animate);
+  creekSet(c);  // creek scene: the water swells/narrows to the new level
   // context strip: min–max of the loaded window + current thumb
   let rlo=Infinity,rhi=-Infinity;
   c.feat.pts.forEach(p=>{if(p.v<rlo)rlo=p.v;if(p.v>rhi)rhi=p.v;});

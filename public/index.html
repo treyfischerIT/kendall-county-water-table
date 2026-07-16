@@ -105,9 +105,12 @@
     -webkit-font-smoothing:antialiased}
   a{color:var(--line)}
   .wrap{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
-  /* cross-site nav shared with /rain and /streams */
-  .crossnav{display:flex;gap:4px 22px;flex-wrap:wrap;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    font-size:.68rem;letter-spacing:.05em;margin:0 0 22px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  /* cross-site nav — identical metrics on /, /rain, /streams so it never shifts
+     between pages: full-width band, 1080px centered row, same font/padding. */
+  .navband{border-bottom:1px solid var(--border)}
+  .crossnav{max-width:1080px;margin:0 auto;display:flex;gap:4px 22px;flex-wrap:wrap;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:.68rem;letter-spacing:.05em;padding:14px clamp(16px,4vw,36px)}
   .crossnav a{color:var(--muted);text-decoration:none;padding:2px 0;border-bottom:1px solid transparent;transition:color .15s}
   .crossnav a:hover{color:var(--line)}
   .crossnav a[aria-current="page"]{color:var(--line);border-bottom-color:rgba(56,189,248,.6)}
@@ -197,12 +200,14 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="navband">
   <nav class="crossnav" aria-label="Texas Water Watchers sites">
     <a href="/" aria-current="page">💧 Water table</a>
     <a href="/rain">🌧️ Rainfall</a>
     <a href="/streams">🌊 Creeks &amp; rivers</a>
   </nav>
+</div>
+<div class="wrap">
   <header>
     <h1>💧 Kendall County Texas Water Table</h1>
     <div class="sub">
