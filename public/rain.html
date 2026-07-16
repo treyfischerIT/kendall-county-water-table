@@ -383,7 +383,11 @@ function render(d){
   // shared absolute gauge scale: a round cap just above the wettest 7-day total
   const maxT7v=Math.max(0.01,...stations.map(s=>last7(s.vals)));
   const CAP=[1,2,3,4,5,6,8,10,12,15,20,25,30].find(c=>c>=maxT7v*1.02)||Math.ceil(maxT7v/5)*5;
-  stations.forEach((s,i)=>{
+  // tiles sorted alphabetically by station name; each card keeps its original
+  // station index (card-r<i>) so the map marker <-> card links stay intact
+  stations.map((s,i)=>({s,i}))
+    .sort((a,b)=>a.s.name.localeCompare(b.s.name))
+    .forEach(({s,i},k)=>{
     const lt=latest(s.vals), t7=last7(s.vals), t14=total(s.vals);
     const card=document.createElement('div');card.className='card';card.id='card-r'+i;
     card.style.setProperty('--edge',rainColor(t7,gmax*4));
@@ -402,7 +406,7 @@ function render(d){
           </div>
         </div>
       </div>`;
-    card.querySelector('.gcol').prepend(gaugeSVG(t7,CAP,wet,animate,i*45));
+    card.querySelector('.gcol').prepend(gaugeSVG(t7,CAP,wet,animate,k*45));
     const main=card.querySelector('.gmain');
     main.appendChild(bars(s.vals,dates,gmax));
     const foot=document.createElement('div');foot.className='cardfoot';
