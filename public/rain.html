@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Boerne-Area Rainfall — Live Daily Totals</title>
-<meta name="description" content="Live daily rainfall totals at CoCoRaHS and NWS co-op gauges around Boerne, Texas.">
+<meta name="description" content="Live daily rainfall at CoCoRaHS and NWS co-op gauges around Boerne, Texas — each station a rain gauge filling to its 7-day total.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a121c">
 <link rel="canonical" href="https://www.texaswaterwatchers.com/rain">
@@ -26,6 +26,11 @@
   body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#12233a 0%,var(--ink) 55%) no-repeat;
     color:var(--paper);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   .wrap{max-width:1080px;margin:0 auto;padding:clamp(24px,4vw,52px) clamp(16px,4vw,36px) 72px}
+  .crossnav{display:flex;gap:4px 22px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;
+    letter-spacing:.05em;margin:0 0 22px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .crossnav a{color:var(--faint);text-decoration:none;padding:2px 0;border-bottom:1px solid transparent;transition:color .15s}
+  .crossnav a:hover{color:var(--water)}
+  .crossnav a[aria-current="page"]{color:var(--water);border-bottom-color:rgba(74,163,228,.6)}
   .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--water);margin:0}
   h1{font-family:var(--serif);font-weight:600;line-height:1.03;letter-spacing:-.01em;
     font-size:clamp(2rem,5.5vw,3.4rem);margin:.28em 0 .12em;text-wrap:balance}
@@ -69,6 +74,21 @@
   .card .loc{font-family:var(--mono);font-size:.66rem;color:var(--mist);letter-spacing:.03em}
   .readline{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:12px 0 2px}
   .amt{font-family:var(--serif);font-size:2.1rem;font-weight:600;line-height:.95;font-variant-numeric:tabular-nums}
+
+  /* ---- rain-gauge tile ---- */
+  .tile{display:flex;gap:13px}
+  .gcol{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .gcol .rgauge{width:62px;height:auto;display:block}
+  .gcap{font-family:var(--mono);font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  .gmain{flex:1;min-width:0}
+  .gmain .amt{font-size:1.55rem}
+  .gmain .readline{margin:8px 0 2px}
+  .gtick{font-family:var(--mono);font-size:7px;fill:#5f7789}
+  @media(prefers-reduced-motion:no-preference){
+    .gwater{transition:transform .65s cubic-bezier(.2,.7,.3,1)}
+    .drop{animation:dropfall 2.9s linear infinite}
+  }
+  @keyframes dropfall{0%{transform:translateY(0);opacity:0}15%{opacity:.85}75%{opacity:.6}100%{transform:translateY(27px);opacity:0}}
   .amt small{font-size:.9rem;color:var(--mist);font-family:var(--sans);font-weight:400;margin-left:3px}
   .amt .none{color:var(--faint);font-size:1.3rem}
   .side{font-family:var(--mono);font-size:.68rem;color:var(--mist);text-align:right;line-height:1.6}
@@ -96,6 +116,11 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <div class="wrap">
+  <nav class="crossnav" aria-label="Texas Water Watchers sites">
+    <a href="/">&#128167; Water table</a>
+    <a href="/rain" aria-current="page">&#127783;&#65039; Rainfall</a>
+    <a href="/streams">&#127754; Creeks &amp; rivers</a>
+  </nav>
   <header>
     <p class="eyebrow">Live · daily rainfall · CoCoRaHS &amp; NWS co-op</p>
     <h1>Boerne-area rainfall</h1>
@@ -129,6 +154,22 @@
   </footer>
 </div>
 <div class="tip" id="tip"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <clipPath id="rg-clip"><path d="M18 30 L18 136 Q18 140 22 140 L38 140 Q42 140 42 136 L42 30 Z"/></clipPath>
+    <linearGradient id="rg-water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#63b6ec"/><stop offset="1" stop-color="#164d86"/>
+    </linearGradient>
+    <linearGradient id="rg-glass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e8ca5" stop-opacity=".26"/>
+      <stop offset=".16" stop-color="#dceefa" stop-opacity=".14"/>
+      <stop offset=".5" stop-color="#96b4cd" stop-opacity=".05"/>
+      <stop offset=".84" stop-color="#7896af" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#55738c" stop-opacity=".28"/>
+    </linearGradient>
+  </defs>
+</svg>
 
 <script>
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -185,6 +226,61 @@ function bars(vals,dates,gmax){
     rect.addEventListener('mouseleave',()=>{hideTip();dayHi(dates[i],false);});
     svg.appendChild(rect);
   });
+  return svg;
+}
+
+/* ---------- per-tile CoCoRaHS-style rain gauge (SVG, shared defs) ----------
+   Funnel mouth → calibrated tube → water at the station's 7-day total on a
+   shared absolute scale, so equal inches read as equal heights across tiles. */
+const TUBE_D='M18 30 L18 136 Q18 140 22 140 L38 140 Q42 140 42 136 L42 30 Z';
+function gaugeSVG(t7,cap,wet,animate,delay){
+  const NS='http://www.w3.org/2000/svg';
+  const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const svg=el('svg',{class:'rgauge',viewBox:'0 0 70 150',role:'img',
+    'aria-label':`Rain gauge: ${t7.toFixed(2)} inches over the last 7 days, on a 0–${cap} inch scale`});
+  // funnel body
+  svg.appendChild(el('path',{d:'M7 9 L18 30 L42 30 L53 9 Z',fill:'url(#rg-glass)',stroke:'rgba(175,200,222,.45)','stroke-width':'1'}));
+  // tube glass (behind water)
+  svg.appendChild(el('path',{d:TUBE_D,fill:'url(#rg-glass)'}));
+  // water, clipped to the tube; over-full gauges brim at the top
+  const full=t7>=cap-1e-9;
+  if(t7>0.004){
+    const wy=full?30:140-(Math.min(t7,cap)/cap)*110;
+    const gw=el('g',{class:'gwater','clip-path':'url(#rg-clip)'});
+    gw.appendChild(el('rect',{x:18,y:wy,width:24,height:140-wy,fill:'url(#rg-water)'}));
+    gw.appendChild(el('ellipse',{cx:30,cy:wy,rx:12,ry:2.2,fill:full?'rgba(225,245,255,.8)':'rgba(205,238,255,.5)'}));
+    svg.appendChild(gw);
+    if(animate&&!RM){
+      const D=140-wy;
+      gw.style.transform=`translateY(${D}px)`;
+      gw.style.transitionDelay=delay+'ms';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{gw.style.transform='translateY(0)';}));
+    }
+  }
+  // glass specular highlight
+  svg.appendChild(el('rect',{x:21.5,y:31,width:4,height:108,fill:'rgba(255,255,255,.10)','clip-path':'url(#rg-clip)'}));
+  // calibration ticks (shared absolute scale)
+  const lab=cap<=5?1:cap<=10?2:5;
+  const minor=cap<=15?1:5;
+  for(let t=minor;t<=cap;t+=minor){
+    const ty=140-(t/cap)*110, major=t%lab===0;
+    svg.appendChild(el('line',{x1:major?34:37,y1:ty,x2:41.2,y2:ty,
+      stroke:`rgba(205,224,238,${major?'.5':'.25'})`,'stroke-width':'.8'}));
+    if(major){const tx=el('text',{x:44.5,y:ty+2.4,class:'gtick'});tx.textContent=t+'"';svg.appendChild(tx);}
+  }
+  // tube outline + funnel mouth
+  svg.appendChild(el('path',{d:TUBE_D,fill:'none',stroke:'rgba(182,206,226,.5)','stroke-width':'1'}));
+  svg.appendChild(el('ellipse',{cx:30,cy:9,rx:23,ry:4.4,fill:'#0b1622',stroke:'rgba(195,218,238,.6)','stroke-width':'1.1'}));
+  // slow drops into the funnel — only when the latest day had measurable rain
+  if(wet&&!RM){
+    [[25,0],[34,1350],[29,2400]].forEach(([dx,dl])=>{
+      const dr=el('line',{x1:dx,y1:0,x2:dx,y2:6,class:'drop',
+        stroke:'rgba(150,210,245,.75)','stroke-width':'1.2','stroke-linecap':'round'});
+      dr.style.animationDelay=dl+'ms';
+      dr.style.opacity='0';
+      svg.appendChild(dr);
+    });
+  }
   return svg;
 }
 
@@ -280,23 +376,34 @@ function render(d){
   const grid=document.getElementById('grid');
   const animate=grid.childElementCount===0&&!RM;    // first paint only
   grid.innerHTML='';
+  // shared absolute gauge scale: a round cap just above the wettest 7-day total
+  const maxT7v=Math.max(0.01,...stations.map(s=>last7(s.vals)));
+  const CAP=[1,2,3,4,5,6,8,10,12,15,20,25,30].find(c=>c>=maxT7v*1.02)||Math.ceil(maxT7v/5)*5;
   stations.forEach((s,i)=>{
     const lt=latest(s.vals), t7=last7(s.vals), t14=total(s.vals);
     const card=document.createElement('div');card.className='card';card.id='card-r'+i;
     card.style.setProperty('--edge',rainColor(t7,gmax*4));
     const big = lt ? (lt.v<0.005?`<span class="none">Trace</span>`:`${lt.v.toFixed(2)}<small> in</small>`) : `<span class="none">—</span>`;
     const when = lt ? fmtDate(dates[lt.i]) : '';
+    const wet = !!(lt&&lt.v>=0.01);   // measurable rain on the latest day → drops fall
     card.innerHTML=`
-      <h3>${s.name}</h3>
-      <div class="loc">${s.dist} mi from Boerne · ${s.lat}, ${s.lon}</div>
-      <div class="readline">
-        <div><div class="amt">${big}</div><div class="loc" style="margin-top:2px">latest daily total · ${when}</div></div>
-        <div class="side">7-day <b>${t7.toFixed(2)}"</b><br>14-day <b>${t14.toFixed(2)}"</b></div>
+      <div class="tile">
+        <div class="gcol"><div class="gcap">7-day</div></div>
+        <div class="gmain">
+          <h3>${s.name}</h3>
+          <div class="loc">${s.dist} mi from Boerne</div>
+          <div class="readline">
+            <div><div class="amt">${big}</div><div class="loc" style="margin-top:2px">latest daily total · ${when}</div></div>
+            <div class="side">7-day <b>${t7.toFixed(2)}"</b><br>14-day <b>${t14.toFixed(2)}"</b></div>
+          </div>
+        </div>
       </div>`;
-    card.appendChild(bars(s.vals,dates,gmax));
+    card.querySelector('.gcol').prepend(gaugeSVG(t7,CAP,wet,animate,i*45));
+    const main=card.querySelector('.gmain');
+    main.appendChild(bars(s.vals,dates,gmax));
     const foot=document.createElement('div');foot.className='cardfoot';
     foot.innerHTML=`<span>daily totals · ${fmtDate(dates[0])} – ${fmtDate(dates[dates.length-1])}</span><span>inches</span>`;
-    card.appendChild(foot);
+    main.appendChild(foot);
     linkCard(card,i);
     grid.appendChild(card);
   });

@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boerne-Area Creeks & Rivers — Live Levels</title>
+<meta name="description" content="Pick a gauge and read its story — live USGS levels for the Cibolo, Guadalupe, and Cypress Creek around Boerne, Texas.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a121c">
+<link rel="canonical" href="https://www.texaswaterwatchers.com/streams">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127754;</text></svg>">
+</head>
+<body>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root{
+    --ink:#0a121c; --panel:#101f2f; --panel2:#0d1927;
+    --paper:#eef4fa; --mist:#93aabf; --faint:#5f7789;
+    --line:rgba(147,170,191,.16);
+    --water:#4aa3e4; --water-hi:#9ad8f7;
+    --rise:#38bdf8; --rise-fast:#f0b429; --fall:#8aa0b5; --steady:#7b93a8;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Code",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:radial-gradient(120% 80% at 50% -10%,#12233a 0%,var(--ink) 55%) no-repeat;
+    color:var(--paper);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:1080px;margin:0 auto;padding:clamp(20px,3.5vw,44px) clamp(16px,4vw,36px) 72px}
+  :focus-visible{outline:2px solid var(--water);outline-offset:3px}
+
+  /* ---- cross-nav ---- */
+  .crossnav{display:flex;gap:4px 22px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;
+    letter-spacing:.05em;margin:0 0 22px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .crossnav a{color:var(--faint);text-decoration:none;padding:2px 0;border-bottom:1px solid transparent;transition:color .15s}
+  .crossnav a:hover{color:var(--water)}
+  .crossnav a[aria-current="page"]{color:var(--water);border-bottom-color:rgba(74,163,228,.6)}
+
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--water);margin:0}
+  h1{font-family:var(--serif);font-weight:600;line-height:1.03;letter-spacing:-.01em;
+    font-size:clamp(2rem,5.5vw,3.4rem);margin:.28em 0 .12em;text-wrap:balance}
+  .lede{color:#cdd9e6;max-width:64ch;margin:.3em 0 0;font-size:1.02rem}
+  .bar{display:flex;align-items:center;gap:12px 18px;flex-wrap:wrap;margin:24px 0 4px;
+    padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .summary{font-family:var(--mono);font-size:.8rem;color:var(--mist);letter-spacing:.02em}
+  .summary b{color:var(--paper)}
+  .summary .up{color:var(--rise)} .summary .fast{color:var(--rise-fast)}
+  .spacer{margin-left:auto}
+  .updated{font-family:var(--mono);font-size:.68rem;color:var(--faint);letter-spacing:.04em}
+  .toggle{display:inline-flex;border:1px solid var(--line);border-radius:100px;overflow:hidden}
+  .toggle button{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;background:transparent;
+    color:var(--mist);border:0;padding:7px 13px;cursor:pointer;text-transform:uppercase}
+  .toggle button.on{background:var(--water);color:#06121f}
+  .btn{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--paper);border:1px solid var(--line);border-radius:100px;
+    padding:7px 14px;cursor:pointer;transition:border-color .15s}
+  .btn:hover{border-color:var(--water)}
+  .stalebanner{margin-top:14px;padding:10px 14px;border:1px solid rgba(240,180,41,.38);border-radius:10px;
+    background:rgba(240,180,41,.07);font-family:var(--mono);font-size:.72rem;color:#ecd9a6;letter-spacing:.02em}
+
+  /* ---- water motifs ---- */
+  .waveline{height:20px;overflow:hidden;margin:24px 0 -6px;opacity:.55}
+  .waveline svg{width:100%;height:100%;display:block}
+  .waveline path{fill:none;stroke:rgba(74,163,228,.34);stroke-width:1.2;vector-effect:non-scaling-stroke}
+  .waveline .w2{stroke:rgba(154,216,247,.16)}
+  @media(prefers-reduced-motion:no-preference){
+    .waveline .w1{animation:wdrift 19s linear infinite}
+    .waveline .w2{animation:wdrift 31s linear infinite reverse}
+    .shimmer{animation:shimmerdrift 16s linear infinite}
+    .ripplering{transform-box:fill-box;transform-origin:center;animation:ripple 4.4s ease-out infinite}
+    .ilvl::after{animation:waterline 9s linear infinite}
+  }
+  @keyframes wdrift{to{transform:translateX(120px)}}
+  @keyframes shimmerdrift{to{transform:translateX(120px)}}
+  @keyframes ripple{0%{transform:scale(.55);opacity:.65}100%{transform:scale(2.6);opacity:0}}
+  @keyframes waterline{to{background-position-x:26px}}
+
+  /* ---- hero map ---- */
+  .mapwrap{margin-top:22px;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    height:clamp(300px,46vw,430px);position:relative;background:var(--panel2);max-width:100%}
+  #map{position:absolute;inset:0;background:#0a121c;z-index:0}
+  .leaflet-container{font-family:var(--mono);font-size:.68rem}
+  .leaflet-control-attribution{background:rgba(8,17,28,.72)!important;color:var(--faint)!important}
+  .leaflet-control-attribution a{color:var(--mist)!important}
+  .leaflet-control-zoom a{background:#0d1927!important;color:var(--paper)!important;border:1px solid var(--line)!important}
+  .leaflet-interactive{cursor:pointer}
+  .glabel{background:rgba(8,17,28,.82);border:1px solid rgba(147,170,191,.3);color:var(--paper);
+    font-family:var(--mono);font-size:.62rem;line-height:1.4;padding:2px 6px;border-radius:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,.4);white-space:nowrap}
+  .glabel.sel{border-color:var(--water-hi);color:var(--water-hi)}
+  .leaflet-tooltip-top.glabel:before,.leaflet-tooltip-bottom.glabel:before,
+  .leaflet-tooltip-left.glabel:before,.leaflet-tooltip-right.glabel:before{display:none}
+  .maplegend{display:flex;gap:10px 18px;flex-wrap:wrap;margin-top:10px;font-family:var(--mono);
+    font-size:.62rem;letter-spacing:.09em;text-transform:uppercase;color:var(--mist)}
+  .maplegend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+
+  /* ---- gauges rail ---- */
+  .rail{display:flex;gap:10px;margin-top:16px;overflow-x:auto;padding:4px 2px 10px;
+    scrollbar-width:thin;scrollbar-color:rgba(147,170,191,.3) transparent}
+  .chipcard{flex:0 0 auto;min-width:158px;text-align:left;background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:12px;padding:9px 12px 7px;cursor:pointer;color:var(--paper);
+    font-family:var(--sans);transition:border-color .15s,transform .15s}
+  .chipcard:hover{border-color:rgba(74,163,228,.45)}
+  @media(prefers-reduced-motion:no-preference){.chipcard:hover{transform:translateY(-1px)}}
+  .chipcard.on{border-color:var(--water);box-shadow:0 0 0 1px var(--water),0 10px 24px rgba(0,0,0,.35)}
+  .chipcard .cw{font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .chipcard .cn{font-family:var(--serif);font-size:.92rem;font-weight:600;line-height:1.15;margin:1px 0 3px;white-space:nowrap}
+  .chipcard .cv{display:flex;align-items:baseline;gap:7px;font-variant-numeric:tabular-nums}
+  .chipcard .cv b{font-family:var(--mono);font-size:.82rem;font-weight:600}
+  .chipcard .cd{font-family:var(--mono);font-size:.6rem;letter-spacing:.03em}
+  .chipcard svg{display:block;width:100%;height:22px;margin-top:5px}
+
+  /* ---- inspector ---- */
+  .inspector{margin-top:14px;background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:16px;padding:clamp(14px,2.6vw,24px);position:relative;overflow:hidden}
+  .inspector::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--edge,var(--water))}
+  .ihead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .ihead .water{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  .ihead h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.25rem,3vw,1.7rem);margin:.08em 0 .05em;line-height:1.1}
+  .iloc{font-family:var(--mono);font-size:.66rem;color:var(--mist);letter-spacing:.03em}
+  .pick{display:flex;flex-direction:column;gap:4px;font-family:var(--mono);font-size:.58rem;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  .pick select{font-family:var(--mono);font-size:.74rem;background:var(--panel2);color:var(--paper);
+    border:1px solid var(--line);border-radius:8px;padding:7px 9px;max-width:240px;cursor:pointer}
+  .istats{display:flex;align-items:flex-end;gap:10px 14px;flex-wrap:wrap;margin:14px 0 6px}
+  .ilvl{font-family:var(--serif);font-size:clamp(2.2rem,6vw,3rem);font-weight:600;line-height:.9;
+    font-variant-numeric:tabular-nums;position:relative;padding-bottom:8px}
+  .ilvl small{font-size:1rem;color:var(--mist);font-family:var(--sans);font-weight:400;margin-left:4px}
+  .ilvl::after{content:"";position:absolute;left:2px;right:10px;bottom:0;height:5px;opacity:.55;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='5'><path d='M0 2.5 Q6.5 .5 13 2.5 T26 2.5' fill='none' stroke='%234aa3e4' stroke-width='1'/></svg>") repeat-x 0 0/26px 5px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.68rem;
+    letter-spacing:.05em;padding:5px 10px;border-radius:100px;border:1px solid currentColor;
+    white-space:nowrap;font-variant-numeric:tabular-nums;margin-bottom:4px}
+  .chip.dim{color:var(--mist);border-color:var(--line)}
+
+  .chartwrap{position:relative;margin-top:10px;border-radius:10px}
+  .chartwrap.loading #chartbox{opacity:.45}
+  #chartbox{transition:opacity .2s}
+  #chartbox svg{display:block;width:100%;height:auto}
+  .axis{font-family:var(--mono);font-size:10px;fill:var(--faint)}
+  .tag{font-family:var(--mono);font-size:10px;fill:var(--mist);paint-order:stroke;stroke:#0d1927;stroke-width:3px}
+  .tag.hi{fill:var(--water-hi)}
+  .rhlabel{font-family:var(--mono);font-size:10px;fill:var(--rise-fast);paint-order:stroke;stroke:#0d1927;stroke-width:3px}
+  .pill{position:absolute;top:2px;left:0;pointer-events:none;background:#08111c;border:1px solid rgba(147,170,191,.35);
+    border-radius:7px;padding:5px 9px;font-family:var(--mono);font-size:.68rem;color:var(--paper);
+    white-space:nowrap;box-shadow:0 8px 26px rgba(0,0,0,.5);z-index:5;font-variant-numeric:tabular-nums}
+  .pill b{color:var(--water-hi);font-weight:600}
+  #resetzoom{position:absolute;top:8px;right:8px;z-index:6;background:rgba(8,17,28,.85)}
+  .kbdhint{margin-top:6px;font-family:var(--mono);font-size:.6rem;color:var(--faint);letter-spacing:.05em}
+  @media(prefers-reduced-motion:no-preference){
+    .pulse-ring{transform-box:fill-box;transform-origin:center;animation:ringpulse 2.2s ease-out infinite}
+  }
+  @keyframes ringpulse{0%{transform:scale(.5);opacity:.8}70%{transform:scale(2.4);opacity:0}100%{transform:scale(2.4);opacity:0}}
+
+  .ctx{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;font-family:var(--mono);
+    font-size:.62rem;color:var(--faint);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+  .rangebar{flex:1;min-width:120px;height:6px;border-radius:100px;background:rgba(147,170,191,.13);position:relative}
+  .rangebar i{display:block;position:relative;height:100%;border-radius:100px;width:0;
+    background:linear-gradient(90deg,rgba(74,163,228,.25),var(--water) 70%,var(--water-hi));
+    transition:width .8s cubic-bezier(.25,.7,.3,1)}
+  .rangebar i::after{content:"";position:absolute;right:-2px;top:-2px;bottom:-2px;width:8px;border-radius:100px;
+    background:radial-gradient(closest-side,rgba(154,216,247,.85),rgba(154,216,247,0))}
+  .rangebar b{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--water-hi);
+    border:2px solid #0d1927;transform:translate(-50%,-50%);left:0;transition:left .8s cubic-bezier(.25,.7,.3,1)}
+  .ctxsrc{margin-left:auto}
+  .ctxsrc a{color:var(--mist);text-decoration:none;border-bottom:1px solid var(--line)}
+  .ctxsrc a:hover{color:var(--water)}
+
+  .state{font-family:var(--mono);font-size:.8rem;color:var(--mist);padding:40px 0;text-align:center}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:.68rem;line-height:1.7;color:var(--faint);letter-spacing:.02em}
+  footer b{color:var(--mist);font-weight:400}
+  @media(max-width:560px){
+    .ihead{flex-direction:column}
+    .pick select{max-width:100%}
+    .ctxsrc{margin-left:0;width:100%}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <nav class="crossnav" aria-label="Texas Water Watchers sites">
+    <a href="/">&#128167; Water table</a>
+    <a href="/rain">&#127783;&#65039; Rainfall</a>
+    <a href="/streams" aria-current="page">&#127754; Creeks &amp; rivers</a>
+  </nav>
+  <header>
+    <p class="eyebrow">Live · U.S. Geological Survey stream gauges</p>
+    <h1>Boerne-area creeks &amp; rivers</h1>
+    <p class="lede">Pick a gauge — on the map, in the rail, or from the list — and read its story:
+      how high the water is right now, how fast it's moving, and where the last few days took it.
+      Gauge height in feet, updated by the USGS about every 15&nbsp;minutes.</p>
+    <div class="bar">
+      <span class="summary" id="summary">Loading gauges…</span>
+      <span class="spacer"></span>
+      <span class="updated" id="updated"></span>
+      <div class="toggle" id="period" role="group" aria-label="Time range">
+        <button data-p="P1D">24 h</button>
+        <button data-p="P7D" class="on">7 days</button>
+        <button data-p="P30D">30 days</button>
+      </div>
+      <button class="btn" id="refresh" aria-label="Refresh now">↻ Refresh</button>
+    </div>
+    <div class="stalebanner" id="stale" role="status" hidden></div>
+  </header>
+
+  <div class="waveline" aria-hidden="true"><svg viewBox="0 0 1200 20" preserveAspectRatio="none">
+    <path class="w1" d="M-120 10 q30 -7 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0"/>
+    <path class="w2" d="M-150 13 q30 -5 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0"/>
+  </svg></div>
+
+  <div class="mapwrap" id="mapwrap" hidden aria-label="Map of stream gauges — click a gauge to inspect it">
+    <div id="map"></div>
+  </div>
+  <div class="maplegend" id="maplegend" hidden>
+    <span><i style="background:var(--rise-fast)"></i>Rising fast</span>
+    <span><i style="background:var(--rise)"></i>Rising</span>
+    <span><i style="background:var(--fall)"></i>Falling / steady</span>
+    <span style="margin-left:auto;color:var(--faint)">dot size = 24-h change · click a gauge to inspect it</span>
+  </div>
+
+  <div class="rail" id="rail" role="group" aria-label="All gauges" hidden></div>
+
+  <section class="inspector" id="inspector" hidden aria-live="polite">
+    <div class="ihead">
+      <div>
+        <div class="water" id="iWater"></div>
+        <h2 id="iName"></h2>
+        <div class="iloc" id="iLoc"></div>
+      </div>
+      <label class="pick">gauge
+        <select id="gsel" aria-label="Choose a gauge"></select>
+      </label>
+    </div>
+    <div class="istats">
+      <div class="ilvl"><span id="iLvl">—</span><small id="iUnit">ft</small></div>
+      <span class="chip" id="iTrend"></span>
+      <span class="chip" id="iD24"></span>
+      <span class="chip dim" id="iCfs" hidden></span>
+    </div>
+    <div class="chartwrap" id="chartwrap" tabindex="0" role="application"
+      aria-label="Hydrograph. Left and right arrow keys step between readings; drag horizontally to zoom; Escape resets zoom.">
+      <div id="chartbox"></div>
+      <div class="pill" id="pill" hidden></div>
+      <button class="btn" id="resetzoom" hidden>⤺ Reset zoom</button>
+    </div>
+    <div class="kbdhint">drag to zoom · ← → step readings · esc resets</div>
+    <div class="ctx">
+      <span id="ctxlo"></span>
+      <div class="rangebar" title="Current level within this window's low–high range"><i id="ctxfill"></i><b id="ctxthumb"></b></div>
+      <span id="ctxhi"></span>
+      <span class="ctxsrc" id="ctxsrc"></span>
+    </div>
+  </section>
+
+  <div id="state" class="state">Fetching live levels from the USGS…</div>
+
+  <div class="waveline" aria-hidden="true" style="margin-top:44px"><svg viewBox="0 0 1200 20" preserveAspectRatio="none">
+    <path class="w1" d="M-120 10 q30 -7 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0"/>
+    <path class="w2" d="M-150 13 q30 -5 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0"/>
+  </svg></div>
+
+  <footer style="margin-top:14px">
+    <b>Source</b> — U.S. Geological Survey, National Water Information System (waterdata.usgs.gov).
+    Provisional real-time data, subject to revision. Gauge height is the water's height above the
+    gauge datum, not depth. <b>Not a flood-warning tool</b> — for warnings see the National Weather Service.<br>
+    <b>A companion to the Kendall County water-table tracker.</b>
+  </footer>
+</div>
+
+<script>
+const STATIONS=[
+  {id:'08183900',water:'Cibolo Creek',name:'near Boerne',short:'Boerne',loc:'Boerne · the home gauge',lat:29.77498889,lon:-98.7094694},
+  {id:'08183978',water:'Cibolo Creek',name:'at Specht Rd',short:'Specht Rd',loc:'Bulverde · ~15 mi SE of Boerne',lat:29.73677778,lon:-98.4933722},
+  {id:'08184050',water:'Cibolo Creek',name:'at Smithson Valley Rd',short:'Smithson Vly',loc:'Bulverde · ~20 mi SE of Boerne',lat:29.74826667,lon:-98.4076833},
+  {id:'08166700',water:'Cypress Creek',name:'at Saur Farm',short:'Saur Farm',loc:'Comfort · ~21 mi NW of Boerne',lat:30.0114361,lon:-98.9741361},
+  {id:'08166250',water:'Guadalupe River',name:'near Center Point',short:'Center Pt',loc:'Center Point · ~26 mi NW of Boerne',lat:29.98777778,lon:-99.11},
+  {id:'08167000',water:'Guadalupe River',name:'at Comfort',short:'Comfort',loc:'Comfort · ~15 mi NW of Boerne',lat:29.96523889,lon:-98.8971667},
+  {id:'08167200',water:'Guadalupe River',name:'at FM 474, Bergheim',short:'Bergheim',loc:'Bergheim · ~8 mi SE of Boerne',lat:29.89358333,lon:-98.6698333},
+  {id:'08167500',water:'Guadalupe River',name:'near Spring Branch',short:'Spring Br',loc:'Spring Branch · ~21 mi E of Boerne',lat:29.8604957,lon:-98.3836275},
+];
+const BY_ID=Object.fromEntries(STATIONS.map(s=>[s.id,s]));
+const DEFAULT_ID='08183900';
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $=id=>document.getElementById(id);
+const fmtT=t=>new Date(t).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+const PERIOD_LBL={P1D:'24 h',P7D:'7-day',P30D:'30-day'};
+
+let PERIOD='P7D';
+let SELECTED=null;      // station id
+let ZOOM=null;          // {t0,t1} in ms, or null
+let CARDS=[];           // computed per-station records for current period
+const MEM={};           // in-memory per-period cache: {data,builtAt,at}
+let BUILT_AT=null, LATEST=null;
+
+/* ---------- freshness (x-built-at header) ---------- */
+function fmtAgo(ms){
+  const m=Math.max(0,Math.round((Date.now()-ms)/60000));
+  if(m<1)return 'refreshed just now';
+  if(m<60)return 'refreshed '+m+' min ago';
+  const h=Math.floor(m/60);
+  return 'refreshed '+h+' h '+(m%60)+' min ago';
+}
+function paintFreshness(){
+  const parts=[];
+  if(LATEST)parts.push('Data as of '+fmtT(LATEST));
+  if(BUILT_AT)parts.push(fmtAgo(BUILT_AT));
+  $('updated').textContent=parts.join(' · ');
+}
+setInterval(paintFreshness,30000);
+
+/* ---------- data ---------- */
+async function fetchLevels(period){
+  const r=await fetch(`/api/streams?period=${period}`,{cache:'no-store'});
+  if(!r.ok) throw new Error('feed returned '+r.status);
+  const builtAt=parseInt(r.headers.get('x-built-at'),10)||Date.now();
+  const d=await r.json();
+  const out={};
+  (d.value.timeSeries||[]).forEach(ts=>{
+    const site=ts.sourceInfo.siteCode[0].value;
+    const pc=ts.variable.variableCode[0].value;           // 00065 gage ht · 00060 discharge
+    const unit=(ts.variable.unit.unitCode||'').replace('ft3/s','cfs');
+    const pts=(ts.values[0].value||[])
+      .filter(v=>v.value!==''&&v.value!=='-999999'&&v.value!=null)
+      .map(v=>({t:new Date(v.dateTime).getTime(),v:parseFloat(v.value)}))
+      .filter(p=>isFinite(p.v)).sort((a,b)=>a.t-b.t);
+    if(!pts.length) return;
+    (out[site]=out[site]||{})[pc]={unit,pts};
+  });
+  return {data:out,builtAt};
+}
+function trendOf(pts){
+  const last=pts[pts.length-1];
+  const dayAgo=last.t-864e5;
+  let ref=pts[0];
+  for(const p of pts){ if(p.t<=dayAgo) ref=p; else break; }
+  return {cur:last.v,at:last.t,delta:last.v-ref.v};
+}
+function classify(delta,unit){
+  const ft=unit==='ft';
+  if(ft){ if(delta>=2)return{k:'fast',lbl:'Rising fast',col:'var(--rise-fast)',ar:'▲'};
+    if(delta>=0.1)return{k:'rise',lbl:'Rising',col:'var(--rise)',ar:'▲'};
+    if(delta<=-0.1)return{k:'fall',lbl:'Falling',col:'var(--fall)',ar:'▼'};
+    return{k:'steady',lbl:'Steady',col:'var(--steady)',ar:'▬'};}
+  if(delta>0)return{k:'rise',lbl:'Rising',col:'var(--rise)',ar:'▲'};
+  if(delta<0)return{k:'fall',lbl:'Falling',col:'var(--fall)',ar:'▼'};
+  return{k:'steady',lbl:'Steady',col:'var(--steady)',ar:'▬'};
+}
+function compute(data){
+  return STATIONS.map(st=>{
+    const rec=data[st.id]; if(!rec)return null;
+    const gh=rec['00065'], q=rec['00060'];
+    const feat=gh||q; if(!feat)return null;
+    const unit=feat.unit;
+    const tr=trendOf(feat.pts);
+    return {st,gh,q,feat,unit,tr,cl:classify(tr.delta,unit)};
+  }).filter(Boolean);
+}
+const cardFor=id=>CARDS.find(c=>c.st.id===id);
+const fmtLvl=(v,unit)=>unit==='ft'?v.toFixed(2):Math.round(v).toLocaleString();
+const fmtD24=(v,unit)=>unit==='ft'
+  ?(v>=0?'+':'')+v.toFixed(1)+' ft / 24h'
+  :(v>=0?'+':'')+Math.round(v).toLocaleString()+' cfs / 24h';
+
+/* ---------- count-up ---------- */
+function countUp(el,target,fmt){
+  if(RM||Math.abs(target)<0.001){el.textContent=fmt(target);return;}
+  const t0=performance.now(),dur=600;
+  const step=t=>{
+    const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3);
+    el.textContent=fmt(target*e);
+    if(k<1)requestAnimationFrame(step);
+  };
+  el.textContent=fmt(0);
+  requestAnimationFrame(step);
+}
+
+/* ---------- map ---------- */
+let map=null, markers={}, ring=null, mapFitted=false;
+const MARKER_COL={fast:'#f0b429',rise:'#38bdf8',fall:'#8aa0b5',steady:'#8aa0b5'};
+function initMap(){
+  if(map||!window.L)return;
+  $('mapwrap').hidden=false;
+  $('maplegend').hidden=false;
+  map=L.map('map',{scrollWheelZoom:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {subdomains:'abcd',maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+}
+let ripples=[];
+function renderMap(){
+  initMap(); if(!map)return;
+  Object.values(markers).forEach(m=>m.remove()); markers={};
+  ripples.forEach(m=>m.remove()); ripples=[];
+  if(ring){ring.remove();ring=null;}
+  const pts=[];
+  // draw falling/steady first so risers sit on top
+  CARDS.slice().sort((a,b)=>Math.abs(a.tr.delta)-Math.abs(b.tr.delta)).forEach(c=>{
+    const col=MARKER_COL[c.cl.k];
+    const mag=c.unit==='ft'?Math.abs(c.tr.delta):0;
+    const r=6+Math.min(9,mag*.6);
+    const rising=c.cl.k==='rise'||c.cl.k==='fast';
+    // rising gauges ripple outward, slowly; more rise = a touch faster. still water stays still.
+    if(rising&&!RM){
+      const rp=L.circleMarker([c.st.lat,c.st.lon],{radius:r,color:col,weight:1.2,fill:false,
+        interactive:false,className:'ripplering'});
+      rp.addTo(map);
+      if(rp._path)rp._path.style.animationDuration=Math.max(2.6,5.2-Math.min(2.4,mag*.25))+'s';
+      ripples.push(rp);
+    }
+    const m=L.circleMarker([c.st.lat,c.st.lon],{radius:r,color:col,weight:1.5,fillColor:col,fillOpacity:.55});
+    m._baseR=r;
+    m.bindTooltip(`${c.st.short} · ${fmtLvl(c.tr.cur,c.unit)} ${c.unit}`,
+      {permanent:true,direction:'right',offset:[r+4,0],className:'glabel',opacity:1});
+    m.on('click',()=>selectGauge(c.st.id));
+    m.addTo(map);
+    markers[c.st.id]=m;
+    pts.push([c.st.lat,c.st.lon]);
+  });
+  if(pts.length&&!mapFitted){
+    mapFitted=true;
+    const b=L.latLngBounds(pts);
+    const fit=()=>{map.invalidateSize();map.fitBounds(b,{padding:[34,58],maxZoom:12});};
+    fit(); setTimeout(fit,150);
+  }
+  paintMapSelection();
+}
+function paintMapSelection(){
+  if(!map)return;
+  if(ring){ring.remove();ring=null;}
+  Object.entries(markers).forEach(([id,m])=>{
+    const on=id===SELECTED;
+    m.setStyle({weight:on?2.5:1.5,fillOpacity:on?.95:.55});
+    const tt=m.getTooltip();
+    if(tt&&tt.getElement)tt.getElement()&&tt.getElement().classList.toggle('sel',on);
+    if(on)m.bringToFront();
+  });
+  const m=markers[SELECTED];
+  if(m){
+    ring=L.circleMarker(m.getLatLng(),{radius:m._baseR+6,color:'#9ad8f7',weight:2,
+      fill:false,dashArray:'4 4',interactive:false}).addTo(map);
+  }
+}
+
+/* ---------- rail ---------- */
+function spark(pts,accent){
+  const NS='http://www.w3.org/2000/svg',W=140,H=22;
+  const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'none','aria-hidden':'true'});
+  if(pts.length<2)return svg;
+  const t0=pts[0].t,t1=pts[pts.length-1].t;
+  let lo=Infinity,hi=-Infinity;pts.forEach(p=>{if(p.v<lo)lo=p.v;if(p.v>hi)hi=p.v;});
+  if(hi-lo<0.01){hi+=.5;lo-=.5;}
+  const x=t=>(t1===t0?0:(t-t0)/(t1-t0))*W;
+  const y=v=>H-2-(v-lo)/(hi-lo)*(H-4);
+  let d='M '+x(pts[0].t).toFixed(1)+' '+y(pts[0].v).toFixed(1);
+  pts.forEach((p,i)=>{if(i)d+=' L '+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1);});
+  svg.appendChild(el('path',{d,fill:'none',stroke:accent,'stroke-width':'1.5','vector-effect':'non-scaling-stroke','stroke-linejoin':'round'}));
+  return svg;
+}
+function renderRail(){
+  const rail=$('rail'); rail.hidden=false; rail.innerHTML='';
+  CARDS.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='chipcard'; b.dataset.id=c.st.id; b.type='button';
+    b.setAttribute('aria-pressed','false');
+    b.innerHTML=`<span class="cw">${c.st.water}</span>
+      <span class="cn">${c.st.short}</span>
+      <span class="cv"><b>${fmtLvl(c.tr.cur,c.unit)} ${c.unit}</b>
+      <span class="cd" style="color:${c.cl.col}">${c.cl.ar} ${c.unit==='ft'?(c.tr.delta>=0?'+':'')+c.tr.delta.toFixed(1):(c.tr.delta>=0?'+':'')+Math.round(c.tr.delta).toLocaleString()}</span></span>`;
+    b.appendChild(spark(c.feat.pts,c.cl.k==='fall'||c.cl.k==='steady'?'var(--water)':c.cl.col));
+    b.addEventListener('click',()=>selectGauge(c.st.id));
+    rail.appendChild(b);
+  });
+}
+function paintRailSelection(){
+  document.querySelectorAll('.chipcard').forEach(b=>{
+    const on=b.dataset.id===SELECTED;
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+
+/* ---------- dropdown ---------- */
+function renderDropdown(){
+  const sel=$('gsel'); sel.innerHTML='';
+  const groups={};
+  CARDS.forEach(c=>{(groups[c.st.water]=groups[c.st.water]||[]).push(c);});
+  Object.entries(groups).forEach(([water,cs])=>{
+    const og=document.createElement('optgroup'); og.label=water;
+    cs.forEach(c=>{
+      const o=document.createElement('option');
+      o.value=c.st.id;
+      o.textContent=`${c.st.name} — ${fmtLvl(c.tr.cur,c.unit)} ${c.unit}`;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+  sel.value=SELECTED||'';
+}
+$('gsel').addEventListener('change',e=>selectGauge(e.target.value));
+
+/* ---------- hydrograph ---------- */
+let CH=null; // current chart context {pts,x,y,W,H,ml,mr,mt,mb,unit,card,svg,guide,dot,ci}
+function niceStep(range,n){
+  const raw=range/Math.max(1,n);
+  const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const norm=raw/mag;
+  return (norm<1.5?1:norm<3?2:norm<7?5:10)*mag;
+}
+function renderChart(c,animate){
+  const box=$('chartbox');
+  const feat=c.feat, unit=c.unit, all=feat.pts;
+  let pts=all;
+  if(ZOOM){
+    pts=all.filter(p=>p.t>=ZOOM.t0&&p.t<=ZOOM.t1);
+    if(pts.length<3){ZOOM=null;pts=all;}
+  }
+  $('resetzoom').hidden=!ZOOM;
+  const W=Math.max(300,Math.round(box.clientWidth||$('chartwrap').clientWidth||600));
+  const H=W<560?230:300;
+  const ml=unit==='ft'?46:64, mr=14, mt=20, mb=28;
+  const t0=pts[0].t, t1=pts[pts.length-1].t;
+  let lo=Infinity,hi=-Infinity;
+  pts.forEach(p=>{if(p.v<lo)lo=p.v;if(p.v>hi)hi=p.v;});
+  if(hi-lo<0.01){hi+=.5;lo-=.5;}
+  const pad=(hi-lo)*.14; lo-=pad; hi+=pad;
+  const x=t=>ml+(t1===t0?0:(t-t0)/(t1-t0))*(W-ml-mr);
+  const y=v=>H-mb-(v-lo)/(hi-lo)*(H-mt-mb);
+  const NS='http://www.w3.org/2000/svg';
+  const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,role:'img',
+    'aria-label':`${c.st.water} ${c.st.name} — ${unit==='ft'?'gauge height':'streamflow'} over the ${ZOOM?'zoomed':''} ${PERIOD_LBL[PERIOD]} window, ${pts.length} readings`});
+  svg.style.touchAction='pan-y';
+
+  // y grid + labels
+  const step=niceStep(hi-lo,4);
+  const fmtY=v=>unit==='ft'?(step<1?v.toFixed(1):Math.round(v).toString()):Math.round(v).toLocaleString();
+  for(let g=Math.ceil(lo/step)*step; g<=hi+1e-9; g+=step){
+    svg.appendChild(el('line',{x1:ml,y1:y(g),x2:W-mr,y2:y(g),stroke:'rgba(147,170,191,.10)'}));
+    const t=el('text',{x:ml-7,y:y(g)+3,'text-anchor':'end',class:'axis'});
+    t.textContent=fmtY(g); svg.appendChild(t);
+  }
+  // y-axis unit label
+  const uy=el('text',{x:ml-7,y:mt-8,'text-anchor':'end',class:'axis'});
+  uy.textContent=unit; svg.appendChild(uy);
+  // x labels
+  const span=t1-t0;
+  const fmtX=span<=15*36e5
+    ? t=>new Date(t).toLocaleTimeString(undefined,{hour:'numeric'})
+    : span<=3.2*864e5
+    ? t=>new Date(t).toLocaleString(undefined,{weekday:'short',hour:'numeric'})
+    : t=>new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  const nx=W<560?3:5;
+  for(let i=0;i<=nx;i++){
+    const tt=t0+span*i/nx;
+    const tx=el('text',{x:x(tt),y:H-9,'text-anchor':i===0?'start':i===nx?'end':'middle',class:'axis'});
+    tx.textContent=fmtX(tt); svg.appendChild(tx);
+    svg.appendChild(el('line',{x1:x(tt),y1:H-mb,x2:x(tt),y2:H-mb+4,stroke:'rgba(147,170,191,.25)'}));
+  }
+  // area + line
+  let d='M '+x(pts[0].t).toFixed(1)+' '+y(pts[0].v).toFixed(1);
+  pts.forEach((p,i)=>{if(i)d+=' L '+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1);});
+  const area=d+` L ${x(t1).toFixed(1)} ${H-mb} L ${x(t0).toFixed(1)} ${H-mb} Z`;
+  const gid='hg'+(t0%1e7)+'_'+pts.length;
+  const defs=el('defs',{});
+  // layered depth: bright surface fading into deep water
+  const grad=el('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+  grad.appendChild(el('stop',{offset:0,'stop-color':'#7fc4ef','stop-opacity':.38}));
+  grad.appendChild(el('stop',{offset:.35,'stop-color':'#4aa3e4','stop-opacity':.20}));
+  grad.appendChild(el('stop',{offset:1,'stop-color':'#123a5c','stop-opacity':.04}));
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+  svg.appendChild(el('path',{d:area,fill:`url(#${gid})`}));
+  // slow shimmer drifting through the water body (skipped under reduced motion)
+  if(!RM){
+    const clip=el('clipPath',{id:gid+'c'});
+    clip.appendChild(el('path',{d:area}));
+    defs.appendChild(clip);
+    const sg=el('linearGradient',{id:gid+'s',gradientUnits:'userSpaceOnUse',x1:0,y1:0,x2:120,y2:0,spreadMethod:'repeat'});
+    sg.appendChild(el('stop',{offset:0,'stop-color':'#9ad8f7','stop-opacity':0}));
+    sg.appendChild(el('stop',{offset:.45,'stop-color':'#9ad8f7','stop-opacity':.055}));
+    sg.appendChild(el('stop',{offset:.6,'stop-color':'#9ad8f7','stop-opacity':.055}));
+    sg.appendChild(el('stop',{offset:1,'stop-color':'#9ad8f7','stop-opacity':0}));
+    defs.appendChild(sg);
+    const shg=el('g',{'clip-path':`url(#${gid}c)`});
+    shg.appendChild(el('rect',{x:ml-240,y:mt,width:(W-ml-mr)+480,height:H-mt-mb,fill:`url(#${gid}s)`,class:'shimmer','pointer-events':'none'}));
+    svg.appendChild(shg);
+  }
+  // soft glow under the surface line
+  svg.appendChild(el('path',{d,fill:'none',stroke:'#9ad8f7','stroke-width':'6','stroke-opacity':'.10',
+    'stroke-linejoin':'round','stroke-linecap':'round','vector-effect':'non-scaling-stroke'}));
+  const line=el('path',{d,fill:'none',stroke:'var(--water)','stroke-width':'2','stroke-linejoin':'round',
+    'stroke-linecap':'round','vector-effect':'non-scaling-stroke'});
+  svg.appendChild(line);
+
+  // min/max of the VISIBLE window (needed below)
+  let pmin=pts[0],pmax=pts[0];
+  pts.forEach(p=>{if(p.v<pmin.v)pmin=p;if(p.v>pmax.v)pmax=p;});
+  // record high of the LOADED window (dashed), even when zoomed
+  let rh=all[0]; all.forEach(p=>{if(p.v>rh.v)rh=p;});
+  if(rh.v>=lo&&rh.v<=hi){
+    svg.appendChild(el('line',{x1:ml,y1:y(rh.v),x2:W-mr,y2:y(rh.v),
+      stroke:'var(--rise-fast)','stroke-width':'1','stroke-dasharray':'5 5','stroke-opacity':.55,'vector-effect':'non-scaling-stroke'}));
+    if(ZOOM&&rh.v>pmax.v+1e-9){   // label only when the high sits above everything visible
+      const rl=el('text',{x:W-mr-4,y:y(rh.v)-5,'text-anchor':'end',class:'rhlabel'});
+      rl.textContent=`${PERIOD_LBL[PERIOD]} high ${fmtLvl(rh.v,unit)}`;
+      svg.appendChild(rl);
+    }
+  }
+  [[pmax,'hi',-7],[pmin,'',13]].forEach(([p,cls,dy])=>{
+    svg.appendChild(el('circle',{cx:x(p.t),cy:y(p.v),r:2.4,fill:cls?'var(--water-hi)':'var(--mist)'}));
+    const anchor=x(p.t)>W-90?'end':x(p.t)<ml+70?'start':'middle';
+    const tg=el('text',{x:x(p.t),y:y(p.v)+dy,'text-anchor':anchor,class:'tag '+cls});
+    tg.textContent=(cls?'high ':'low ')+fmtLvl(p.v,unit);
+    svg.appendChild(tg);
+  });
+  // latest point, pulsing (only when the true latest reading is visible)
+  const lastAll=all[all.length-1], lastVis=pts[pts.length-1];
+  if(lastVis.t===lastAll.t){
+    if(!RM){
+      const pr=el('circle',{cx:x(lastVis.t),cy:y(lastVis.v),r:5,fill:'none',
+        stroke:'var(--water-hi)','stroke-width':'1.5',class:'pulse-ring'});
+      svg.appendChild(pr);
+    }
+    svg.appendChild(el('circle',{cx:x(lastVis.t),cy:y(lastVis.v),r:3.4,fill:'#08111c',
+      stroke:'var(--water-hi)','stroke-width':'2'}));
+  }
+  // crosshair + zoom band
+  const guide=el('line',{y1:mt,y2:H-mb,stroke:'rgba(255,255,255,.3)','stroke-width':'1','vector-effect':'non-scaling-stroke',visibility:'hidden'});
+  const dot=el('circle',{r:3.4,fill:'var(--water-hi)',visibility:'hidden'});
+  const band=el('rect',{y:mt,height:H-mt-mb,fill:'rgba(74,163,228,.16)',stroke:'rgba(154,216,247,.5)',
+    'stroke-width':'1','vector-effect':'non-scaling-stroke',visibility:'hidden'});
+  svg.appendChild(band);svg.appendChild(guide);svg.appendChild(dot);
+
+  box.innerHTML=''; box.appendChild(svg);
+  if(animate&&!RM){
+    let len=0; try{len=line.getTotalLength();}catch(_){}
+    if(len){
+      line.style.strokeDasharray=len+' '+len;
+      line.style.strokeDashoffset=len;
+      line.getBoundingClientRect();
+      line.style.transition='stroke-dashoffset .55s ease-out';
+      line.style.strokeDashoffset='0';
+      line.addEventListener('transitionend',()=>{line.style.strokeDasharray='';line.style.transition='';},{once:true});
+    }
+  }
+
+  CH={pts,all,x,y,W,H,ml,mr,mt,mb,unit,card:c,svg,guide,dot,band,ci:null,t0,t1};
+
+  /* --- pointer interactions --- */
+  const pxOf=e=>{const r=svg.getBoundingClientRect();return (e.clientX-r.left)*(W/r.width);};
+  const tOf=px=>t0+(Math.min(W-mr,Math.max(ml,px))-ml)/(W-ml-mr)*(t1-t0);
+  const nearest=tt=>{let bi=0;for(let i=1;i<pts.length;i++)if(Math.abs(pts[i].t-tt)<Math.abs(pts[bi].t-tt))bi=i;return bi;};
+  let drag=null;
+  svg.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'&&e.button!==0)return;
+    try{svg.setPointerCapture(e.pointerId);}catch(_){}
+    drag={x0:pxOf(e),moved:false};
+  });
+  svg.addEventListener('pointermove',e=>{
+    const px=pxOf(e);
+    if(drag){
+      if(Math.abs(px-drag.x0)>10)drag.moved=true;
+      if(drag.moved){
+        hideCrosshair();
+        const a=Math.max(ml,Math.min(drag.x0,px)),b=Math.min(W-mr,Math.max(drag.x0,px));
+        band.setAttribute('x',a);band.setAttribute('width',Math.max(0,b-a));
+        band.setAttribute('visibility','visible');
+        return;
+      }
+    }
+    setCrosshair(nearest(tOf(px)));
+  });
+  svg.addEventListener('pointerup',e=>{
+    if(drag&&drag.moved){
+      const px=pxOf(e);
+      const ta=tOf(Math.min(drag.x0,px)), tb=tOf(Math.max(drag.x0,px));
+      band.setAttribute('visibility','hidden');
+      if(all.filter(p=>p.t>=ta&&p.t<=tb).length>=3){
+        ZOOM={t0:ta,t1:tb};
+        renderChart(c,false);
+      }
+    }else if(drag&&e.pointerType!=='mouse'){
+      setCrosshair(nearest(tOf(pxOf(e))));   // tap on touch = place crosshair
+    }
+    drag=null;
+  });
+  svg.addEventListener('pointercancel',()=>{drag=null;band.setAttribute('visibility','hidden');});
+  svg.addEventListener('pointerleave',()=>{if(!drag)hideCrosshair();});
+
+  /* --- keyboard on the wrapper --- */
+  $('chartwrap').onkeydown=e=>{
+    if(!CH)return;
+    const n=CH.pts.length;
+    if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+      e.preventDefault();
+      const d=e.key==='ArrowRight'?1:-1;
+      const i=CH.ci==null?n-1:Math.max(0,Math.min(n-1,CH.ci+d*(e.shiftKey?10:1)));
+      setCrosshair(i);
+    }else if(e.key==='Home'){e.preventDefault();setCrosshair(0);}
+    else if(e.key==='End'){e.preventDefault();setCrosshair(n-1);}
+    else if(e.key==='Escape'&&ZOOM){e.preventDefault();resetZoom();}
+  };
+}
+function setCrosshair(i){
+  if(!CH)return;
+  CH.ci=i;
+  const p=CH.pts[i];
+  CH.guide.setAttribute('x1',CH.x(p.t));CH.guide.setAttribute('x2',CH.x(p.t));
+  CH.guide.setAttribute('visibility','visible');
+  CH.dot.setAttribute('cx',CH.x(p.t));CH.dot.setAttribute('cy',CH.y(p.v));
+  CH.dot.setAttribute('visibility','visible');
+  // readout pill: time + ft + cfs when both series exist
+  let txt=`${fmtT(p.t)} · <b>${fmtLvl(p.v,CH.unit)} ${CH.unit}</b>`;
+  const q=CH.card.q;
+  if(q&&CH.unit==='ft'){
+    let bq=null;
+    for(const qp of q.pts)if(!bq||Math.abs(qp.t-p.t)<Math.abs(bq.t-p.t))bq=qp;
+    if(bq&&Math.abs(bq.t-p.t)<=45*6e4)txt+=` · ${Math.round(bq.v).toLocaleString()} cfs`;
+  }
+  const pill=$('pill');
+  pill.innerHTML=txt; pill.hidden=false;
+  const wrapR=$('chartwrap').getBoundingClientRect();
+  const svgR=CH.svg.getBoundingClientRect();
+  const px=(svgR.left-wrapR.left)+CH.x(p.t)*(svgR.width/CH.W);
+  const pw=pill.offsetWidth;
+  pill.style.left=Math.max(2,Math.min(wrapR.width-pw-2,px-pw/2))+'px';
+}
+function hideCrosshair(){
+  if(!CH)return;
+  CH.ci=null;
+  CH.guide.setAttribute('visibility','hidden');
+  CH.dot.setAttribute('visibility','hidden');
+  $('pill').hidden=true;
+}
+function resetZoom(){
+  ZOOM=null;
+  const c=cardFor(SELECTED);
+  if(c)renderChart(c,false);
+}
+$('resetzoom').addEventListener('click',resetZoom);
+let rsz=null;
+addEventListener('resize',()=>{
+  clearTimeout(rsz);
+  rsz=setTimeout(()=>{const c=cardFor(SELECTED);if(c)renderChart(c,false);},180);
+});
+
+/* ---------- inspector ---------- */
+function renderInspector(animate){
+  const c=cardFor(SELECTED);
+  const insp=$('inspector');
+  if(!c){insp.hidden=true;return;}
+  insp.hidden=false;
+  insp.style.setProperty('--edge',c.cl.col);
+  $('iWater').textContent=c.st.water;
+  $('iName').textContent=c.st.name;
+  $('iLoc').textContent=c.st.loc;
+  $('iUnit').textContent=' '+c.unit;
+  if(animate)countUp($('iLvl'),c.tr.cur,v=>fmtLvl(v,c.unit));
+  else $('iLvl').textContent=fmtLvl(c.tr.cur,c.unit);
+  const tEl=$('iTrend');
+  tEl.textContent=`${c.cl.ar} ${c.cl.lbl}`;
+  tEl.style.color=c.cl.col;
+  const dEl=$('iD24');
+  dEl.textContent=fmtD24(c.tr.delta,c.unit);
+  dEl.style.color=c.cl.col;
+  const cfsEl=$('iCfs');
+  if(c.gh&&c.q){
+    cfsEl.hidden=false;
+    cfsEl.textContent=Math.round(c.q.pts[c.q.pts.length-1].v).toLocaleString()+' cfs flowing';
+  }else cfsEl.hidden=true;
+  renderChart(c,animate);
+  // context strip: min–max of the loaded window + current thumb
+  let rlo=Infinity,rhi=-Infinity;
+  c.feat.pts.forEach(p=>{if(p.v<rlo)rlo=p.v;if(p.v>rhi)rhi=p.v;});
+  const fill=rhi>rlo?Math.max(0,Math.min(100,(c.tr.cur-rlo)/(rhi-rlo)*100)):100;
+  $('ctxlo').textContent=`${PERIOD_LBL[PERIOD]} low ${fmtLvl(rlo,c.unit)}`;
+  $('ctxhi').textContent=`high ${fmtLvl(rhi,c.unit)}`;
+  $('ctxfill').style.width=fill+'%';
+  $('ctxthumb').style.left=fill+'%';
+  $('ctxsrc').innerHTML=`reading every ~15 min · <a href="https://waterdata.usgs.gov/monitoring-location/USGS-${c.st.id}/" target="_blank" rel="noopener">USGS ${c.st.id} ↗</a>`;
+}
+
+/* ---------- selection ---------- */
+function selectGauge(id,opts={}){
+  if(!BY_ID[id])return;
+  const changed=id!==SELECTED;
+  SELECTED=id;
+  if(changed)ZOOM=null;
+  if(!opts.fromHash)history.replaceState(null,'','#'+id);
+  paintRailSelection();
+  paintMapSelection();
+  const sel=$('gsel'); if(sel.value!==id)sel.value=id;
+  renderInspector(changed&&!opts.silent);
+}
+addEventListener('hashchange',()=>{
+  const id=location.hash.slice(1);
+  if(BY_ID[id]&&id!==SELECTED&&cardFor(id))selectGauge(id,{fromHash:true});
+});
+
+/* ---------- render everything ---------- */
+function renderAll(animate){
+  if(!CARDS.length){
+    $('summary').textContent='No gauge data available right now.';
+    return;
+  }
+  const rising=CARDS.filter(c=>c.cl.k==='rise'||c.cl.k==='fast');
+  const top=CARDS.slice().sort((a,b)=>b.tr.delta-a.tr.delta)[0];
+  let s=`<b>${CARDS.length}</b> gauges · <span class="${rising.length?'up':''}"><b>${rising.length}</b> rising</span>`;
+  if(top&&top.tr.delta>=0.1&&top.unit==='ft')
+    s+=` · biggest riser <b>${top.st.water} ${top.st.name}</b> <span class="${top.cl.k==='fast'?'fast':'up'}">${top.cl.ar} ${top.tr.delta.toFixed(1)} ft / 24h</span>`;
+  $('summary').innerHTML=s;
+  const latest=Math.max(...CARDS.map(c=>c.tr.at));
+  if(isFinite(latest))LATEST=latest;
+  paintFreshness();
+
+  if(!SELECTED||!cardFor(SELECTED)){
+    const h=location.hash.slice(1);
+    SELECTED=(cardFor(h)&&h)||(cardFor(DEFAULT_ID)&&DEFAULT_ID)||CARDS[0].st.id;
+    history.replaceState(null,'','#'+SELECTED);
+  }
+  renderRail(); renderDropdown(); renderMap();
+  paintRailSelection(); paintMapSelection();
+  renderInspector(animate);
+  $('state').hidden=true;
+}
+
+/* ---------- load, with per-period localStorage fallback ---------- */
+const cacheKey=p=>'streams:'+p;
+function saveCache(p,data,builtAt){
+  try{localStorage.setItem(cacheKey(p),JSON.stringify({builtAt,savedAt:Date.now(),data}));}catch(_){}
+}
+function readCache(p){
+  try{const raw=localStorage.getItem(cacheKey(p));return raw?JSON.parse(raw):null;}catch(_){return null;}
+}
+let busy=false;
+async function load(opts={}){
+  if(busy)return; busy=true;
+  const state=$('state'), stale=$('stale');
+  $('chartwrap').classList.add('loading');
+  try{
+    const mem=MEM[PERIOD];
+    let data,builtAt;
+    if(opts.allowMem&&mem&&Date.now()-mem.at<5*60*1000){
+      ({data,builtAt}=mem);
+    }else{
+      ({data,builtAt}=await fetchLevels(PERIOD));
+      MEM[PERIOD]={data,builtAt,at:Date.now()};
+      saveCache(PERIOD,data,builtAt);
+    }
+    BUILT_AT=builtAt;
+    stale.hidden=true;
+    CARDS=compute(data);
+    renderAll(!opts.quiet);
+  }catch(e){
+    const c=readCache(PERIOD);
+    if(c&&c.data){
+      BUILT_AT=c.builtAt||c.savedAt||null;
+      try{
+        CARDS=compute(c.data);
+        renderAll(!opts.quiet);
+        stale.hidden=false;
+        stale.textContent='Live update failed — showing saved data from '+fmtT(LATEST||c.savedAt)+'.';
+      }catch(_){
+        state.hidden=false;
+        state.innerHTML=`Couldn't reach the USGS feed (${e.message}). <button class="btn" onclick="load()">Retry</button>`;
+      }
+    }else{
+      state.hidden=false;
+      state.innerHTML=`Couldn't reach the USGS feed (${e.message}). <button class="btn" onclick="load()">Retry</button>`;
+    }
+  }finally{
+    busy=false;
+    $('chartwrap').classList.remove('loading');
+  }
+}
+
+$('period').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-p]');if(!b||b.dataset.p===PERIOD)return;
+  PERIOD=b.dataset.p;
+  [...$('period').children].forEach(c=>c.classList.toggle('on',c===b));
+  ZOOM=null;
+  load({allowMem:true});
+});
+$('refresh').addEventListener('click',()=>load({quiet:true}));
+setInterval(()=>{if(!document.hidden)load({quiet:true});},5*60*1000);
+load();
+</script>
+</body>
+</html>
