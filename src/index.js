@@ -33,10 +33,14 @@ const ALLOWED_WELLS = new Set([
 ]);
 const DEFAULT_WELL = "6811417";
 
-// USGS real-time stream gauges around Boerne (Cibolo, Guadalupe, Cypress).
-// The list lives here so /api/streams can't be used as an open proxy to USGS.
-const STREAM_SITES =
-  "08183900,08183978,08184050,08166700,08166250,08167000,08167200,08167500";
+// USGS real-time stream gauges, allowlisted per region so /api/streams can't be
+// used as an open proxy to USGS. Pick a region with ?region= (default boerne).
+const STREAM_SITE_SETS = {
+  // Boerne / Kendall County: Cibolo, Guadalupe, Cypress.
+  boerne: "08183900,08183978,08184050,08166700,08166250,08167000,08167200,08167500",
+  // Lampasas County area: Lampasas Rv, Colorado Rv, Cowhouse/House/Rocky Cks, San Gabriel.
+  lampasas: "08102850,08103800,08147000,08100950,08101000,08101310,08103900,08104590",
+};
 const STREAM_PERIODS = new Set(["P1D", "P7D", "P30D"]);
 // Bounding box (west,south,east,north) for daily rainfall stations near Boerne.
 const RAIN_BBOX = "-99.15,29.50,-98.30,30.20";
@@ -194,7 +198,9 @@ function aggregate(raw, wellId) {
 async function handleStreams(url, ctx) {
   let period = (url.searchParams.get("period") || "P7D").toUpperCase();
   if (!STREAM_PERIODS.has(period)) period = "P7D";
-  const key = new Request(`https://cache.local/streams/${CACHE_VERSION}/${period}`);
+  const region = url.searchParams.get("region") === "lampasas" ? "lampasas" : "boerne";
+  const sites = STREAM_SITE_SETS[region];
+  const key = new Request(`https://cache.local/streams/${CACHE_VERSION}/${region}/${period}`);
   // USGS fair-use guidance (waterservices.usgs.gov docs): small requests should
   // stay under ~5-10/sec steady; offenders get HTTP 429. Gauge readings are
   // taken ~every 15 min and transmitted about hourly. With this edge cache we
@@ -204,7 +210,7 @@ async function handleStreams(url, ctx) {
   // migrate this URL to api.waterdata.usgs.gov (OGC API) before then.
   return cachedJson(key, 300, async () => {
     const u =
-      `https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${STREAM_SITES}` +
+      `https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${sites}` +
       `&parameterCd=00065,00060&period=${period}&siteStatus=all`;
     const r = await fetch(u, { cache: "no-store" });
     if (!r.ok) throw new Error(`USGS ${r.status}`);
