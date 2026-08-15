@@ -16,11 +16,11 @@ const VALUE_KEY = "water_level(ft below land surface)";
 // Refresh from TWDB about twice a day. The source posts a new reading roughly
 // once daily, so a 12h window reliably picks up each update within half a day
 // without over-fetching. SWR means users never wait on the refetch.
-const CACHE_SECONDS = 43200; // 12 hours — how often we refresh from TWDB
+const CACHE_SECONDS = 86400; // 24 hours — how often we refresh from TWDB (source posts ~once daily)
 const EDGE_SECONDS = 2592000; // 30 days — how long the edge keeps a copy (for SWR)
 // Bump to invalidate every cached copy at once (e.g. after changing the refresh
 // cadence or the payload shape) so all visitors get a fresh rebuild immediately.
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 
 // Only the wells the site actually uses (the Cow Creek GCD monitoring network).
 // Prevents the endpoint from being abused as an open proxy to hammer TWDB with
@@ -30,6 +30,9 @@ const ALLOWED_WELLS = new Set([
   "5758402", "6804214", "6812414", "6802302", "6803503", "6804312", "6810626",
   "6811817", "6812106", "6802807", "6803109", "6811509", "6809303", "6811418",
   "6802609", "6802509",
+  // San Antonio groundwater pilot — Edwards + Trinity recorder wells (Bexar Co).
+  "6836132", "6828211", "6827610", "6829112", "6827609",
+  "6819806", "6827112", "6820110", "6820602", "6819618",
 ]);
 const DEFAULT_WELL = "6811417";
 

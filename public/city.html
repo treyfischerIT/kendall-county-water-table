@@ -141,6 +141,13 @@
     font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);flex-wrap:wrap}
   .scalebar{width:120px;height:9px;border-radius:100px;background:linear-gradient(90deg,#24425f,#3f86cc,#7fd0f5)}
 
+  /* ---- groundwater (inverted depth-to-water) ---- */
+  .mapwrap.gmap{height:clamp(320px,45vw,380px)}
+  #gwMap{position:absolute;inset:0;background:var(--ink);z-index:0}
+  #gwChartbox{transition:opacity .2s}
+  #gwChartbox svg{display:block;width:100%;height:auto}
+  .chartwrap.loading #gwChartbox{opacity:.45}
+
   /* ---- gauges rail ---- */
   .rail{display:flex;gap:10px;margin-top:16px;overflow-x:auto;padding:4px 2px 10px;
     -webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(147,170,191,.3) transparent}
@@ -401,6 +408,50 @@
 
     <div id="rnGrid" class="grid"></div>
     <div id="rnState" class="state">Fetching daily rainfall&hellip;</div>
+  </section>
+
+  <section class="subsection" id="gwSection" aria-labelledby="gwH2" hidden>
+    <p class="eyebrow">Slow trend &middot; TWDB groundwater recorder wells</p>
+    <h2 id="gwH2">Groundwater &mdash; water table</h2>
+    <p class="lede" id="gwLede"></p>
+
+    <div class="mapwrap gmap" id="gwMapwrap" hidden aria-label="Map of groundwater monitoring wells — click a well to inspect it">
+      <div id="gwMap"></div>
+    </div>
+    <div class="maplegend" id="gwMaplegend" hidden>
+      <span><i style="background:#f0b429"></i>Edwards Aquifer</span>
+      <span><i style="background:#c98a2b"></i>Trinity Aquifer</span>
+      <span style="margin-left:auto;color:var(--faint)">click a well to inspect it</span>
+    </div>
+
+    <div class="rail" id="gwRail" role="group" aria-label="All groundwater wells" hidden></div>
+
+    <section class="inspector" id="gwInspector" hidden aria-live="polite">
+      <div class="ihead">
+        <div>
+          <div class="water" id="gwAquifer"></div>
+          <h3 id="gwName"></h3>
+          <div class="iloc" id="gwLoc"></div>
+        </div>
+        <label class="pick">well
+          <select id="gwSel" aria-label="Choose a groundwater well"></select>
+        </label>
+      </div>
+      <div class="istats">
+        <div class="ilvl"><span id="gwLvl">&mdash;</span><small id="gwUnit"> ft below surface</small></div>
+        <span class="chip" id="gwTrend" hidden></span>
+      </div>
+      <div class="chartwrap" id="gwChartwrap">
+        <div id="gwChartbox"></div>
+      </div>
+      <div class="kbdhint">&#9650; shallower &mdash; more water in the aquifer &nbsp;&middot;&nbsp; &#9660; deeper &mdash; less water &nbsp;&middot;&nbsp; feet below land surface</div>
+      <div class="ctx" style="margin-top:14px">
+        <span class="updated" id="gwAsOf"></span>
+        <span class="ctxsrc" id="gwSrcNote">Source: TWDB recorder wells, via Water Data for Texas &mdash; depth to water, provisional and subject to revision. A slow, multi-year trend, not a real-time gauge.</span>
+      </div>
+    </section>
+
+    <div id="gwState" class="state" hidden>Loading groundwater wells&hellip;</div>
   </section>
 
   <footer>
@@ -1614,6 +1665,345 @@ async function load(){
 document.getElementById('rnRefresh').addEventListener('click',load);
 load();
 setInterval(()=>{if(!document.hidden)load();},30*60*1000);
+})();
+</script>
+
+<script>
+/* ======================================================================
+   GROUNDWATER MODULE — depth-to-water at TWDB recorder wells, driven by
+   WELLSETS[SLUG]. Gated: only san-antonio has a wellset today, so this
+   whole IIFE is a no-op (section stays hidden) for every other city.
+   Data comes from the same /api/well endpoint as the Kendall flagship
+   page, but that page uses Chart.js — this one is plain SVG, to match
+   the streams/rain modules' hydrograph and avoid a second chart library.
+   ====================================================================== */
+const WELLSETS={"san-antonio":{"intro":"Depth to the water table at Edwards and Trinity aquifer monitoring wells around San Antonio — the two aquifers the region draws its water from. Lower on the chart means deeper water (less held in the aquifer). This is a slow, multi-year trend, not a real-time gauge.","wells":[{"id":"6836132","name":"Edwards — 8 mi NW of San Antonio","short":"Edwards · 8 mi NW","aquifer":"Edwards","lat":29.49528,"lon":-98.59556},{"id":"6828211","name":"Edwards — 12 mi N of San Antonio","short":"Edwards · 12 mi N","aquifer":"Edwards","lat":29.58778,"lon":-98.54861},{"id":"6827610","name":"Edwards — 12 mi NW of San Antonio","short":"Edwards · 12 mi NW","aquifer":"Edwards","lat":29.54778,"lon":-98.63556},{"id":"6829112","name":"Edwards — 12 mi N of San Antonio","short":"Edwards · 12 mi N","aquifer":"Edwards","lat":29.59972,"lon":-98.48},{"id":"6827609","name":"Edwards — 14 mi NW of San Antonio","short":"Edwards · 14 mi NW","aquifer":"Edwards","lat":29.56806,"lon":-98.66167},{"id":"6819806","name":"Trinity — 18 mi NW of San Antonio","short":"Trinity · 18 mi NW","aquifer":"Trinity","lat":29.63211,"lon":-98.68622},{"id":"6827112","name":"Trinity — 20 mi NW of San Antonio","short":"Trinity · 20 mi NW","aquifer":"Trinity","lat":29.61611,"lon":-98.73547},{"id":"6820110","name":"Trinity — 23 mi N of San Antonio","short":"Trinity · 23 mi N","aquifer":"Trinity","lat":29.73275,"lon":-98.62381},{"id":"6820602","name":"Trinity — 18 mi N of San Antonio","short":"Trinity · 18 mi N","aquifer":"Trinity","lat":29.681,"lon":-98.52197},{"id":"6819618","name":"Trinity — 20 mi NW of San Antonio","short":"Trinity · 20 mi NW","aquifer":"Trinity","lat":29.67314,"lon":-98.65431}]}};
+(function(){
+const SET=WELLSETS[SLUG];
+if(!SET||!SET.wells||!SET.wells.length)return;   // gate: nothing to show for this city
+
+const $=id=>document.getElementById(id);
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const WELLS=SET.wells;
+const BY_ID=Object.fromEntries(WELLS.map(w=>[w.id,w]));
+const AQ_COLOR={Edwards:'#f0b429',Trinity:'#c98a2b'};
+
+let SELECTED=null, CURRENT=null;   // CURRENT = {well,data} for the last successful render
+const CACHE={};
+
+/* ---------- date helpers ---------- */
+function fmtDate(t){
+  if(!t)return '';
+  const iso=t.includes('T')?t:t.replace(' ','T')+'Z';
+  const d=new Date(iso);
+  if(isNaN(d))return t;
+  return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+}
+function monthKey(t){return (t||'').slice(0,7);}
+function monthDist(a,b){
+  const[ay,am]=a.split('-').map(Number),[by,bm]=b.split('-').map(Number);
+  return (ay*12+am)-(by*12+bm);
+}
+function monthsAgo(monthStr,n){
+  const[y,m]=monthStr.split('-').map(Number);
+  const total=y*12+(m-1)-n;
+  const yy=Math.floor(total/12),mm=total%12+1;
+  return yy+'-'+String(mm).padStart(2,'0');
+}
+
+/* ---------- 12-month trend: depth DOWN = water table UP ---------- */
+function trend12mo(data){
+  if(!data.monthly||!data.monthly.length||data.current==null)return null;
+  const lastMonth=monthKey(data.lastDate);
+  if(!lastMonth)return null;
+  const target=monthsAgo(lastMonth,12);
+  let best=null,bestDist=Infinity;
+  data.monthly.forEach(m=>{
+    const d=Math.abs(monthDist(m.month,target));
+    if(d<bestDist){bestDist=d;best=m;}
+  });
+  if(!best||bestDist>2)return null;
+  return {delta:data.current-best.v,refMonth:best.month};   // +delta = deeper, -delta = shallower
+}
+
+/* ---------- data ---------- */
+async function fetchWell(id){
+  if(CACHE[id])return CACHE[id];
+  const r=await fetch(`/api/well?id=${id}`,{cache:'no-store'});
+  if(!r.ok)throw new Error('feed returned '+r.status);
+  const d=await r.json();
+  if(d.error)throw new Error(d.error);
+  CACHE[id]=d;
+  return d;
+}
+
+/* ---------- map ---------- */
+let map=null,markers={};
+function mapCenter(){
+  const lats=WELLS.map(w=>w.lat),lons=WELLS.map(w=>w.lon);
+  return [(Math.min(...lats)+Math.max(...lats))/2,(Math.min(...lons)+Math.max(...lons))/2];
+}
+function initMap(){
+  if(map||!window.L)return;
+  $('gwMapwrap').hidden=false;
+  $('gwMaplegend').hidden=false;
+  map=L.map('gwMap',{scrollWheelZoom:false}).setView(mapCenter(),9);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {subdomains:'abcd',maxZoom:19,attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+}
+function renderMap(){
+  initMap();if(!map)return;
+  Object.values(markers).forEach(m=>m.remove());markers={};
+  const pts=[];
+  WELLS.forEach(w=>{
+    const col=AQ_COLOR[w.aquifer]||'#f0b429';
+    const hit=L.circleMarker([w.lat,w.lon],{radius:18,stroke:false,fillColor:'#000',fillOpacity:0});
+    hit.on('click',()=>selectWell(w.id));
+    hit.addTo(map);
+    const m=L.circleMarker([w.lat,w.lon],{radius:7,color:col,weight:1.5,fillColor:col,fillOpacity:.6});
+    m.bindTooltip(w.short,{permanent:false,direction:'top',offset:[0,-6],className:'glabel'});
+    m.on('click',()=>selectWell(w.id));
+    m.addTo(map);
+    markers[w.id]=m;
+    pts.push([w.lat,w.lon]);
+  });
+  if(pts.length){
+    const b=L.latLngBounds(pts);
+    const fit=()=>{map.invalidateSize();map.fitBounds(b,{padding:[30,30],maxZoom:11});};
+    fit();setTimeout(fit,150);
+  }
+  paintMapSelection();
+}
+function paintMapSelection(){
+  if(!map)return;
+  Object.entries(markers).forEach(([id,m])=>{
+    const on=id===SELECTED;
+    m.setStyle({weight:on?2.6:1.5,fillOpacity:on?.95:.6,radius:on?9:7});
+    if(on)m.bringToFront();
+  });
+}
+
+/* ---------- rail + select ---------- */
+function renderRail(){
+  const rail=$('gwRail');rail.hidden=false;rail.innerHTML='';
+  WELLS.forEach(w=>{
+    const b=document.createElement('button');
+    b.className='chipcard';b.type='button';b.dataset.id=w.id;
+    b.setAttribute('aria-pressed','false');
+    b.innerHTML=`<span class="cw">${w.aquifer} Aquifer</span><span class="cn">${w.short}</span>`;
+    b.addEventListener('click',()=>selectWell(w.id));
+    rail.appendChild(b);
+  });
+}
+function paintRailSelection(){
+  $('gwRail').querySelectorAll('.chipcard').forEach(b=>{
+    const on=b.dataset.id===SELECTED;
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+function renderSelect(){
+  const sel=$('gwSel');sel.innerHTML='';
+  const groups={};
+  WELLS.forEach(w=>{(groups[w.aquifer]=groups[w.aquifer]||[]).push(w);});
+  Object.entries(groups).forEach(([aq,ws])=>{
+    const og=document.createElement('optgroup');og.label=aq+' Aquifer';
+    ws.forEach(w=>{
+      const o=document.createElement('option');o.value=w.id;o.textContent=w.name;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+$('gwSel').addEventListener('change',e=>selectWell(e.target.value));
+
+/* ---------- inverted-depth chart ----------
+   y maps depth DIRECTLY (not flipped like the streams hydrograph): a
+   larger depth-below-surface value plots further DOWN the SVG, so the
+   line reads exactly like the ground does — shallow near the top,
+   deep toward the bottom. That means a line trending upward across the
+   chart = the water table rising (shallower, more water). */
+function renderChart(well,data){
+  const box=$('gwChartbox');
+  const pts=(data.monthly||[]).filter(p=>typeof p.v==='number');
+  if(pts.length<2){
+    box.innerHTML='<div class="state">Not enough history to chart yet for this well.</div>';
+    return;
+  }
+  const W=Math.max(300,Math.round(box.clientWidth||$('gwChartwrap').clientWidth||600));
+  const H=W<560?230:300;
+  const ml=52,mr=14,mt=20,mb=28;
+  const xs=pts.map(p=>new Date(p.date+'T00:00:00Z').getTime());
+  const t0=xs[0],t1=xs[xs.length-1];
+  let lo=Infinity,hi=-Infinity;
+  pts.forEach(p=>{if(p.v<lo)lo=p.v;if(p.v>hi)hi=p.v;});
+  if(hi-lo<0.01){hi+=.5;lo-=.5;}
+  const pad=(hi-lo)*.12;lo-=pad;hi+=pad;
+  const x=t=>ml+(t1===t0?0:(t-t0)/(t1-t0))*(W-ml-mr);
+  const y=v=>mt+(v-lo)/(hi-lo)*(H-mt-mb);   // NOT flipped: bigger depth = further down = deeper
+
+  const NS='http://www.w3.org/2000/svg';
+  const el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,role:'img',
+    'aria-label':`${well.name} — depth to water over its full record, ${pts.length} monthly readings. Axis inverted: up is shallower, down is deeper.`});
+  svg.style.touchAction='pan-y';
+
+  // y grid + labels (depth, ft)
+  const range=hi-lo;
+  const rawStep=range/4;
+  const mag=Math.pow(10,Math.floor(Math.log10(rawStep||1)));
+  const norm=rawStep/mag;
+  const step=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag;
+  for(let g=Math.ceil(lo/step)*step;g<=hi+1e-9;g+=step){
+    svg.appendChild(el('line',{x1:ml,y1:y(g),x2:W-mr,y2:y(g),stroke:'rgba(147,170,191,.10)'}));
+    const t=el('text',{x:ml-7,y:y(g)+3,'text-anchor':'end',class:'axis'});
+    t.textContent=(step<1?g.toFixed(1):Math.round(g).toString());
+    svg.appendChild(t);
+  }
+  const uy=el('text',{x:ml-7,y:mt-8,'text-anchor':'end',class:'axis'});
+  uy.textContent='ft';svg.appendChild(uy);
+  // direction cues on the y-axis
+  const upCue=el('text',{x:ml-7,y:mt+10,'text-anchor':'end',class:'axis',fill:'var(--rise)'});
+  upCue.textContent='▲ shallower';svg.appendChild(upCue);
+  const downCue=el('text',{x:ml-7,y:H-mb-4,'text-anchor':'end',class:'axis',fill:'var(--fall)'});
+  downCue.textContent='▼ deeper';svg.appendChild(downCue);
+
+  // x labels (years)
+  const span=t1-t0;
+  const fmtX=span>3*365*864e5
+    ?t=>new Date(t).getUTCFullYear()
+    :t=>new Date(t).toLocaleDateString(undefined,{month:'short',year:'2-digit'});
+  const nx=W<420?2:W<560?3:5;
+  for(let i=0;i<=nx;i++){
+    const tt=t0+span*i/nx;
+    const tx=el('text',{x:x(tt),y:H-9,'text-anchor':i===0?'start':i===nx?'end':'middle',class:'axis'});
+    tx.textContent=fmtX(tt);svg.appendChild(tx);
+    svg.appendChild(el('line',{x1:x(tt),y1:H-mb,x2:x(tt),y2:H-mb+4,stroke:'rgba(147,170,191,.25)'}));
+  }
+
+  // area (from the line down to the bottom of the chart — the saturated
+  // ground below the water table) + line
+  let d='M '+x(t0).toFixed(1)+' '+y(pts[0].v).toFixed(1);
+  pts.forEach((p,i)=>{d+=' L '+x(xs[i]).toFixed(1)+' '+y(p.v).toFixed(1);});
+  const area=d+` L ${x(t1).toFixed(1)} ${H-mb} L ${x(t0).toFixed(1)} ${H-mb} Z`;
+  const gid='gw'+(t0%1e7)+'_'+pts.length;
+  const defs=el('defs',{});
+  const grad=el('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+  grad.appendChild(el('stop',{offset:0,'stop-color':'#123a5c','stop-opacity':.05}));
+  grad.appendChild(el('stop',{offset:.65,'stop-color':'#4aa3e4','stop-opacity':.18}));
+  grad.appendChild(el('stop',{offset:1,'stop-color':'#7fc4ef','stop-opacity':.32}));
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+  svg.appendChild(el('path',{d:area,fill:`url(#${gid})`}));
+  svg.appendChild(el('path',{d,fill:'none',stroke:'#9ad8f7','stroke-width':'6','stroke-opacity':'.10',
+    'stroke-linejoin':'round','stroke-linecap':'round','vector-effect':'non-scaling-stroke'}));
+  const line=el('path',{d,fill:'none',stroke:'var(--water)','stroke-width':'2','stroke-linejoin':'round',
+    'stroke-linecap':'round','vector-effect':'non-scaling-stroke'});
+  svg.appendChild(line);
+
+  // shallowest / deepest of the record
+  let pmin=pts[0],pmax=pts[0],imin=0,imax=0;
+  pts.forEach((p,i)=>{if(p.v<pmin.v){pmin=p;imin=i;}if(p.v>pmax.v){pmax=p;imax=i;}});
+  [[pmin,imin,'hi',-7,'shallowest'],[pmax,imax,'',13,'deepest']].forEach(([p,i,cls,dy,lbl])=>{
+    svg.appendChild(el('circle',{cx:x(xs[i]),cy:y(p.v),r:2.4,fill:cls?'var(--water-hi)':'var(--mist)'}));
+    const anchor=x(xs[i])>W-90?'end':x(xs[i])<ml+70?'start':'middle';
+    const tg=el('text',{x:x(xs[i]),y:y(p.v)+dy,'text-anchor':anchor,class:'tag '+cls});
+    tg.textContent=lbl+' '+p.v.toFixed(1);
+    svg.appendChild(tg);
+  });
+
+  // current reading, pulsing
+  const lastI=pts.length-1;
+  if(!RM){
+    const pr=el('circle',{cx:x(xs[lastI]),cy:y(pts[lastI].v),r:5,fill:'none',
+      stroke:'var(--water-hi)','stroke-width':'1.5',class:'pulse-ring'});
+    svg.appendChild(pr);
+  }
+  svg.appendChild(el('circle',{cx:x(xs[lastI]),cy:y(pts[lastI].v),r:3.4,fill:'#08111c',
+    stroke:'var(--water-hi)','stroke-width':'2'}));
+
+  box.innerHTML='';box.appendChild(svg);
+  if(!RM){
+    let len=0;try{len=line.getTotalLength();}catch(_){}
+    if(len){
+      line.style.strokeDasharray=len+' '+len;
+      line.style.strokeDashoffset=len;
+      line.getBoundingClientRect();
+      line.style.transition='stroke-dashoffset .55s ease-out';
+      line.style.strokeDashoffset='0';
+      line.addEventListener('transitionend',()=>{line.style.strokeDasharray='';line.style.transition='';},{once:true});
+    }
+  }
+}
+
+/* ---------- inspector ---------- */
+function renderInspector(well,data){
+  $('gwAquifer').textContent=well.aquifer+' Aquifer';
+  $('gwName').textContent=well.short;
+  $('gwLoc').textContent='TWDB well '+well.id;
+  $('gwLvl').textContent=data.current!=null?data.current.toFixed(1):'—';
+
+  const t=trend12mo(data);
+  const tEl=$('gwTrend');
+  if(t&&Math.abs(t.delta)>=0.05){
+    const up=t.delta<0;   // depth decreased = shallower = water table rose
+    tEl.hidden=false;
+    tEl.textContent=(up?'▲ water table up ':'▼ water table down ')+Math.abs(t.delta).toFixed(1)+' ft (12 mo)';
+    tEl.style.color=up?'var(--rise)':'var(--fall)';
+  }else if(t){
+    tEl.hidden=false;
+    tEl.textContent='▬ steady (12 mo)';
+    tEl.style.color='var(--steady)';
+  }else{
+    tEl.hidden=true;
+  }
+
+  $('gwAsOf').textContent=data.updated?'Data as of '+fmtDate(data.updated):'';
+  renderChart(well,data);
+}
+
+/* ---------- selection ---------- */
+async function selectWell(id){
+  if(!BY_ID[id])return;
+  SELECTED=id;
+  paintRailSelection();paintMapSelection();
+  if($('gwSel').value!==id)$('gwSel').value=id;
+  const well=BY_ID[id];
+  $('gwInspector').hidden=false;
+  $('gwAquifer').textContent=well.aquifer+' Aquifer';
+  $('gwName').textContent=well.short;
+  $('gwLoc').textContent='TWDB well '+well.id;
+  $('gwLvl').textContent='…';
+  $('gwTrend').hidden=true;
+  $('gwAsOf').textContent='Loading…';
+  $('gwChartwrap').classList.add('loading');
+  try{
+    const data=await fetchWell(id);
+    if(SELECTED!==id)return;   // a newer selection landed first
+    CURRENT={well,data};
+    renderInspector(well,data);
+  }catch(e){
+    if(SELECTED!==id)return;
+    $('gwChartbox').innerHTML=`<div class="state">Couldn't load this well's data (${e.message}). <button class="btn" onclick="location.reload()">Retry</button></div>`;
+    $('gwLvl').textContent='—';
+    $('gwTrend').hidden=true;
+    $('gwAsOf').textContent='';
+  }finally{
+    $('gwChartwrap').classList.remove('loading');
+  }
+}
+
+let rsz=null;
+addEventListener('resize',()=>{
+  clearTimeout(rsz);
+  rsz=setTimeout(()=>{if(CURRENT)renderChart(CURRENT.well,CURRENT.data);},180);
+});
+
+/* ---------- init ---------- */
+$('gwLede').textContent=SET.intro;
+renderRail();renderSelect();renderMap();
+$('gwSection').hidden=false;
+selectWell(WELLS[0].id);
 })();
 </script>
 </body>
