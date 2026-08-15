@@ -116,7 +116,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/well") {
-      return handleWell(url, ctx);
+      return handleWell(url, ctx, env);
     }
     if (url.pathname === "/api/streams") {
       return handleStreams(url, ctx);
@@ -147,7 +147,7 @@ export default {
   },
 };
 
-async function handleWell(url, ctx) {
+async function handleWell(url, ctx, env) {
   const requested = (url.searchParams.get("id") || DEFAULT_WELL).replace(/[^0-9]/g, "");
   if (!ALLOWED_WELLS.has(requested)) {
     return json({ error: `Unknown well ${requested || "(none)"}` }, 404, {
@@ -158,26 +158,47 @@ async function handleWell(url, ctx) {
   const cacheKey = new Request(`https://cache.local/well/${CACHE_VERSION}/${wellId}`, { method: "GET" });
   const cache = caches.default;
 
+  // 1. Edge cache (fastest, per-colo).
   const cached = await cache.match(cacheKey);
   if (cached) {
-    // Serve immediately. If it's past the refresh mark, rebuild in the
-    // background so the next visitor gets fresh data — this request doesn't wait.
     const builtAt = Number(cached.headers.get("x-built-at")) || 0;
     if (Date.now() - builtAt > CACHE_SECONDS * 1000) {
-      ctx.waitUntil(refresh(wellId, cache, cacheKey));
+      ctx.waitUntil(refresh(env, wellId, cache, cacheKey));
     }
     return cached;
   }
 
-  // Cold: build synchronously (dedup'd so concurrent cold requests share one build).
+  // 2. R2 archive (durable, tiny read) — avoids re-pulling the ~33MB TWDB feed.
+  //    Serve the stored payload instantly; if it's past the refresh window,
+  //    rebuild from TWDB in the background so no visitor ever waits on the big fetch.
+  if (env && env.WATER_DATA) {
+    try {
+      const obj = await env.WATER_DATA.get(r2Key(wellId));
+      if (obj) {
+        const payload = await obj.json();
+        const builtAt = Number(obj.customMetadata && obj.customMetadata.builtAt) ||
+          (obj.uploaded ? obj.uploaded.getTime() : 0);
+        const resp = payloadResponse(payload, builtAt, "r2");
+        ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+        if (Date.now() - builtAt > CACHE_SECONDS * 1000) {
+          ctx.waitUntil(refresh(env, wellId, cache, cacheKey));
+        }
+        return resp;
+      }
+    } catch (_) {
+      /* R2 hiccup — fall through to the upstream build */
+    }
+  }
+
+  // 3. Cold: build from TWDB (dedup'd), then seed both the edge cache and R2.
   let payload;
   try {
     payload = await buildPayload(wellId);
   } catch (err) {
     return json({ error: `Could not load well ${wellId}: ${err.message}` }, 502);
   }
-  const resp = freshResponse(payload);
-  ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+  const resp = payloadResponse(payload, Date.now(), "upstream");
+  ctx.waitUntil(Promise.all([cache.put(cacheKey, resp.clone()), r2Put(env, wellId, payload)]));
   return resp;
 }
 
@@ -199,26 +220,48 @@ function buildPayload(wellId) {
   return job;
 }
 
-// Background revalidation: rebuild and replace the cached copy. On failure we do
-// nothing, so the existing (stale) copy keeps being served — stale-if-error.
-async function refresh(wellId, cache, cacheKey) {
+// Background revalidation: rebuild from TWDB and replace both the edge copy and
+// the durable R2 copy. On failure we do nothing, so the existing (stale) copies
+// keep being served — stale-if-error.
+async function refresh(env, wellId, cache, cacheKey) {
   try {
     const payload = await buildPayload(wellId);
-    await cache.put(cacheKey, freshResponse(payload));
+    await Promise.all([
+      cache.put(cacheKey, payloadResponse(payload, Date.now(), "upstream")),
+      r2Put(env, wellId, payload),
+    ]);
   } catch (_) {
     /* keep serving the last good copy */
   }
 }
 
-function freshResponse(payload) {
+function payloadResponse(payload, builtAt, source) {
   return json(payload, 200, {
-    // Browsers cache a week; the edge holds a copy for 30 days so we can serve
+    // Browsers cache a day; the edge holds a copy for 30 days so we can serve
     // stale-while-revalidate and stale-if-error from it.
     "Cache-Control":
       `public, max-age=${CACHE_SECONDS}, s-maxage=${EDGE_SECONDS}, ` +
       `stale-while-revalidate=${EDGE_SECONDS}, stale-if-error=${EDGE_SECONDS}`,
-    "x-built-at": String(Date.now()),
+    "x-built-at": String(builtAt || Date.now()),
+    "x-source": source || "upstream",
   });
+}
+
+// Durable archive of the downsampled historic payload, keyed by cache version so
+// a payload-shape change rolls over cleanly.
+function r2Key(wellId) {
+  return `well/${CACHE_VERSION}/${wellId}.json`;
+}
+async function r2Put(env, wellId, payload) {
+  if (!env || !env.WATER_DATA) return;
+  try {
+    await env.WATER_DATA.put(r2Key(wellId), JSON.stringify(payload), {
+      httpMetadata: { contentType: "application/json" },
+      customMetadata: { builtAt: String(Date.now()) },
+    });
+  } catch (_) {
+    /* archival is best-effort; serving never depends on the write succeeding */
+  }
 }
 
 // Turn the full record into a compact payload:

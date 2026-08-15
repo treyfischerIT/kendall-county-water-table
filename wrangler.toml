@@ -8,3 +8,11 @@ compatibility_date = "2025-01-01"
 [assets]
 directory = "./public"
 binding = "ASSETS"
+
+# Durable archive of the downsampled well payloads (the full historic series).
+# The Worker reads well data from here instead of re-fetching the ~33MB TWDB
+# feed on every cache miss; TWDB is pulled at most once per well per day, in the
+# background, to refresh this bucket.
+[[r2_buckets]]
+binding = "WATER_DATA"
+bucket_name = "texaswaterwatchers-data"
