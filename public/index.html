@@ -319,6 +319,7 @@
     This page is an independent visualization and is not affiliated with the CCGCD or TWDB.
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
       Site built &amp; hosted by <a href="https://upwardaxistech.com" target="_blank" rel="noopener"><b>Upward Axis Tech</b></a>.
+      &nbsp;·&nbsp; <a href="/privacy">Privacy &amp; ads</a>
     </div>
   </footer>
 </div>
@@ -403,7 +404,7 @@ const WELL_BY_ID = Object.fromEntries(WELLS.map(w => [w.id, w]));
 const CHG12_RECORDER = {"5758203":6.5,"6811708":0.5,"6806105":-0.8,"6801314":-4.4,"6811302":-3.1,"5758402":8.1,"6804214":-10.3,"6812414":-8,"6802302":-2.5,"6803503":null,"6811417":10,"6804312":10.1,"6810616":45.4,"6810626":26.5,"6811817":-34.2,"6812106":-9.1,"6802807":-5.5,"6811509":0.4,"6803109":8.6,"6809303":-3.2,"6811418":16.4,"6802609":-9.5,"6802509":-14.3};
 const CHG12_MANUAL = {"m5013":-1.2,"m4255":-1.6,"m3991":-2.4,"m5637":-0.6,"m3281":3.2,"m4609":-4,"m5093":-23.6,"m9000":-0.5,"m8630":-0.3,"m7656":-21.3,"m5318":-50,"m0767":6.1,"m5434":-0.1,"m3473":2.1,"m5193":-0.2,"m4739":-3.1,"m6021":1.8,"m3730":-6,"m7971":12.3,"m0105":-7.2,"m0197":1,"m5968":-13.4,"m1886":-23.4,"m3740":-4.5,"m3738":-2,"m4581":-18.2};
 const CHG12 = Object.assign({}, CHG12_RECORDER, CHG12_MANUAL);
-const CHG12_ASOF = "2026-07-27";
+const CHG12_ASOF = "2026-08-03";
 // Map a 12-month change to a color + tier label.
 function trendTier(chg){
   if(chg == null)   return { c:"#93aec7", label:"Not enough data" };
@@ -419,10 +420,24 @@ function trendTier(chg){
 //   { name:"Hill Country Rain Catchment", tagline:"Rainwater systems & tanks · Boerne", url:"https://..." }
 const SPONSORS = [
 ];
+// Google AdSense — fills an empty sponsor slot with a paid Google ad.
+// OFF until both IDs are set. After AdSense approves the site, paste your
+// publisher id ("ca-pub-…") and a Display-ad-unit slot id (the number) here;
+// the loader script and ad unit then activate automatically. Leave blank to
+// keep only the direct "Advertise here" slots and load nothing from Google.
+const ADSENSE = { client: "", slot: "" };
+function loadAdsense(){
+  if(!ADSENSE.client || document.getElementById("adsbygoogle-js")) return;
+  const s = document.createElement("script");
+  s.id = "adsbygoogle-js"; s.async = true; s.crossOrigin = "anonymous";
+  s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + ADSENSE.client;
+  document.head.appendChild(s);
+}
 // Where "Advertise here" inquiries go.
 const ADVERTISE_CONTACT = "mailto:info@upwardaxistech.com?subject=Advertising%20on%20the%20Kendall%20County%20Water%20Table";
 function renderSponsors(){
   const el = document.getElementById("sponsors"); if(!el) return;
+  loadAdsense();
   const slot = (name, tag) =>
     `<a class="sponsor-card ad-slot" href="${ADVERTISE_CONTACT}" target="_blank" rel="noopener">
        <div class="sp-name">${name}</div><div class="sp-tag">${tag}</div></a>`;
@@ -437,7 +452,17 @@ function renderSponsors(){
   } else {
     cards.push(slot("Advertise here →", "Reach local well &amp; water customers in Kendall County"));
   }
+  // Paid Google ad in a slot, only when configured + approved.
+  if(ADSENSE.client && ADSENSE.slot){
+    cards.push(
+      `<ins class="adsbygoogle sponsor-card" style="display:block;min-height:120px"
+         data-ad-client="${ADSENSE.client}" data-ad-slot="${ADSENSE.slot}"
+         data-ad-format="auto" data-full-width-responsive="true"></ins>`);
+  }
   el.innerHTML = cards.join("");
+  if(ADSENSE.client && ADSENSE.slot){
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
+  }
 }
 
 function activeRange(){
