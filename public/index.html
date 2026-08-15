@@ -13,6 +13,8 @@
 </script>
 <!-- Hotjar (Contentsquare) -->
 <script src="https://t.contentsquare.net/uxa/6d23c766fe32b.js" defer></script>
+<!-- Google AdSense -->
+<script async id="adsbygoogle-js" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6372653365779768" crossorigin="anonymous"></script>
 <title>Kendall County Water Table — Live Groundwater Levels (Boerne, TX)</title>
 <meta name="description" content="Live depth-to-water for 49 groundwater monitoring wells across Kendall County & Boerne, Texas — 23 automatic recorders plus 26 additional monitoring wells. Interactive map, per-well history, and trends from official Cow Creek GCD / Texas Water Development Board data." />
 <link rel="canonical" href="https://www.texaswaterwatchers.com/" />
@@ -105,6 +107,9 @@
     -webkit-font-smoothing:antialiased}
   a{color:var(--line)}
   .wrap{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
+  .admid{margin:22px 0}
+  .admid::before{content:"Sponsored";display:block;font-size:.62rem;letter-spacing:.6px;
+    text-transform:uppercase;color:var(--muted);margin-bottom:4px;text-align:center}
   /* cross-site nav — identical metrics on /, /rain, /streams so it never shifts
      between pages: full-width band, 1080px centered row, same font/padding. */
   .navband{background:rgba(56,189,248,.07);border-bottom:1px solid rgba(56,189,248,.30)}
@@ -259,6 +264,8 @@
     <div class="toolbar"><h2>Well details</h2></div>
     <div id="meta"></div>
   </section>
+
+  <div id="adMid" class="admid" aria-label="Advertisement" hidden></div>
 
   <section class="panel" id="xsecPanel" hidden>
     <div class="toolbar">
@@ -425,7 +432,7 @@ const SPONSORS = [
 // publisher id ("ca-pub-…") and a Display-ad-unit slot id (the number) here;
 // the loader script and ad unit then activate automatically. Leave blank to
 // keep only the direct "Advertise here" slots and load nothing from Google.
-const ADSENSE = { client: "", slot: "" };
+const ADSENSE = { client: "ca-pub-6372653365779768", slot: "" };
 function loadAdsense(){
   if(!ADSENSE.client || document.getElementById("adsbygoogle-js")) return;
   const s = document.createElement("script");
@@ -452,17 +459,21 @@ function renderSponsors(){
   } else {
     cards.push(slot("Advertise here →", "Reach local well &amp; water customers in Kendall County"));
   }
-  // Paid Google ad in a slot, only when configured + approved.
-  if(ADSENSE.client && ADSENSE.slot){
-    cards.push(
-      `<ins class="adsbygoogle sponsor-card" style="display:block;min-height:120px"
-         data-ad-client="${ADSENSE.client}" data-ad-slot="${ADSENSE.slot}"
-         data-ad-format="auto" data-full-width-responsive="true"></ins>`);
-  }
   el.innerHTML = cards.join("");
-  if(ADSENSE.client && ADSENSE.slot){
-    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
-  }
+}
+
+// Mid-page Google ad. Renders into #adMid only when configured AND an ad-unit
+// slot id exists (i.e. after AdSense approval). Until then the container stays
+// hidden and empty, so there's no visible change and no layout shift.
+function renderAd(){
+  const el = document.getElementById("adMid"); if(!el) return;
+  if(!(ADSENSE.client && ADSENSE.slot)) return;
+  loadAdsense();
+  el.innerHTML =
+    `<ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE.client}"` +
+    ` data-ad-slot="${ADSENSE.slot}" data-ad-format="auto" data-full-width-responsive="true"></ins>`;
+  el.hidden = false;
+  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
 }
 
 function activeRange(){
@@ -641,6 +652,7 @@ function init(){
   sel.addEventListener("change", ()=> load(sel.value));
   initMap();
   renderSponsors();
+  renderAd();
   setupRanges();
 
   // Reset-zoom button
