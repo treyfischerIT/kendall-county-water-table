@@ -1,0 +1,5 @@
+# Texas Water Watchers — Authorized Digital Sellers (ads.txt)
+# Pending Google AdSense approval. Once approved, replace the placeholder
+# line below with the real one (swap in your ca-pub- number):
+#
+# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
