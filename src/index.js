@@ -132,20 +132,135 @@ export default {
     const slug = url.pathname.replace(/^\/+/, "").replace(/\/+$/, "");
     if (CITY_SLUGS.has(slug)) {
       const res = await env.ASSETS.fetch(new Request(new URL("/city", url), request));
-      return new Response(res.body, res);
+      return injectCommon(new Response(res.body, res), url.pathname);
     }
 
     // Boerne is an alias for the Kendall County flagship (groundwater) page,
     // so town-name traffic resolves to the same content at /kendall.
     if (slug === "boerne") {
       const res = await env.ASSETS.fetch(new Request(new URL("/kendall", url), request));
-      return new Response(res.body, res);
+      return injectCommon(new Response(res.body, res), url.pathname);
     }
 
     // Everything else = static assets from ./public
-    return env.ASSETS.fetch(request);
+    return injectCommon(await env.ASSETS.fetch(request), url.pathname);
   },
 };
+
+// Inject the shared site include (/tww-common.js) into every HTML response, so
+// the disclaimer banner + mid-page ad land on every current AND future page with
+// zero per-page markup. Non-HTML responses (JSON API, the JS/asset files) pass
+// through untouched.
+// City pages that carry a groundwater/water-table section (see WELLSETS in city.html).
+const GW_CITY_SLUGS = new Set([
+  "san-antonio", "austin", "houston", "dfw", "amarillo", "kerrville",
+]);
+
+// Every place, for the "Jump to a city" nav dropdown.
+const CITY_NAV = [
+  { href: "/kendall", name: "Boerne · Kendall" },
+  { href: "/new-braunfels", name: "New Braunfels" },
+  { href: "/san-marcos", name: "San Marcos" },
+  { href: "/wimberley", name: "Wimberley & Blanco" },
+  { href: "/kerrville", name: "Kerrville" },
+  { href: "/fredericksburg", name: "Fredericksburg" },
+  { href: "/lampasas", name: "Lampasas" },
+  { href: "/austin", name: "Austin" },
+  { href: "/san-antonio", name: "San Antonio" },
+  { href: "/houston", name: "Houston" },
+  { href: "/dfw", name: "Dallas–Fort Worth" },
+  { href: "/corpus-christi", name: "Corpus Christi" },
+  { href: "/san-angelo", name: "San Angelo" },
+  { href: "/abilene", name: "Abilene" },
+  { href: "/amarillo", name: "Amarillo" },
+  { href: "/wichita-falls", name: "Wichita Falls" },
+  { href: "/waco", name: "Waco" },
+  { href: "/killeen-temple", name: "Killeen–Temple" },
+  { href: "/college-station", name: "Bryan–College Station" },
+  { href: "/tyler-longview", name: "Tyler–Longview" },
+  { href: "/beaumont", name: "Beaumont–Port Arthur" },
+  { href: "/victoria", name: "Victoria" },
+  { href: "/laredo", name: "Laredo" },
+  { href: "/brownsville", name: "Brownsville" },
+];
+
+// Cross-site nav injected server-side (crawlable, no flash) into every page.
+// On a city page the data views live in one page, so Water table / Rainfall /
+// Creeks link to that city's own sections; elsewhere they link to the standalone
+// Boerne-area pages. A "Jump to a city" dropdown lets you hop anywhere.
+function navFor(pathname) {
+  const p = (pathname || "/").replace(/\/+$/, "") || "/";
+  const slug = p.replace(/^\/+/, "");
+  const isCity = CITY_SLUGS.has(slug);
+  const items = [
+    { href: "/", label: "🏠 Home", key: "/" },
+    {
+      href: isCity ? (GW_CITY_SLUGS.has(slug) ? "#gwSection" : "/kendall") : "/kendall",
+      label: "💧 Water table",
+      key: "/kendall",
+    },
+    { href: isCity ? "#rainSection" : "/rain", label: "🌧️ Rainfall", key: "/rain" },
+    { href: isCity ? "#streamsSection" : "/streams", label: "🌊 Creeks & rivers", key: "/streams" },
+  ];
+  const links = items
+    .map((it) => {
+      const active = !isCity && (p === it.key || (it.key === "/kendall" && p === "/boerne"));
+      return (
+        `<a href="${it.href}"${active ? ' aria-current="page"' : ""} ` +
+        `style="color:${active ? "#38bdf8" : "#c3d4e4"};text-decoration:none;padding:2px 0;` +
+        `border-bottom:1px solid ${active ? "#38bdf8" : "rgba(147,170,191,.35)"};` +
+        `font-weight:${active ? "600" : "400"};white-space:nowrap">${it.label}</a>`
+      );
+    })
+    .join("");
+  const cityLinks = CITY_NAV.map((c) => {
+    const cur = c.href === p;
+    return (
+      `<a href="${c.href}" style="color:${cur ? "#38bdf8" : "#c3d4e4"};text-decoration:none;` +
+      `padding:5px 8px;border-radius:6px;white-space:nowrap${cur ? ";font-weight:600" : ""}">${c.name}</a>`
+    );
+  }).join("");
+  const drop =
+    '<details style="position:relative">' +
+    '<summary style="cursor:pointer;list-style:none;color:#eaf2fb;font-weight:600;' +
+    'padding:2px 0;border-bottom:1px solid rgba(56,189,248,.55)">📍 Jump to a city ▾</summary>' +
+    '<div style="position:absolute;top:calc(100% + 10px);right:0;z-index:3000;background:#0f2032;' +
+    'border:1px solid rgba(147,174,199,.3);border-radius:12px;padding:12px;display:grid;' +
+    'grid-template-columns:repeat(2,minmax(150px,1fr));gap:2px 12px;min-width:320px;max-width:92vw;' +
+    'max-height:min(70vh,520px);overflow:auto;box-shadow:0 18px 44px rgba(0,0,0,.55)">' +
+    cityLinks +
+    "</div></details>";
+  return (
+    '<nav id="tww-nav" aria-label="Texas Water Watchers" ' +
+    'style="background:rgba(56,189,248,.07);border-bottom:1px solid rgba(56,189,248,.30)">' +
+    '<div style="max-width:1080px;margin:0 auto;display:flex;gap:10px 22px;flex-wrap:wrap;' +
+    "align-items:center;justify-content:space-between;" +
+    'font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.72rem;letter-spacing:.05em;' +
+    'padding:12px clamp(16px,4vw,36px)">' +
+    '<span style="display:flex;gap:6px 22px;flex-wrap:wrap;align-items:center">' +
+    links +
+    "</span>" +
+    drop +
+    "</div></nav>"
+  );
+}
+
+function injectCommon(response, pathname) {
+  const ct = response.headers.get("content-type") || "";
+  if (!ct.includes("text/html")) return response;
+  return new HTMLRewriter()
+    .on("head", {
+      element(el) {
+        el.append('<script defer src="/tww-common.js"></script>', { html: true });
+      },
+    })
+    .on("body", {
+      element(el) {
+        el.prepend(navFor(pathname), { html: true });
+      },
+    })
+    .transform(response);
+}
 
 async function handleWell(url, ctx, env) {
   const requested = (url.searchParams.get("id") || DEFAULT_WELL).replace(/[^0-9]/g, "");

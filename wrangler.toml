@@ -8,6 +8,10 @@ compatibility_date = "2025-01-01"
 [assets]
 directory = "./public"
 binding = "ASSETS"
+# Run the Worker before serving static assets so injectCommon() can rewrite every
+# HTML page (inject /tww-common.js) — otherwise Cloudflare serves static files
+# directly and the Worker never sees them.
+run_worker_first = true
 
 # Durable archive of the downsampled well payloads (the full historic series).
 # The Worker reads well data from here instead of re-fetching the ~33MB TWDB

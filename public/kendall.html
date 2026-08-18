@@ -213,13 +213,6 @@
 </head>
 <body>
 <div id="tww-alertbar" role="note" style="background:rgba(220,38,38,.16);border-bottom:1px solid rgba(220,38,38,.55);color:#ff6b6b;font-weight:700;text-align:center;padding:9px 16px;font-size:.8rem;line-height:1.45;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em">Not for emergency, flood-warning, navigational, safety, or regulatory decisions</div>
-<div class="navband">
-  <nav class="crossnav" aria-label="Texas Water Watchers sites">
-    <a href="/" aria-current="page">💧 Water table</a>
-    <a href="/rain">🌧️ Rainfall</a>
-    <a href="/streams">🌊 Creeks &amp; rivers</a>
-  </nav>
-</div>
 <div class="wrap">
   <header>
     <h1>💧 Kendall County Texas Water Table</h1>
@@ -277,18 +270,6 @@
     </div>
   </section>
 
-  <section class="panel" id="sponsorPanel">
-    <div class="toolbar">
-      <h2>💧 Local water &amp; rain-catchment pros</h2>
-      <span class="sponsor-tag">Sponsored</span>
-    </div>
-    <p class="sponsor-intro">Well drillers, pump &amp; rain-catchment installers, water treatment — reach neighbors who are actively watching their water.</p>
-    <div id="sponsors" class="sponsor-grid"></div>
-    <div id="adMid" class="admid" aria-label="Advertisement" hidden></div>
-    <p class="sponsor-contact">Want your business here?
-      <a href="tel:+12103074832">1&nbsp;(210)&nbsp;307-4832</a> &nbsp;|&nbsp;
-      ✉️&nbsp;<a href="mailto:info@upwardaxistech.com?subject=Advertising%20on%20the%20Kendall%20County%20Water%20Table">info@upwardaxistech.com</a></p>
-  </section>
 
   <section class="panel">
     <div class="toolbar">
@@ -649,7 +630,6 @@ function init(){
   if(noData.length){ const g3 = grp("In network · no readings yet"); noData.forEach(w=>opt(w,g3)); }
   sel.addEventListener("change", ()=> load(sel.value));
   initMap();
-  renderSponsors();
   renderAd();
   setupRanges();
 
