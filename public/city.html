@@ -10,6 +10,9 @@
 <link rel="canonical" id="canonicalLink" href="https://www.texaswaterwatchers.com/austin">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127754;</text></svg>">
 <script async id="adsbygoogle-js" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6372653365779768" crossorigin="anonymous"></script>
+<!-- Chart.js — used by the groundwater module's "water table over time" line chart (kendall.html parity) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
 <div id="tww-alertbar" role="note" style="background:rgba(220,38,38,.16);border-bottom:1px solid rgba(220,38,38,.55);color:#ff6b6b;font-weight:700;text-align:center;padding:9px 16px;font-size:.8rem;line-height:1.45;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em">Not for emergency, flood-warning, navigational, safety, or regulatory decisions</div>
@@ -148,6 +151,17 @@
   #gwChartbox{transition:opacity .2s}
   #gwChartbox svg{display:block;width:100%;height:auto}
   .chartwrap.loading #gwChartbox{opacity:.45}
+
+  /* ---- groundwater: "under the ground" cross-section (kendall.html parity) ---- */
+  .gwxsec{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+  .gwxsecwrap{margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;
+    background:linear-gradient(180deg,#0d1c2d,#0a1421);box-shadow:inset 0 0 40px rgba(0,0,0,.35)}
+  .gwxsecwrap svg{display:block;width:100%;height:auto}
+
+  /* ---- groundwater: Chart.js water-table-over-time graph (kendall.html parity) ---- */
+  .gwgraph{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+  .gwgraphbox{position:relative;height:300px;margin-top:10px}
+  @media(max-width:560px){.gwgraphbox{height:240px}}
 
   /* ---- gauges rail ---- */
   .rail{display:flex;gap:10px;margin-top:16px;overflow-x:auto;padding:4px 2px 10px;
@@ -446,6 +460,25 @@
         <div id="gwChartbox"></div>
       </div>
       <div class="kbdhint">&#9650; shallower &mdash; more water in the aquifer &nbsp;&middot;&nbsp; &#9660; deeper &mdash; less water &nbsp;&middot;&nbsp; feet below land surface</div>
+
+      <div class="gwxsec" id="gwXsecPanel" hidden>
+        <div class="xhead">Under the ground &mdash; where the water sits</div>
+        <span class="xnote">Cross-section drawn to scale from this well&rsquo;s record &middot; click or hover to replay the drain animation</span>
+        <div class="gwxsecwrap" id="gwXsec"></div>
+      </div>
+
+      <div class="gwgraph" id="gwGraphPanel" hidden>
+        <div class="xhead" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 14px">
+          <span>Water table over time</span>
+          <div class="toggle" id="gwRanges">
+            <button type="button" data-range="1y" class="on">1 year</button>
+            <button type="button" data-range="all">All time</button>
+          </div>
+        </div>
+        <div class="gwgraphbox"><canvas id="gwWellChart"></canvas></div>
+        <span class="xnote">Axis inverted so a rising line = the water table getting shallower (more water).</span>
+      </div>
+
       <div class="ctx" style="margin-top:14px">
         <span class="updated" id="gwAsOf"></span>
         <span class="ctxsrc" id="gwSrcNote">Source: TWDB recorder wells, via Water Data for Texas &mdash; depth to water, provisional and subject to revision. A slow, multi-year trend, not a real-time gauge.</span>
@@ -1675,8 +1708,12 @@ setInterval(()=>{if(!document.hidden)load();},30*60*1000);
    WELLSETS[SLUG]. Gated: only san-antonio has a wellset today, so this
    whole IIFE is a no-op (section stays hidden) for every other city.
    Data comes from the same /api/well endpoint as the Kendall flagship
-   page, but that page uses Chart.js — this one is plain SVG, to match
-   the streams/rain modules' hydrograph and avoid a second chart library.
+   page. The compact SVG trend chart below the readout is plain SVG, to
+   match the streams/rain modules' hydrograph. The "under the ground"
+   cross-section and full water-table graph further down port the
+   flagship kendall.html visuals (Chart.js) — same look, no drilled-depth
+   field on these wells so the cross-section scales purely from the
+   record-low reading instead.
    ====================================================================== */
 const WELLSETS={"san-antonio":{"intro":"Depth to the water table at TWDB recorder wells around San Antonio — Edwards and Trinity aquifers. Wells sit over the aquifer recharge zone and outcrop, so they cluster north/northwest of downtown rather than evenly around town. Lower on the chart = deeper water. A slow, multi-year trend, not a real-time gauge.","wells":[{"id":"6836132","name":"Edwards — 8 mi NW of San Antonio","short":"Edwards · 8 mi NW","aquifer":"Edwards","lat":29.49528,"lon":-98.59556},{"id":"6828211","name":"Edwards — 12 mi N of San Antonio","short":"Edwards · 12 mi N","aquifer":"Edwards","lat":29.58778,"lon":-98.54861},{"id":"6827610","name":"Edwards — 12 mi NW of San Antonio","short":"Edwards · 12 mi NW","aquifer":"Edwards","lat":29.54778,"lon":-98.63556},{"id":"6829112","name":"Edwards — 12 mi N of San Antonio","short":"Edwards · 12 mi N","aquifer":"Edwards","lat":29.59972,"lon":-98.48},{"id":"6827609","name":"Edwards — 14 mi NW of San Antonio","short":"Edwards · 14 mi NW","aquifer":"Edwards","lat":29.56806,"lon":-98.66167},{"id":"6819806","name":"Trinity — 18 mi NW of San Antonio","short":"Trinity · 18 mi NW","aquifer":"Trinity","lat":29.63211,"lon":-98.68622},{"id":"6827112","name":"Trinity — 20 mi NW of San Antonio","short":"Trinity · 20 mi NW","aquifer":"Trinity","lat":29.61611,"lon":-98.73547},{"id":"6820110","name":"Trinity — 23 mi N of San Antonio","short":"Trinity · 23 mi N","aquifer":"Trinity","lat":29.73275,"lon":-98.62381},{"id":"6820602","name":"Trinity — 18 mi N of San Antonio","short":"Trinity · 18 mi N","aquifer":"Trinity","lat":29.681,"lon":-98.52197},{"id":"6819618","name":"Trinity — 20 mi NW of San Antonio","short":"Trinity · 20 mi NW","aquifer":"Trinity","lat":29.67314,"lon":-98.65431}]},"austin":{"intro":"Depth to the water table at TWDB recorder wells around Austin — Edwards and Trinity aquifers. Wells sit over the aquifer outcrop/recharge areas, so they cluster where it nears the surface rather than evenly around town. Lower on the chart = deeper water. A slow, multi-year trend, not a real-time gauge.","wells":[{"id":"5835811","name":"Edwards — 10 mi N of Austin","short":"Edwards · 10 mi N","aquifer":"Edwards","lat":30.40389,"lon":-97.70556},{"id":"5857502","name":"Edwards — 18 mi SW of Austin","short":"Edwards · 18 mi SW","aquifer":"Edwards","lat":30.06636,"lon":-97.94447},{"id":"5748811","name":"Trinity — 19 mi W of Austin","short":"Trinity · 19 mi W","aquifer":"Trinity","lat":30.25528,"lon":-98.05778},{"id":"5748505","name":"Trinity — 20 mi W of Austin","short":"Trinity · 20 mi W","aquifer":"Trinity","lat":30.29647,"lon":-98.07207},{"id":"5826312","name":"Trinity — 22 mi N of Austin","short":"Trinity · 22 mi N","aquifer":"Trinity","lat":30.58429,"lon":-97.75342},{"id":"5756716","name":"Trinity — 23 mi W of Austin","short":"Trinity · 23 mi W","aquifer":"Trinity","lat":30.14454,"lon":-98.09333},{"id":"5748109","name":"Trinity — 23 mi W of Austin","short":"Trinity · 23 mi W","aquifer":"Trinity","lat":30.35814,"lon":-98.11551},{"id":"5747312","name":"Trinity — 23 mi W of Austin","short":"Trinity · 23 mi W","aquifer":"Trinity","lat":30.33966,"lon":-98.12823},{"id":"5747314","name":"Trinity — 24 mi W of Austin","short":"Trinity · 24 mi W","aquifer":"Trinity","lat":30.335,"lon":-98.13247}]},"houston":{"intro":"Depth to the water table at TWDB recorder wells around Houston — Gulf Coast aquifer. Wells sit over the aquifer outcrop/recharge areas, so they cluster where it nears the surface rather than evenly around town. Lower on the chart = deeper water. A slow, multi-year trend, not a real-time gauge.","wells":[{"id":"6514738","name":"Gulf Coast — 3 mi NE of Houston","short":"Gulf Coast · 3 mi NE","aquifer":"Gulf Coast","lat":29.79139,"lon":-95.33389},{"id":"6514746","name":"Gulf Coast — 3 mi NE of Houston","short":"Gulf Coast · 3 mi NE","aquifer":"Gulf Coast","lat":29.79139,"lon":-95.33389},{"id":"6514409","name":"Gulf Coast — 4 mi N of Houston","short":"Gulf Coast · 4 mi N","aquifer":"Gulf Coast","lat":29.81722,"lon":-95.36944},{"id":"6521230","name":"Gulf Coast — 5 mi SW of Houston","short":"Gulf Coast · 5 mi SW","aquifer":"Gulf Coast","lat":29.7275,"lon":-95.45139},{"id":"6522622","name":"Gulf Coast — 7 mi SE of Houston","short":"Gulf Coast · 7 mi SE","aquifer":"Gulf Coast","lat":29.70194,"lon":-95.27417},{"id":"6523322","name":"Gulf Coast — 13 mi E of Houston","short":"Gulf Coast · 13 mi E","aquifer":"Gulf Coast","lat":29.71016,"lon":-95.15927},{"id":"6512726","name":"Gulf Coast — 13 mi W of Houston","short":"Gulf Coast · 13 mi W","aquifer":"Gulf Coast","lat":29.79083,"lon":-95.58611},{"id":"6512725","name":"Gulf Coast — 13 mi W of Houston","short":"Gulf Coast · 13 mi W","aquifer":"Gulf Coast","lat":29.79083,"lon":-95.58667},{"id":"6512729","name":"Gulf Coast — 13 mi W of Houston","short":"Gulf Coast · 13 mi W","aquifer":"Gulf Coast","lat":29.79083,"lon":-95.58667},{"id":"6507909","name":"Gulf Coast — 17 mi NE of Houston","short":"Gulf Coast · 17 mi NE","aquifer":"Gulf Coast","lat":29.91322,"lon":-95.14553}]},"dfw":{"intro":"Depth to the water table at TWDB recorder wells around Dallas–Fort Worth — Trinity and Woodbine aquifers. Wells sit over the aquifer outcrop/recharge areas, so they cluster where it nears the surface rather than evenly around town. Lower on the chart = deeper water. A slow, multi-year trend, not a real-time gauge.","wells":[{"id":"3325202","name":"Trinity — 16 mi S of Dallas","short":"Trinity · 16 mi S","aquifer":"Trinity","lat":32.58833,"lon":-96.95694},{"id":"3319101","name":"Trinity — 18 mi E of Dallas","short":"Trinity · 18 mi E","aquifer":"Trinity","lat":32.74639,"lon":-96.75028},{"id":"3231906","name":"Woodbine — 21 mi S of Dallas","short":"Woodbine · 21 mi S","aquifer":"Woodbine","lat":32.51411,"lon":-97.16069},{"id":"3333203","name":"Trinity — 22 mi S of Dallas","short":"Trinity · 22 mi S","aquifer":"Trinity","lat":32.4967,"lon":-96.95453},{"id":"3326822","name":"Woodbine — 23 mi SE of Dallas","short":"Woodbine · 23 mi SE","aquifer":"Woodbine","lat":32.53651,"lon":-96.81328},{"id":"3333304","name":"Trinity — 24 mi SE of Dallas","short":"Trinity · 24 mi SE","aquifer":"Trinity","lat":32.47806,"lon":-96.89028},{"id":"3334207","name":"Trinity — 26 mi SE of Dallas","short":"Trinity · 26 mi SE","aquifer":"Trinity","lat":32.46649,"lon":-96.82978},{"id":"3334209","name":"Woodbine — 26 mi SE of Dallas","short":"Woodbine · 26 mi SE","aquifer":"Woodbine","lat":32.46643,"lon":-96.82988},{"id":"3240703","name":"Trinity — 27 mi S of Dallas","short":"Trinity · 27 mi S","aquifer":"Trinity","lat":32.40728,"lon":-97.10002},{"id":"3240704","name":"Woodbine — 27 mi S of Dallas","short":"Woodbine · 27 mi S","aquifer":"Woodbine","lat":32.40722,"lon":-97.10028}]},"amarillo":{"intro":"Depth to the water table at TWDB recorder wells around Amarillo — Ogallala/Dockum and Ogallala aquifers. Wells sit over the aquifer outcrop/recharge areas, so they cluster where it nears the surface rather than evenly around town. Lower on the chart = deeper water. A slow, multi-year trend, not a real-time gauge.","wells":[{"id":"0635912","name":"Ogallala/Dockum — 17 mi NE of Amarillo","short":"Ogallala/Dockum · 17 mi NE","aquifer":"Ogallala/Dockum","lat":35.41361,"lon":-101.64},{"id":"0653401","name":"Ogallala — 19 mi E of Amarillo","short":"Ogallala · 19 mi E","aquifer":"Ogallala","lat":35.17444,"lon":-101.49667},{"id":"0637710","name":"Ogallala — 22 mi NE of Amarillo","short":"Ogallala · 22 mi NE","aquifer":"Ogallala","lat":35.38333,"lon":-101.48694},{"id":"0646805","name":"Ogallala — 30 mi E of Amarillo","short":"Ogallala · 30 mi E","aquifer":"Ogallala","lat":35.26861,"lon":-101.30194}]},"kerrville":{"intro":"Depth to the water table at TWDB recorder wells around Kerrville — Trinity and Ellenburger-San Saba aquifers. Wells sit over the aquifer outcrop/recharge areas, so they cluster where it nears the surface rather than evenly around town. Lower on the chart = deeper water. A slow, multi-year trend, not a real-time gauge.","wells":[{"id":"5663922","name":"Trinity — 3 mi S of Kerrville","short":"Trinity · 3 mi S","aquifer":"Trinity","lat":30.00556,"lon":-99.13281},{"id":"6801703","name":"Trinity — 14 mi SE of Kerrville","short":"Trinity · 14 mi SE","aquifer":"Trinity","lat":29.90692,"lon":-98.97292},{"id":"6801704","name":"Trinity — 14 mi SE of Kerrville","short":"Trinity · 14 mi SE","aquifer":"Trinity","lat":29.90692,"lon":-98.97292},{"id":"5654405","name":"Trinity — 15 mi NW of Kerrville","short":"Trinity · 15 mi NW","aquifer":"Trinity","lat":30.16965,"lon":-99.34739},{"id":"6806105","name":"Trinity — 18 mi E of Kerrville","short":"Trinity · 18 mi E","aquifer":"Trinity","lat":29.95889,"lon":-98.86},{"id":"5750108","name":"Ellenburger-San Saba — 21 mi NE of Kerrville","short":"Ellenburger-San Saba · 21 mi NE","aquifer":"Ellenburger-San Saba","lat":30.21553,"lon":-98.842},{"id":"6924225","name":"Trinity — 22 mi S of Kerrville","short":"Trinity · 22 mi S","aquifer":"Trinity","lat":29.73467,"lon":-99.07466},{"id":"6802302","name":"Trinity — 23 mi E of Kerrville","short":"Trinity · 23 mi E","aquifer":"Trinity","lat":29.97756,"lon":-98.76086},{"id":"5750324","name":"Ellenburger-San Saba — 24 mi NE of Kerrville","short":"Ellenburger-San Saba · 24 mi NE","aquifer":"Ellenburger-San Saba","lat":30.23089,"lon":-98.79089},{"id":"6803109","name":"Trinity — 26 mi E of Kerrville","short":"Trinity · 26 mi E","aquifer":"Trinity","lat":29.97556,"lon":-98.72111}]}};
 (function(){
@@ -1710,6 +1747,27 @@ function monthsAgo(monthStr,n){
   const total=y*12+(m-1)-n;
   const yy=Math.floor(total/12),mm=total%12+1;
   return yy+'-'+String(mm).padStart(2,'0');
+}
+// date-only strings (YYYY-MM-DD) -> local midnight, same convention kendall.html uses
+function gwParse(s){return new Date(s.includes(' ')?s.replace(' ','T'):s+'T00:00:00');}
+function gwMonYY(ds){
+  const[yy,mm]=ds.split('-');
+  return new Date(+yy,+mm-1,1).toLocaleString('en-US',{month:'short'})+' '+yy;
+}
+// prefer the daily series (finer-grained record); fall back to monthly for sparser wells
+function gwSeries(data){return (data.daily&&data.daily.length)?data.daily:(data.monthly||[]);}
+function gwValueAtOrBefore(series,targetMs){
+  let best=null;
+  for(const p of series){if(gwParse(p.date).getTime()<=targetMs)best=p;else break;}
+  return best;
+}
+// record high (shallowest) + record low (deepest) from a well's series
+function gwRecord(data){
+  const d=gwSeries(data);
+  if(!d.length)return null;
+  let hi=d[0],lo=d[0];
+  for(const p of d){if(p.v<hi.v)hi=p;if(p.v>lo.v)lo=p;}
+  return {hi,lo,series:d};
 }
 
 /* ---------- 12-month trend: depth DOWN = water table UP ---------- */
@@ -1937,6 +1995,267 @@ function renderChart(well,data){
   }
 }
 
+/* ---------- "under the ground" cross-section (ported from kendall.html's drawXsec) ----------
+   Same look/behavior as the flagship page: land surface, soil/rock bands, well bore, standing
+   water column, dashed water-table line, record high/low markers, and the drain-down animation
+   from record-high to today. Unlike kendall's WELLS, these WELLSETS wells carry no drilled-depth
+   field, so — instead of scaling to a known well bottom — the diagram scales from 0 ft (surface)
+   down to the record-low depth plus a 10% margin, and the bore simply runs to the diagram floor. */
+let gwXsecRaf=null, gwDrainObserver=null;
+function renderXsec(well,data){
+  const rec=gwRecord(data);
+  const panel=$('gwXsecPanel');
+  if(!rec||data.current==null){panel.hidden=true;return;}
+  const {hi,lo,series:d}=rec;
+  const cur=data.current;
+  const ya=data.lastDate?gwValueAtOrBefore(d,gwParse(data.lastDate).getTime()-365*864e5):null;
+
+  const W=760,SURF=64,BOT=456,H=480;
+  const depthMax=Math.max(25,Math.ceil((lo.v*1.10)/25)*25);
+  const y=ft=>SURF+ft*(BOT-SURF)/depthMax;
+  const wellBottomY=BOT;   // no drilled-depth field for these wells — bore runs to the diagram floor
+
+  // limestone strata bands (below soil + weathered caliche)
+  let bands='',depth=30,i=0;
+  const thick=[26,38,20,44,28,32,22,40],cols=['#3b382e','#332f27'];
+  while(depth<depthMax){
+    const t=Math.min(thick[i%thick.length],depthMax-depth);
+    bands+=`<rect x="0" y="${y(depth)}" width="${W}" height="${y(depth+t)-y(depth)}" fill="${cols[i%2]}"/>`+
+           `<line x1="0" y1="${y(depth)}" x2="${W}" y2="${y(depth)}" stroke="#241f18" stroke-width="1" opacity=".6"/>`;
+    depth+=t;i++;
+  }
+
+  // faint depth ruler
+  const step=depthMax>360?100:50;
+  let ruler='';
+  for(let ft=step;ft<depthMax;ft+=step){
+    ruler+=`<line x1="10" y1="${y(ft)}" x2="${W-10}" y2="${y(ft)}" stroke="#93aec7" stroke-width="0.5" opacity=".12"/>`;
+    if(Math.abs(y(ft)-y(cur))>16)
+      ruler+=`<text x="14" y="${y(ft)-3}" fill="#93aec7" font-size="10" opacity=".8">${ft} ft</text>`;
+  }
+
+  // depth markers, nudged apart when they'd overlap
+  const BX=328,BW=26;
+  const marks=[
+    {ft:hi.v,c:'#34d399',t:`▲ Record high · ${hi.v.toFixed(1)} ft · ${gwMonYY(hi.date)}`},
+    {ft:cur, c:'#38bdf8',t:`● Today · ${cur.toFixed(1)} ft`,bold:true},
+    {ft:lo.v,c:'#f87171',t:`▼ Record low · ${lo.v.toFixed(1)} ft · ${gwMonYY(lo.date)}`},
+  ];
+  if(ya)marks.push({ft:ya.v,c:'#93aec7',t:`1 year ago · ${ya.v.toFixed(1)} ft`});
+  marks.forEach(m=>{m.yA=y(m.ft);m.yL=m.yA;});
+  marks.sort((a,b)=>a.yA-b.yA);
+  for(let k=1;k<marks.length;k++)
+    if(marks[k].yL-marks[k-1].yL<20)marks[k].yL=marks[k-1].yL+20;
+  const markSvg=marks.map(m=>
+    `<line x1="${BX+BW}" y1="${m.yA}" x2="530" y2="${m.yA}" stroke="${m.c}" stroke-width="1" opacity=".55"/>`+
+    `<line x1="530" y1="${m.yA}" x2="546" y2="${m.yL}" stroke="${m.c}" stroke-width="1" opacity=".55"/>`+
+    `<rect x="547" y="${m.yL-9}" width="${m.t.length*6.6+10}" height="18" rx="4" fill="#0e1b2a" opacity=".85"/>`+
+    `<text x="551" y="${m.yL+4}" fill="${m.c}" font-size="12"${m.bold?' font-weight="700"':''}>${m.t}</text>`).join('');
+
+  const startFt=RM?cur:hi.v;   // drain animation starts at the record high
+  const wtY=y(startFt);
+
+  const spokes=[0,45,90,135].map(a=>{
+    const r=8,x=152.5,yy=17,ca=Math.cos(a*Math.PI/180),sa=Math.sin(a*Math.PI/180);
+    return `<line x1="${x-r*ca}" y1="${yy-r*sa}" x2="${x+r*ca}" y2="${yy+r*sa}"/>`;
+  }).join('');
+  const stars=[[60,12],[110,22],[230,9],[300,18],[420,10],[480,20],[700,14],[730,26]]
+    .map(([x,yy])=>`<circle cx="${x}" cy="${yy}" r="1" fill="#eaf2fb" opacity=".7"/>`).join('');
+
+  $('gwXsec').innerHTML=`
+  <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="gwXsSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0d1f33"/><stop offset=".6" stop-color="#1c3a55"/>
+        <stop offset=".92" stop-color="#5d4530"/><stop offset="1" stop-color="#6e5136"/>
+      </linearGradient>
+      <linearGradient id="gwXsSoil" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#5a4128"/><stop offset="1" stop-color="#463019"/>
+      </linearGradient>
+      <linearGradient id="gwXsSat" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#38bdf8" stop-opacity=".28"/>
+        <stop offset="1" stop-color="#0c4a6e" stop-opacity=".45"/>
+      </linearGradient>
+      <linearGradient id="gwXsBoreW" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#075985"/>
+      </linearGradient>
+      <radialGradient id="gwXsSun">
+        <stop offset="0" stop-color="#fcd9a0"/><stop offset="1" stop-color="#f2a65c" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <rect x="0" y="0" width="${W}" height="${SURF}" fill="url(#gwXsSky)"/>
+    <circle cx="618" cy="46" r="26" fill="url(#gwXsSun)"/>
+    <circle cx="618" cy="46" r="9" fill="#f6c178"/>
+    ${stars}
+
+    <g stroke="#08131f" stroke-width="1.6" fill="none">
+      <line x1="142" y1="64" x2="152" y2="20"/><line x1="164" y1="64" x2="153" y2="20"/>
+      <line x1="146" y1="50" x2="161" y2="50"/><line x1="144" y1="57" x2="163" y2="57"/>
+      <circle cx="152.5" cy="17" r="8"/>${spokes}
+      <line x1="152.5" y1="17" x2="168" y2="21"/>
+    </g>
+
+    <g fill="#0c1c12">
+      <path d="M497 64 l3 -12 l4 12 z"/>
+      <ellipse cx="500" cy="44" rx="26" ry="12"/>
+      <ellipse cx="486" cy="50" rx="15" ry="8"/><ellipse cx="514" cy="50" rx="15" ry="8"/>
+    </g>
+
+    <rect x="0" y="58" width="${W}" height="6" fill="#2c4a2e"/>
+    <text x="${W-14}" y="56" fill="#eaf2fb" font-size="11" text-anchor="end" opacity=".85">land surface · 0 ft</text>
+
+    <rect x="0" y="${SURF}" width="${W}" height="${y(14)-SURF}" fill="url(#gwXsSoil)"/>
+    <rect x="0" y="${y(14)}" width="${W}" height="${y(30)-y(14)}" fill="#4d463a"/>
+    ${bands}
+    ${ruler}
+
+    <rect id="gwXsSatRect" x="0" y="${wtY}" width="${W}" height="${BOT-wtY}" fill="url(#gwXsSat)"/>
+    <line id="gwXsWt" x1="0" y1="${wtY}" x2="${W}" y2="${wtY}" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="7 5">
+      <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2.5s" repeatCount="indefinite"/>
+    </line>
+    <text id="gwXsWtLabel" x="14" y="${wtY-6}" fill="#38bdf8" font-size="11" font-weight="600">water table</text>
+
+    <rect x="${BX}" y="${SURF-6}" width="${BW}" height="${wellBottomY-SURF+6}" fill="#0a1624" stroke="#93aec7" stroke-width="1.2" rx="2"/>
+    <rect id="gwXsBoreWater" x="${BX+2}" y="${wtY}" width="${BW-4}" height="${wellBottomY-wtY-2}" fill="url(#gwXsBoreW)"/>
+    <rect id="gwXsBoreShine" x="${BX+2}" y="${wtY}" width="${BW-4}" height="3" fill="#bae6fd">
+      <animate attributeName="opacity" values="1;.35;1" dur="2s" repeatCount="indefinite"/>
+    </rect>
+    <line x1="${BX-4}" y1="${wellBottomY}" x2="${BX+BW+4}" y2="${wellBottomY}" stroke="#9aa7b4" stroke-width="3" stroke-linecap="round"/>
+    <rect x="${BX-8}" y="${SURF-14}" width="${BW+16}" height="9" fill="#5b6c80" rx="2"/>
+
+    <text id="gwXsYearTicker" x="215" y="${SURF+(BOT-SURF)*0.42}" fill="#93aec7"
+      font-size="54" font-weight="700" text-anchor="middle" opacity="0"></text>
+    ${markSvg}
+
+    <rect x="0" y="${BOT}" width="${W}" height="${H-BOT}" fill="#0e1b2a"/>
+    <text x="14" y="${BOT+16}" fill="#93aec7" font-size="10" opacity=".8">Saturated rock continues below the well bottom · vertical scale 0–${depthMax} ft</text>
+  </svg>`;
+  panel.hidden=false;
+
+  // drain animation: sweep from the record high down to today; replay on click/hover, and
+  // auto-play the first time the diagram scrolls into view (so visitors actually see it happen).
+  const xsec=$('gwXsec');
+  xsec.title='Replay the decline';
+  const play=()=>gwAnimateDrain(hi.v,cur,y,BOT,wellBottomY,hi.date,data.lastDate);
+  xsec.onclick=play;
+  if(!RM){
+    xsec.onmouseenter=play;
+    gwArmDrainOnView(xsec,play);
+  }else{
+    xsec.onmouseenter=null;
+  }
+}
+
+function gwArmDrainOnView(el,play){
+  if(gwDrainObserver){gwDrainObserver.disconnect();gwDrainObserver=null;}
+  if(!('IntersectionObserver' in window)){setTimeout(play,500);return;}
+  gwDrainObserver=new IntersectionObserver((entries)=>{
+    for(const e of entries){
+      if(e.isIntersecting&&e.intersectionRatio>=0.25){
+        gwDrainObserver.disconnect();gwDrainObserver=null;
+        setTimeout(play,200);
+        break;
+      }
+    }
+  },{threshold:[0.25]});
+  gwDrainObserver.observe(el);
+}
+
+function gwAnimateDrain(fromFt,toFt,yFn,BOT,boreBottom,fromDate,toDate){
+  cancelAnimationFrame(gwXsecRaf);
+  const sat=$('gwXsSatRect'),line=$('gwXsWt'),lab=$('gwXsWtLabel'),
+        bw=$('gwXsBoreWater'),sh=$('gwXsBoreShine'),yrT=$('gwXsYearTicker');
+  if(!sat)return;
+  const yf=ds=>ds?+ds.slice(0,4)+(+ds.slice(5,7)-1)/12:null;
+  const yf0=yf(fromDate),yf1=yf(toDate);
+  const dur=3500;
+  let last=performance.now(),elapsed=0;
+  const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  function frame(now){
+    elapsed+=Math.min(now-last,50);last=now;
+    const p=Math.min(1,elapsed/dur),v=fromFt+(toFt-fromFt)*ease(p),yy=yFn(v);
+    sat.setAttribute('y',yy);sat.setAttribute('height',Math.max(0,BOT-yy));
+    line.setAttribute('y1',yy);line.setAttribute('y2',yy);
+    lab.setAttribute('y',yy-6);
+    lab.textContent='water table · '+v.toFixed(1)+' ft';
+    bw.setAttribute('y',yy);bw.setAttribute('height',Math.max(0,boreBottom-yy-2));
+    sh.setAttribute('y',yy);
+    if(yrT&&yf0!=null&&yf1!=null){
+      yrT.textContent=Math.floor(yf0+(yf1-yf0)*ease(p));
+      yrT.setAttribute('opacity',(0.28*Math.min(1,p*10,(1.04-p)*8)).toFixed(3));
+    }
+    if(p<1)gwXsecRaf=requestAnimationFrame(frame);
+    else if(yrT)yrT.setAttribute('opacity','0');
+  }
+  gwXsecRaf=requestAnimationFrame(frame);
+}
+
+/* ---------- water-table-over-time graph (ported from kendall.html's Chart.js drawRange) ---------- */
+let gwChart=null;
+function gwActiveRange(){
+  const b=$('gwRanges')&&$('gwRanges').querySelector('button.on');
+  return b?b.dataset.range:'1y';
+}
+function gwSeriesForRange(data,range){
+  const d=gwSeries(data).map(p=>({x:gwParse(p.date),y:p.v}));
+  if(!d.length)return d;
+  if(range==='1y'){
+    const cut=d[d.length-1].x.getTime()-365*864e5;
+    return d.filter(p=>p.x.getTime()>=cut);
+  }
+  return d;
+}
+function renderWellChart(well,data){
+  const panel=$('gwGraphPanel');
+  const canvas=$('gwWellChart');
+  if(typeof Chart==='undefined'||!canvas){panel.hidden=true;return;}
+  const range=gwActiveRange();
+  const pts=gwSeriesForRange(data,range);
+  if(pts.length<2){panel.hidden=true;return;}
+  panel.hidden=false;
+  const unit=range==='1y'?'month':'year';
+  const cfg={
+    type:'line',
+    data:{datasets:[{
+      label:'Depth to water (ft below surface)',
+      data:pts,borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.14)',
+      borderWidth:2,pointRadius:0,tension:.25,fill:true,
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{type:'time',time:{unit},grid:{color:'rgba(147,174,199,.14)'},
+           ticks:{color:'#93aec7',maxRotation:0,autoSkipPadding:24}},
+        y:{reverse:true,grid:{color:'rgba(147,174,199,.14)'},
+           ticks:{color:'#93aec7',callback:v=>v+' ft'},
+           title:{display:true,text:'◀ deeper   ·   ft below surface   ·   shallower ▶',color:'#93aec7'}}
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title:it=>new Date(it[0].parsed.x).toLocaleDateString(),
+          label:it=>' '+it.parsed.y.toFixed(2)+' ft below surface'
+        }}
+      }
+    }
+  };
+  if(gwChart)gwChart.destroy();
+  gwChart=new Chart(canvas,cfg);
+}
+function gwSetupRanges(){
+  const wrap=$('gwRanges');
+  if(!wrap)return;
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      wrap.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      if(CURRENT)renderWellChart(CURRENT.well,CURRENT.data);
+    });
+  });
+}
+
 /* ---------- inspector ---------- */
 function renderInspector(well,data){
   $('gwAquifer').textContent=well.aquifer+' Aquifer';
@@ -1961,6 +2280,8 @@ function renderInspector(well,data){
 
   $('gwAsOf').textContent=data.updated?'Data as of '+fmtDate(data.updated):'';
   renderChart(well,data);
+  renderXsec(well,data);
+  renderWellChart(well,data);
 }
 
 /* ---------- selection ---------- */
@@ -1978,6 +2299,8 @@ async function selectWell(id){
   $('gwTrend').hidden=true;
   $('gwAsOf').textContent='Loading…';
   $('gwChartwrap').classList.add('loading');
+  $('gwXsecPanel').hidden=true;
+  $('gwGraphPanel').hidden=true;
   try{
     const data=await fetchWell(id);
     if(SELECTED!==id)return;   // a newer selection landed first
@@ -1989,6 +2312,8 @@ async function selectWell(id){
     $('gwLvl').textContent='—';
     $('gwTrend').hidden=true;
     $('gwAsOf').textContent='';
+    $('gwXsecPanel').hidden=true;
+    $('gwGraphPanel').hidden=true;
   }finally{
     $('gwChartwrap').classList.remove('loading');
   }
@@ -1998,11 +2323,14 @@ let rsz=null;
 addEventListener('resize',()=>{
   clearTimeout(rsz);
   rsz=setTimeout(()=>{if(CURRENT)renderChart(CURRENT.well,CURRENT.data);},180);
+  // Chart.js is responsive on its own; the cross-section SVG scales via viewBox + CSS —
+  // neither needs a manual redraw here.
 });
 
 /* ---------- init ---------- */
 $('gwLede').textContent=SET.intro;
 renderRail();renderSelect();renderMap();
+gwSetupRanges();
 $('gwSection').hidden=false;
 selectWell(WELLS[0].id);
 })();
