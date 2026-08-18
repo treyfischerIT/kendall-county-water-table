@@ -71,11 +71,29 @@
 
   function pushAd(box, tries) {
     if (box.offsetWidth > 10) {
+      var ins = box.querySelector("ins.adsbygoogle");
       try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+      if (ins) collapseIfUnfilled(box, ins);
       return;
     }
     if (tries > 20) return;
     requestAnimationFrame(function () { pushAd(box, tries + 1); });
+  }
+
+  // Hide the whole slot when Google returns no ad (unfilled), so there's no empty
+  // gap; show it once an ad fills. AdSense sets data-ad-status asynchronously.
+  function collapseIfUnfilled(box, ins) {
+    function apply() {
+      var st = ins.getAttribute("data-ad-status");
+      if (st === "unfilled") { box.style.display = "none"; return true; }
+      if (st === "filled") { box.style.display = ""; return true; }
+      return false;
+    }
+    if (apply()) return;
+    if (!("MutationObserver" in window)) { setTimeout(apply, 4000); return; }
+    var obs = new MutationObserver(function () { if (apply()) obs.disconnect(); });
+    obs.observe(ins, { attributes: true, attributeFilter: ["data-ad-status"] });
+    setTimeout(function () { obs.disconnect(); apply(); }, 15000);
   }
 
   function init() { banner(); loader(); ad(); }
