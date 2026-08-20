@@ -192,16 +192,23 @@ function navFor(pathname) {
   const p = (pathname || "/").replace(/\/+$/, "") || "/";
   const slug = p.replace(/^\/+/, "");
   const isCity = CITY_SLUGS.has(slug);
-  const items = [
-    { href: "/", label: "🏠 Home", key: "/" },
-    {
-      href: isCity ? (GW_CITY_SLUGS.has(slug) ? "#gwSection" : "/kendall") : "/kendall",
-      label: "💧 Water table",
-      key: "/kendall",
-    },
-    { href: isCity ? "#rainSection" : "/rain", label: "🌧️ Rainfall", key: "/rain" },
-    { href: isCity ? "#streamsSection" : "/streams", label: "🌊 Creeks & rivers", key: "/streams" },
-  ];
+  // The standalone Boerne/Kendall data pages (these cross-link each other).
+  const FLAGSHIP = new Set(["/kendall", "/boerne", "/rain", "/streams"]);
+  const items = [{ href: "/", label: "🏠 Home", key: "/" }];
+  if (isCity) {
+    // A city page holds its data in-page — jump to that city's own sections.
+    // Only show Water table where the city actually has a groundwater section.
+    if (GW_CITY_SLUGS.has(slug)) items.push({ href: "#gwSection", label: "💧 Water table" });
+    items.push({ href: "#rainSection", label: "🌧️ Rainfall" });
+    items.push({ href: "#streamsSection", label: "🌊 Creeks & rivers" });
+  } else if (FLAGSHIP.has(p)) {
+    // Boerne/Kendall flagship pages cross-link their sibling views.
+    items.push({ href: "/kendall", label: "💧 Water table", key: "/kendall" });
+    items.push({ href: "/rain", label: "🌧️ Rainfall", key: "/rain" });
+    items.push({ href: "/streams", label: "🌊 Creeks & rivers", key: "/streams" });
+  }
+  // Otherwise (statewide hub, /lampasas, /rain-almanac, /privacy): just Home + the
+  // city picker, so these links never funnel a statewide visitor to Kendall County.
   const links = items
     .map((it) => {
       const active = !isCity && (p === it.key || (it.key === "/kendall" && p === "/boerne"));
