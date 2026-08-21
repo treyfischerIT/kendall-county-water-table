@@ -43,6 +43,8 @@ const ALLOWED_WELLS = new Set([
   "6815211", "5764721", "5764705", "6733805", "5763705", "5763504", "5764405", "6733907", "5764502", "5663923",
   "5755607", "5755405", "6711501", "4061509", "5804702", "5804816", "4062501", "4058201", "5802304", "5802303",
   "5803702", "5803701", "4057601",
+  // Central/East Texas groundwater (Waco, Tyler-Longview).
+  "4039204", "4014602", "4015102", "4007502", "3541604", "3430907", "3558405", "3552602",
 ]);
 const DEFAULT_WELL = "6811417";
 
@@ -159,6 +161,7 @@ export default {
 const GW_CITY_SLUGS = new Set([
   "san-antonio", "austin", "houston", "dfw", "amarillo", "kerrville",
   "new-braunfels", "fredericksburg", "wimberley", "san-marcos", "killeen-temple",
+  "waco", "tyler-longview",
 ]);
 
 // Every place, for the "Jump to a city" nav dropdown.
