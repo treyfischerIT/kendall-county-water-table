@@ -39,6 +39,10 @@ const ALLOWED_WELLS = new Set([
   "3325202", "3319101", "3231906", "3333203", "3326822", "3333304", "3334207", "3334209", "3240703", "3240704",
   "0635912", "0653401", "0637710", "0646805",
   "5663922", "6801703", "6801704", "5654405", "6806105", "5750108", "6924225", "6802302", "5750324", "6803109",
+  // Hill Country groundwater (New Braunfels, Fredericksburg, Wimberley, San Marcos, Killeen-Temple).
+  "6815211", "5764721", "5764705", "6733805", "5763705", "5763504", "5764405", "6733907", "5764502", "5663923",
+  "5755607", "5755405", "6711501", "4061509", "5804702", "5804816", "4062501", "4058201", "5802304", "5802303",
+  "5803702", "5803701", "4057601",
 ]);
 const DEFAULT_WELL = "6811417";
 
@@ -154,6 +158,7 @@ export default {
 // City pages that carry a groundwater/water-table section (see WELLSETS in city.html).
 const GW_CITY_SLUGS = new Set([
   "san-antonio", "austin", "houston", "dfw", "amarillo", "kerrville",
+  "new-braunfels", "fredericksburg", "wimberley", "san-marcos", "killeen-temple",
 ]);
 
 // Every place, for the "Jump to a city" nav dropdown.
